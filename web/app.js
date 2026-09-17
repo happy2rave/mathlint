@@ -16,6 +16,19 @@ const operationSelect = document.getElementById("operation");
 const stepsButton = document.getElementById("show-steps");
 const linalgStatus = document.getElementById("linalg-status");
 const worked = document.getElementById("worked");
+const bounds = document.getElementById("bounds");
+const lowerInput = document.getElementById("lower");
+const upperInput = document.getElementById("upper");
+const matrixLabel = document.getElementById("matrix-label");
+const matrixHelp = document.getElementById("matrix-help-text");
+
+const MATRIX_EXAMPLE = "[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]";
+const EXPRESSION_EXAMPLE = "x^2 sin x";
+const MATRIX_HELP =
+  "Write it as [[2, 1], [3, 4]], MATLAB style [2 1; 3 4], or as a LaTeX pmatrix. " +
+  "Fractions stay exact — no decimals.";
+const EXPRESSION_HELP =
+  "Write it as you would say it: x^2 sin x, e^(2x), 1/(x^2+1), sqrt(x). LaTeX works too.";
 
 const MARKS = { OK: "✓", WRONG: "✗", WARNING: "!", UNSURE: "?" };
 
@@ -270,13 +283,37 @@ function renderSolution(solution) {
   }
 }
 
+function isCalculus(operation) {
+  return operation === "diff" || operation === "integrate";
+}
+
+function updateOperationInput() {
+  const operation = operationSelect.value;
+  const calculus = isCalculus(operation);
+  bounds.hidden = operation !== "integrate";
+  matrixLabel.textContent = calculus ? "Your expression" : "Your matrix";
+  matrixHelp.textContent = calculus ? EXPRESSION_HELP : MATRIX_HELP;
+
+  const looksLikeMatrix = matrixInput.value.trim().startsWith("[");
+  if (calculus && looksLikeMatrix) matrixInput.value = EXPRESSION_EXAMPLE;
+  if (!calculus && !looksLikeMatrix) matrixInput.value = MATRIX_EXAMPLE;
+}
+
 function showSteps() {
   if (!runSteps) return;
   linalgStatus.textContent = "Working…";
   stepsButton.disabled = true;
   setTimeout(() => {
     try {
-      const outcome = JSON.parse(runSteps(operationSelect.value, matrixInput.value));
+      const integral = operationSelect.value === "integrate";
+      const outcome = JSON.parse(
+        runSteps(
+          operationSelect.value,
+          matrixInput.value,
+          integral ? lowerInput.value : "",
+          integral ? upperInput.value : ""
+        )
+      );
       if (outcome.ok) {
         renderSolution(outcome.solution);
         linalgStatus.textContent = "";
@@ -298,8 +335,10 @@ async function boot() {
   setUpTabs();
   stepsButton.addEventListener("click", showSteps);
   operationSelect.addEventListener("change", () => {
+    updateOperationInput();
     if (runSteps) showSteps();
   });
+  updateOperationInput();
   fillExamples();
   solution.value = initialText();
   drawGutter();
@@ -335,11 +374,36 @@ _run
 
   runSteps = pyodide.runPython(`
 import json
-from mathlint.steps import parse_matrix, solve_linalg
+import sympy
+from mathlint.parse.plain import parse_expression
+from mathlint.steps import (
+    differentiate_solution,
+    integrate_solution,
+    parse_matrix,
+    solve_linalg,
+)
 
-def _steps(operation, text):
+def _variable(expression):
+    symbols = sorted(expression.free_symbols, key=lambda symbol: symbol.name)
+    return symbols[0] if len(symbols) == 1 else sympy.Symbol("x")
+
+def _steps(operation, text, lower, upper):
     try:
-        return json.dumps({"ok": True, "solution": solve_linalg(operation, parse_matrix(text)).to_dict()})
+        if operation in ("diff", "integrate"):
+            expression = parse_expression(text).expr
+            variable = _variable(expression)
+            if operation == "diff":
+                solution = differentiate_solution(expression, variable)
+            else:
+                solution = integrate_solution(
+                    expression,
+                    variable,
+                    lower=parse_expression(lower).expr if lower.strip() else None,
+                    upper=parse_expression(upper).expr if upper.strip() else None,
+                )
+        else:
+            solution = solve_linalg(operation, parse_matrix(text))
+        return json.dumps({"ok": True, "solution": solution.to_dict()})
     except mathlint.MathlintError as error:
         return json.dumps({"ok": False, "error": str(error)})
     except Exception as error:

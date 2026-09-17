@@ -20,6 +20,7 @@ import sympy as sp
 
 from ..document import Document
 from ..equivalence import Verdict
+from ..parse.plain import read_as
 from ..report import Report, Step
 
 MAX_SOURCE_ROWS = 2
@@ -208,4 +209,4 @@ def _stray_row(before: sp.Matrix, after: sp.Matrix) -> int | None:
 
 
 def _show(value: sp.Expr) -> str:
-    return sp.sstr(value).replace("**", "^")
+    return read_as(value)

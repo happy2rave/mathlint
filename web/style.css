@@ -344,3 +344,16 @@ a { color: var(--pen); }
 }
 
 .worked-math { overflow-x: auto; padding: 0.15rem 0; }
+
+input[type="text"] {
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 1rem;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 0.2rem 0.3rem;
+}
+
+#bounds { gap: 0.5rem; }
+#bounds .help { margin: 0; }

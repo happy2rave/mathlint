@@ -16,7 +16,7 @@ install, and nothing you type leaves the page.
 $ mathlint check solution.txt
 
   1  d/dx [x^2 sin x]
-     read as: Derivative(x^2*sin(x), x)
+     read as: d/dx [x^2*sin(x)]
   2  = 2x sin x + x^2 cos x
      read as: 2*x*sin(x) + x^2*cos(x)
      OK  equal to line 1 (proved exactly)
@@ -93,17 +93,38 @@ print(report.ok)            # True
 print(report.to_text())
 ```
 
-## Linear algebra, step by step
+## Worked solutions, step by step
 
 ```bash
-mathlint steps rref    "[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]"
-mathlint steps det     "[[3, 8], [4, 6]]"
-mathlint steps inverse "[1 2; 3 4]"
-mathlint steps eigen   "[[2, 1], [0, 2]]"
+mathlint steps diff      "x^2 sin x"
+mathlint steps integrate "x e^x"
+mathlint steps integrate "x^2" --from 0 --to 1
+mathlint steps rref      "[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]"
+mathlint steps det       "[[3, 8], [4, 6]]"
+mathlint steps inverse   "[1 2; 3 4]"
+mathlint steps eigen     "[[2, 1], [0, 2]]"
 ```
 
-Every row operation is written the way you would write it in the margin, and the
-entries stay exact — `1/2`, never `0.5`. Add `--format markdown`, `--format latex`
+```console
+$ mathlint steps diff "x^2 sin x"
+
+1. Start from
+      d/dx [x^2*sin(x)]
+2. Product rule: (uv)' = u'v + uv', with u = x^2 and v = sin(x)
+3. Power rule: d/dx x^n = n x^(n-1), with n = 2
+      2*x
+4. Standard derivative: d/dx sin(x) = cos(x)
+      cos(x)
+5. Put it together and tidy up
+      x*(x*cos(x) + 2*sin(x))
+```
+
+Derivatives name the rule they use and the `u` and `v` they use it with, rather
+than handing you an answer. Integrals explain the method — substitution, parts,
+partial fractions — and say plainly when an integrand has no elementary
+antiderivative instead of producing a special function without comment. Row
+operations are written the way you would write them in the margin, and matrix
+entries stay exact: `1/2`, never `0.5`. Add `--format markdown`, `--format latex`
 or `--format json` to paste the work somewhere else.
 
 Checking a row reduction you did yourself works the same way as everything else:
@@ -144,8 +165,9 @@ being guessed at.
 
 ## What it does not do yet
 
-Inequalities, several unknowns at once, and multivariable calculus. Step-by-step
-derivatives and integrals are coming in v0.3.
+Inequalities, several unknowns at once, multivariable calculus, and checking a
+derivative or integral you worked out step by step (today it checks the result of
+each line, not the rule you named).
 
 ## Contributing
 

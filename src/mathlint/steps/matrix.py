@@ -11,7 +11,7 @@ import re
 import sympy as sp
 
 from ..errors import ParseError
-from ..parse.plain import parse_expression
+from ..parse.plain import parse_expression, read_as
 from ..parse.unicode_math import normalize_unicode
 
 _ENVIRONMENT = re.compile(r"\\begin\{(p|b|v|V|B)?matrix\}(.*?)\\end\{(p|b|v|V|B)?matrix\}", re.S)
@@ -86,7 +86,7 @@ def _build(rows: list[list[str]]) -> sp.Matrix:
 def format_matrix(matrix: sp.Matrix) -> str:
     """Print a matrix with its columns lined up, exact fractions and all."""
     cells = [
-        [sp.sstr(entry).replace("**", "^") for entry in matrix.row(index)]
+        [read_as(entry) for entry in matrix.row(index)]
         for index in range(matrix.rows)
     ]
     widths = [

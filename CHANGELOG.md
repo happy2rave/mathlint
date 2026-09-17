@@ -6,6 +6,30 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-09-17
+
+Calculus, worked out.
+
+### Added
+
+- `mathlint steps diff EXPR` — derivatives with the rule named at every step:
+  product, quotient, chain, power, exponential, and logarithmic differentiation
+  when the variable is in the base and the exponent.
+- `mathlint steps integrate EXPR [--from A --to B]` — integrals explained through
+  SymPy's by-hand rules: substitution, parts, cyclic parts, rewriting, partial
+  fractions, and the standard forms. Definite integrals show F(b) - F(a).
+- `--var` to choose the variable; with one unknown in the expression it is picked
+  automatically.
+- Derivatives and integrals on the web page, next to the linear algebra.
+
+### Changed
+
+- Expressions are printed the way they are written by hand: `d/dx [x^2]` instead
+  of `Derivative(x**2, x)`, and `int f dx` instead of `Integral(f, x)`. This shows
+  up in the `read as:` line of every report.
+- Worked solutions print in plain ASCII, so a legacy Windows console cannot mangle
+  them.
+
 ## [0.2.0] — 2026-09-17
 
 Linear algebra.
@@ -50,6 +74,7 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.3.0
 [0.2.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.2.0
 [0.1.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.1.0

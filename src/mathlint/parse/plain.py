@@ -112,9 +112,37 @@ class Parsed:
     warnings: list[str] = field(default_factory=list)
 
 
+class _PlainPrinter(sp.printing.str.StrPrinter):
+    """Print the way a student writes, not the way SymPy stores it.
+
+    ``Derivative(x**2, x)`` says nothing to someone checking their homework;
+    ``d/dx [x^2]`` is the same thing in their own notation.
+    """
+
+    def _print_Derivative(self, expr: sp.Derivative) -> str:
+        operators = " ".join(
+            f"d/d{variable}" if count == 1 else f"d^{count}/d{variable}^{count}"
+            for variable, count in expr.variable_count
+        )
+        return f"{operators} [{self._print(expr.expr)}]"
+
+    def _print_Integral(self, expr: sp.Integral) -> str:
+        body = self._print(expr.function)
+        for limit in expr.limits:
+            if len(limit) == 3:
+                variable, lower, upper = limit
+                body = (
+                    f"int from {self._print(lower)} to {self._print(upper)} "
+                    f"of {body} d{variable}"
+                )
+            else:
+                body = f"int {body} d{limit[0]}"
+        return body
+
+
 def read_as(expr: sp.Expr) -> str:
     """Render an expression the way this parser reads it back."""
-    return sp.sstr(expr).replace("**", "^")
+    return _PlainPrinter().doprint(expr).replace("**", "^")
 
 
 def parse_expression(text: str) -> Parsed:

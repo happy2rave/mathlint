@@ -11,7 +11,7 @@ import sys
 from ._version import __version__
 from .check import check_document
 from .document import parse_document
-from .errors import MathlintError
+from .errors import MathlintError, UnsupportedError
 
 EXIT_OK = 0
 EXIT_FOUND_ERROR = 1
@@ -44,13 +44,24 @@ def build_parser() -> argparse.ArgumentParser:
     steps = subcommands.add_parser("steps", help="show a worked solution, step by step")
     steps.add_argument(
         "operation",
-        choices=["rref", "det", "inverse", "eigen"],
-        help="row reduce, determinant, inverse, or eigenvalues and eigenvectors",
+        choices=["rref", "det", "inverse", "eigen", "diff", "integrate"],
+        help=(
+            "rref, det, inverse or eigen for a matrix; diff or integrate for an expression"
+        ),
     )
     steps.add_argument(
-        "matrix",
-        help='the matrix: "[[1,2],[3,4]]", "[1 2; 3 4]" or a LaTeX pmatrix',
+        "target",
+        help=(
+            'the matrix ("[[1,2],[3,4]]", "[1 2; 3 4]", a LaTeX pmatrix) '
+            'or the expression ("x^2 sin x")'
+        ),
     )
+    steps.add_argument(
+        "--var",
+        help="the variable to work with (default: the one in the expression, else x)",
+    )
+    steps.add_argument("--from", dest="lower", help="lower limit of a definite integral")
+    steps.add_argument("--to", dest="upper", help="upper limit of a definite integral")
     steps.add_argument(
         "--format",
         choices=["text", "markdown", "latex", "json"],
@@ -71,10 +82,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _run_steps(args) -> int:
-    from .steps import parse_matrix, solve_linalg
-
     try:
-        solution = solve_linalg(args.operation, parse_matrix(args.matrix))
+        solution = _build_solution(args)
     except MathlintError as error:
         print(f"mathlint: {error}", file=sys.stderr)
         return EXIT_BAD_INPUT
@@ -88,6 +97,42 @@ def _run_steps(args) -> int:
     else:
         print(solution.to_text())
     return EXIT_OK
+
+
+def _build_solution(args):
+
+    from .parse.plain import parse_expression
+    from .steps import (
+        differentiate_solution,
+        integrate_solution,
+        parse_matrix,
+        solve_linalg,
+    )
+
+    if args.operation not in ("diff", "integrate"):
+        return solve_linalg(args.operation, parse_matrix(args.target))
+
+    expression = parse_expression(args.target).expr
+    variable = _pick_variable(expression, args.var)
+    if args.operation == "diff":
+        return differentiate_solution(expression, variable)
+
+    if (args.lower is None) != (args.upper is None):
+        raise UnsupportedError("a definite integral needs both --from and --to")
+    lower = parse_expression(args.lower).expr if args.lower else None
+    upper = parse_expression(args.upper).expr if args.upper else None
+    return integrate_solution(expression, variable, lower=lower, upper=upper)
+
+
+def _pick_variable(expression, chosen: str | None):
+    import sympy as sp
+
+    if chosen:
+        return sp.Symbol(chosen)
+    symbols = sorted(expression.free_symbols, key=lambda symbol: symbol.name)
+    if len(symbols) == 1:
+        return symbols[0]
+    return sp.Symbol("x")
 
 
 def _run_check(args) -> int:

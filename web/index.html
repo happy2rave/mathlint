@@ -23,7 +23,7 @@
 <main>
   <div class="tabs" role="tablist">
     <button role="tab" id="tab-check" aria-controls="panel-check" aria-selected="true">Check my working</button>
-    <button role="tab" id="tab-linalg" aria-controls="panel-linalg" aria-selected="false">Linear algebra, step by step</button>
+    <button role="tab" id="tab-linalg" aria-controls="panel-linalg" aria-selected="false">Work it out step by step</button>
   </div>
 
   <section class="sheet-block" id="panel-check" role="tabpanel" aria-labelledby="tab-check">
@@ -57,7 +57,7 @@
 
   <section class="sheet-block" id="panel-linalg" role="tabpanel" aria-labelledby="tab-linalg" hidden>
     <div class="sheet-head">
-      <label for="matrix">Your matrix</label>
+      <label for="matrix" id="matrix-label">Your matrix</label>
       <label class="examples">
         <span>Work out</span>
         <select id="operation">
@@ -65,6 +65,8 @@
           <option value="det">Determinant</option>
           <option value="inverse">Inverse</option>
           <option value="eigen">Eigenvalues and eigenvectors</option>
+          <option value="diff">Derivative</option>
+          <option value="integrate">Integral</option>
         </select>
       </label>
     </div>
@@ -74,14 +76,23 @@
         aria-describedby="matrix-help">[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]</textarea>
     </div>
 
+    <div class="controls" id="bounds" hidden>
+      <label for="lower">From</label>
+      <input id="lower" type="text" inputmode="text" value="0" size="6">
+      <label for="upper">to</label>
+      <input id="upper" type="text" inputmode="text" value="1" size="6">
+      <span class="help">leave these empty for an indefinite integral</span>
+    </div>
+
     <div class="controls">
       <button id="show-steps" type="button" disabled>Show the steps</button>
       <p id="linalg-status" role="status" aria-live="polite"></p>
     </div>
 
     <p id="matrix-help" class="help">
-      Write it as <code>[[2, 1], [3, 4]]</code>, MATLAB style <code>[2 1; 3 4]</code>, or as a
-      LaTeX <code>pmatrix</code>. Fractions stay exact — no decimals.
+      <span id="matrix-help-text">Write it as <code>[[2, 1], [3, 4]]</code>, MATLAB style
+      <code>[2 1; 3 4]</code>, or as a LaTeX <code>pmatrix</code>. Fractions stay exact — no
+      decimals.</span>
     </p>
 
     <section id="worked" class="results" aria-live="polite"></section>

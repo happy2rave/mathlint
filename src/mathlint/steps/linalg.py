@@ -10,6 +10,7 @@ from __future__ import annotations
 import sympy as sp
 
 from ..errors import UnsupportedError
+from ..parse.plain import read_as
 from .solution import Solution
 
 LAMBDA = sp.Symbol("lambda")
@@ -249,4 +250,4 @@ def _require_square(matrix: sp.Matrix, what: str) -> None:
 
 
 def _show(value: sp.Expr) -> str:
-    return sp.sstr(value).replace("**", "^")
+    return read_as(value)

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 import sympy as sp
 
+from ..parse.plain import read_as
 from .matrix import format_matrix
 
 
@@ -115,7 +116,7 @@ class Solution:
 
 
 def _plain(expression: sp.Expr) -> str:
-    return sp.sstr(expression).replace("**", "^")
+    return read_as(expression)
 
 
 def _latex_escape(operation: str) -> str:

@@ -73,5 +73,5 @@ def test_empty_input_is_an_error():
 
 def test_read_as_is_filled_in():
     doc = parse_document("d/dx(x^2)\n= 2x")
-    assert doc.lines[0].read_as == "Derivative(x^2, x)"
+    assert doc.lines[0].read_as == "d/dx [x^2]"
     assert doc.lines[1].read_as == "2*x"
