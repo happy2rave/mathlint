@@ -47,3 +47,5 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+# a space-separated list of function names reads better than 30 quoted strings
+ignore = ["SIM905"]

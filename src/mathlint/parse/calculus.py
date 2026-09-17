@@ -78,10 +78,7 @@ def _rewrite_integral(text: str, match: re.Match[str]) -> str:
     variable = closing.group(1)
     rest = text[closing.end() :]
 
-    if lower is None:
-        spec = variable
-    else:
-        spec = f"({variable}, {lower}, {upper})"
+    spec = variable if lower is None else f"({variable}, {lower}, {upper})"
     return f"{text[: match.start()]}Integral(({_rewrite(integrand)}), {spec}){_rewrite(rest)}"
 
 
