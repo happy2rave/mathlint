@@ -1,9 +1,16 @@
 # mathlint
 
+[![CI](https://github.com/happy2rave/mathlint/actions/workflows/ci.yml/badge.svg)](https://github.com/happy2rave/mathlint/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/mathlint.svg)](https://pypi.org/project/mathlint/)
+[![Python](https://img.shields.io/pypi/pyversions/mathlint.svg)](https://pypi.org/project/mathlint/)
+
 **A linter for your math.** You write out a solution by hand, mathlint tells you
 which step is wrong — and proves it with a counterexample.
 
 Other tools show you *their* solution. mathlint checks *yours*.
+
+**[Try it in your browser](https://happy2rave.github.io/mathlint/)** — nothing to
+install, and nothing you type leaves the page.
 
 ```console
 $ mathlint check solution.txt
@@ -109,7 +116,7 @@ Matrices are coming in v0.2.
 
 ## Contributing
 
-Bug reports about **misread input** are the most valuable kind — if mathlint
+Issues and pull requests are welcome. Bug reports about **misread input** are the most valuable kind — if mathlint
 reads your line differently than you meant it, that's a bug. See
 [CONTRIBUTING.md](CONTRIBUTING.md).
 

@@ -18,8 +18,8 @@ dependencies = ["sympy>=1.12"]
 dynamic = ["version"]
 
 [project.urls]
-Homepage = "https://github.com/mathlint/mathlint"
-Issues = "https://github.com/mathlint/mathlint/issues"
+Homepage = "https://github.com/happy2rave/mathlint"
+Issues = "https://github.com/happy2rave/mathlint/issues"
 
 [project.scripts]
 mathlint = "mathlint.cli:main"

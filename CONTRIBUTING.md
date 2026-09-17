@@ -17,7 +17,7 @@ the notation is unusual.
 ## Getting set up
 
 ```bash
-git clone https://github.com/mathlint/mathlint
+git clone https://github.com/happy2rave/mathlint
 cd mathlint
 uv sync          # or: python -m venv .venv && pip install -e . pytest ruff
 uv run pytest

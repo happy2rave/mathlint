@@ -27,5 +27,5 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/mathlint/mathlint/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/mathlint/mathlint/releases/tag/v0.1.0
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.1.0
