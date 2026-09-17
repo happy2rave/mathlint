@@ -289,3 +289,58 @@ a { color: var(--pen); }
   body { font-size: 1rem; }
   .masthead { padding: 2rem 0 1.5rem; }
 }
+
+/* Tabs: two ways to use the same engine. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.tabs button {
+  padding: 0 0 0.6rem;
+  background: none;
+  color: var(--ink-soft);
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  font-size: 0.9375rem;
+  margin-bottom: -1px;
+}
+
+.tabs button[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--pen);
+}
+
+/* The matrix box is a plain sheet: no ruled lines behind free-form input. */
+.sheet.plain { background-image: none; }
+.sheet.plain textarea { padding-left: 0.9rem; }
+
+.worked-step {
+  display: grid;
+  grid-template-columns: var(--gutter-width) 1fr;
+  column-gap: 0.9rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.worked-step:last-of-type { border-bottom: 1px solid var(--rule); }
+
+.worked-index {
+  text-align: right;
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+.worked-text { margin: 0 0 0.35rem; }
+
+.worked-operation {
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 0.9375rem;
+  color: var(--pen);
+}
+
+.worked-math { overflow-x: auto; padding: 0.15rem 0; }

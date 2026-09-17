@@ -15,6 +15,7 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
         ("derivative-sign-slip.txt", False, 5),
         ("integration-by-parts.txt", True, None),
         ("squaring-invents-a-root.txt", False, 4),
+        ("row-reduction.txt", True, None),
     ],
 )
 def test_examples(name, expected_ok, expected_error_line):

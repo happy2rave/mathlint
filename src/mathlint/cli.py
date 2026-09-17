@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -39,13 +40,57 @@ def build_parser() -> argparse.ArgumentParser:
         help="how to print the result (default: text)",
     )
     check.add_argument("--no-color", action="store_true", help="never colour the output")
+
+    steps = subcommands.add_parser("steps", help="show a worked solution, step by step")
+    steps.add_argument(
+        "operation",
+        choices=["rref", "det", "inverse", "eigen"],
+        help="row reduce, determinant, inverse, or eigenvalues and eigenvectors",
+    )
+    steps.add_argument(
+        "matrix",
+        help='the matrix: "[[1,2],[3,4]]", "[1 2; 3 4]" or a LaTeX pmatrix',
+    )
+    steps.add_argument(
+        "--format",
+        choices=["text", "markdown", "latex", "json"],
+        default="text",
+        help="how to print the solution (default: text)",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    _use_utf8()
 
+    if args.command == "steps":
+        return _run_steps(args)
+    return _run_check(args)
+
+
+def _run_steps(args) -> int:
+    from .steps import parse_matrix, solve_linalg
+
+    try:
+        solution = solve_linalg(args.operation, parse_matrix(args.matrix))
+    except MathlintError as error:
+        print(f"mathlint: {error}", file=sys.stderr)
+        return EXIT_BAD_INPUT
+
+    if args.format == "json":
+        print(json.dumps(solution.to_dict(), indent=2))
+    elif args.format == "markdown":
+        print(solution.to_markdown())
+    elif args.format == "latex":
+        print(solution.to_latex())
+    else:
+        print(solution.to_text())
+    return EXIT_OK
+
+
+def _run_check(args) -> int:
     try:
         text = _read_input(args.file)
     except OSError as error:
@@ -66,6 +111,15 @@ def main(argv: list[str] | None = None) -> int:
         print(report.to_text(color=_use_color(args.no_color)))
 
     return EXIT_OK if report.ok else EXIT_FOUND_ERROR
+
+
+def _use_utf8() -> None:
+    """Reports contain dashes and arrows; a legacy console would choke on them."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            # depends on the terminal, and a failure here changes nothing important
+            with contextlib.suppress(ValueError, OSError):
+                stream.reconfigure(encoding="utf-8", errors="replace")
 
 
 def _read_input(name: str) -> str:

@@ -6,6 +6,29 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-09-17
+
+Linear algebra.
+
+### Added
+
+- `mathlint steps rref|det|inverse|eigen MATRIX` — worked solutions with every
+  row operation written out and every entry kept as an exact fraction. Output as
+  text, Markdown, LaTeX or JSON.
+- Matrices as input anywhere: `[[1,2],[3,4]]`, MATLAB style `[1 2; 3 4]`, and
+  LaTeX `pmatrix`/`bmatrix`.
+- Checking a row reduction: put your matrices one per line with `~` between them.
+  mathlint solves for the coefficients that turn one matrix into the next, so it
+  reports the operation you performed, catches rows that are not combinations of
+  the rows above, steps that cannot be undone, and rows that only work out
+  through an operation nobody would write on purpose.
+- A second tab on the web page for the worked solutions.
+
+### Fixed
+
+- The command now prints reports as UTF-8 on terminals that would otherwise
+  mangle the dashes.
+
 ## [0.1.0] — 2026-09-17
 
 First release: the mistake finder.
@@ -27,5 +50,6 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.2.0
 [0.1.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.1.0

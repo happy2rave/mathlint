@@ -21,7 +21,12 @@
 </header>
 
 <main>
-  <section class="sheet-block">
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-check" aria-controls="panel-check" aria-selected="true">Check my working</button>
+    <button role="tab" id="tab-linalg" aria-controls="panel-linalg" aria-selected="false">Linear algebra, step by step</button>
+  </div>
+
+  <section class="sheet-block" id="panel-check" role="tabpanel" aria-labelledby="tab-check">
     <div class="sheet-head">
       <label for="solution">Your working, one step per line</label>
       <label class="examples">
@@ -49,6 +54,38 @@
   </section>
 
   <section id="results" class="results" aria-live="polite"></section>
+
+  <section class="sheet-block" id="panel-linalg" role="tabpanel" aria-labelledby="tab-linalg" hidden>
+    <div class="sheet-head">
+      <label for="matrix">Your matrix</label>
+      <label class="examples">
+        <span>Work out</span>
+        <select id="operation">
+          <option value="rref">Row reduce (RREF)</option>
+          <option value="det">Determinant</option>
+          <option value="inverse">Inverse</option>
+          <option value="eigen">Eigenvalues and eigenvectors</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="sheet plain">
+      <textarea id="matrix" spellcheck="false" autocapitalize="off" autocorrect="off"
+        aria-describedby="matrix-help">[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]</textarea>
+    </div>
+
+    <div class="controls">
+      <button id="show-steps" type="button" disabled>Show the steps</button>
+      <p id="linalg-status" role="status" aria-live="polite"></p>
+    </div>
+
+    <p id="matrix-help" class="help">
+      Write it as <code>[[2, 1], [3, 4]]</code>, MATLAB style <code>[2 1; 3 4]</code>, or as a
+      LaTeX <code>pmatrix</code>. Fractions stay exact — no decimals.
+    </p>
+
+    <section id="worked" class="results" aria-live="polite"></section>
+  </section>
 </main>
 
 <footer>

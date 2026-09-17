@@ -38,6 +38,8 @@ First error: line 3 -> 4
   (equal up to a constant, so `+ C` is handled), definite integrals.
 - **Solving equations** — one unknown: it catches solutions you lost (dividing by
   `x`) and solutions that appeared out of nowhere (squaring both sides).
+- **Row reduction** — write your matrices one per line with `~` between them, and
+  mathlint works out which row operation you did and whether it is really one.
 - **Input** — typed text (`2x sin x + x^2 cos x`) or LaTeX
   (`2x \sin x + x^2 \cos x`).
 
@@ -91,6 +93,36 @@ print(report.ok)            # True
 print(report.to_text())
 ```
 
+## Linear algebra, step by step
+
+```bash
+mathlint steps rref    "[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]"
+mathlint steps det     "[[3, 8], [4, 6]]"
+mathlint steps inverse "[1 2; 3 4]"
+mathlint steps eigen   "[[2, 1], [0, 2]]"
+```
+
+Every row operation is written the way you would write it in the margin, and the
+entries stay exact — `1/2`, never `0.5`. Add `--format markdown`, `--format latex`
+or `--format json` to paste the work somewhere else.
+
+Checking a row reduction you did yourself works the same way as everything else:
+
+```text
+[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]
+~ [[1, 1/2, -1/2], [-3, -1, 2], [-2, 1, 2]]
+~ [[1, 1/2, -1/2], [0, 1/2, 1/2], [0, 2, 1]]
+```
+
+```
+OK  row operation checks out: R2 -> R2 + (3) R1, R3 -> R3 + (2) R1
+```
+
+mathlint solves for the coefficients that turn one matrix into the next, so it
+catches a row that is not a combination of the rows above, a step that cannot be
+undone, and a row that only works out through an operation nobody would write on
+purpose — the fingerprint of an arithmetic slip.
+
 ## Writing your solution
 
 | You write | Meaning |
@@ -101,6 +133,7 @@ print(report.to_text())
 | `d/dx expr`, `d/dx(expr)`, `d^2/dx^2 (expr)` | derivatives |
 | `int f dx`, `int_0^1 f dx` | integrals (`∫` works too) |
 | `x = 2 or x = 3`, `x = ±2`, `no solution` | answers when solving an equation |
+| `[[1, 2], [3, 4]]`, `[1 2; 3 4]`, `pmatrix` | matrices; `~` between row reduction steps |
 | `=>`, `<=>` at the start of a line | implication / equivalence |
 | `# ...` | comment, ignored |
 
@@ -111,8 +144,8 @@ being guessed at.
 
 ## What it does not do yet
 
-Inequalities, several unknowns at once, multivariable calculus, and matrices.
-Matrices are coming in v0.2.
+Inequalities, several unknowns at once, and multivariable calculus. Step-by-step
+derivatives and integrals are coming in v0.3.
 
 ## Contributing
 

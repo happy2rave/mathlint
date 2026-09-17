@@ -11,10 +11,16 @@ const checkButton = document.getElementById("check");
 const results = document.getElementById("results");
 const examplesSelect = document.getElementById("examples");
 const versionSlot = document.getElementById("version");
+const matrixInput = document.getElementById("matrix");
+const operationSelect = document.getElementById("operation");
+const stepsButton = document.getElementById("show-steps");
+const linalgStatus = document.getElementById("linalg-status");
+const worked = document.getElementById("worked");
 
 const MARKS = { OK: "✓", WRONG: "✗", WARNING: "!", UNSURE: "?" };
 
 let runCheck = null;
+let runSteps = null;
 
 function drawGutter() {
   const count = Math.max(solution.value.split("\n").length, 6);
@@ -200,7 +206,100 @@ function check() {
   }, 16);
 }
 
+function setUpTabs() {
+  const tabs = [
+    { tab: document.getElementById("tab-check"), panels: ["panel-check", "results"] },
+    { tab: document.getElementById("tab-linalg"), panels: ["panel-linalg"] },
+  ];
+  for (const { tab } of tabs) {
+    tab.addEventListener("click", () => {
+      for (const entry of tabs) {
+        const selected = entry.tab === tab;
+        entry.tab.setAttribute("aria-selected", String(selected));
+        for (const id of entry.panels) document.getElementById(id).hidden = !selected;
+      }
+    });
+  }
+  document.getElementById("panel-linalg").hidden = true;
+}
+
+function workedStep(step, index) {
+  const row = document.createElement("div");
+  row.className = "worked-step";
+
+  const number = document.createElement("div");
+  number.className = "worked-index";
+  number.textContent = String(index + 1);
+  row.append(number);
+
+  const body = document.createElement("div");
+  const text = document.createElement("p");
+  text.className = "worked-text";
+  text.textContent = step.text;
+  if (step.operation) {
+    const operation = document.createElement("span");
+    operation.className = "worked-operation";
+    operation.textContent = "   " + step.operation;
+    text.append(operation);
+  }
+  body.append(text);
+
+  if (step.math_latex || step.math) {
+    const math = document.createElement("div");
+    math.className = "worked-math";
+    math.dataset.plain = step.math;
+    renderMath(math, step.math_latex);
+    body.append(math);
+  }
+
+  row.append(body);
+  return row;
+}
+
+function renderSolution(solution) {
+  worked.replaceChildren();
+  const heading = document.createElement("h2");
+  heading.textContent = solution.title;
+  worked.append(heading);
+  solution.steps.forEach((step, index) => worked.append(workedStep(step, index)));
+  if (solution.summary) {
+    const summary = document.createElement("p");
+    summary.className = "summary";
+    summary.textContent = solution.summary;
+    worked.append(summary);
+  }
+}
+
+function showSteps() {
+  if (!runSteps) return;
+  linalgStatus.textContent = "Working…";
+  stepsButton.disabled = true;
+  setTimeout(() => {
+    try {
+      const outcome = JSON.parse(runSteps(operationSelect.value, matrixInput.value));
+      if (outcome.ok) {
+        renderSolution(outcome.solution);
+        linalgStatus.textContent = "";
+      } else {
+        worked.replaceChildren();
+        const box = document.createElement("div");
+        box.className = "failure";
+        box.textContent = outcome.error;
+        worked.append(box);
+        linalgStatus.textContent = "";
+      }
+    } finally {
+      stepsButton.disabled = false;
+    }
+  }, 16);
+}
+
 async function boot() {
+  setUpTabs();
+  stepsButton.addEventListener("click", showSteps);
+  operationSelect.addEventListener("change", () => {
+    if (runSteps) showSteps();
+  });
   fillExamples();
   solution.value = initialText();
   drawGutter();
@@ -233,6 +332,22 @@ def _run(text):
 
 _run
 `);
+
+  runSteps = pyodide.runPython(`
+import json
+from mathlint.steps import parse_matrix, solve_linalg
+
+def _steps(operation, text):
+    try:
+        return json.dumps({"ok": True, "solution": solve_linalg(operation, parse_matrix(text)).to_dict()})
+    except mathlint.MathlintError as error:
+        return json.dumps({"ok": False, "error": str(error)})
+    except Exception as error:
+        return json.dumps({"ok": False, "error": f"{type(error).__name__}: {error}"})
+
+_steps
+`);
+  stepsButton.disabled = false;
 
   versionSlot.textContent = "mathlint " + pyodide.runPython("import mathlint; mathlint.__version__");
   status.textContent = "Ready";

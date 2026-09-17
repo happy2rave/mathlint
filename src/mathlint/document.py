@@ -15,6 +15,7 @@ import sympy as sp
 from .errors import ParseError, UnsupportedError
 from .parse.plain import parse_expression, read_as
 from .parse.unicode_math import normalize_unicode
+from .steps.matrix import looks_like_matrix, parse_matrix
 
 _ARROWS = [
     ("<=>", "<=>"),
@@ -38,8 +39,9 @@ class Line:
 
     number: int
     raw: str
-    kind: str  # "expression" | "equation" | "solutions"
+    kind: str  # "expression" | "equation" | "solutions" | "matrix"
     expr: sp.Expr | None = None
+    matrix: sp.Matrix | None = None
     equation: tuple[sp.Expr, sp.Expr] | None = None
     solutions: list[sp.Expr] | None = None
     no_solution: bool = False
@@ -53,7 +55,7 @@ class Line:
 class Document:
     """A whole solution: its mode, its lines and the unknown being solved for."""
 
-    mode: str  # "chain" | "equation"
+    mode: str  # "chain" | "equation" | "matrix"
     lines: list[Line]
     variable: sp.Symbol | None = None
 
@@ -71,7 +73,12 @@ def parse_document(text: str) -> Document:
     first_number, first_raw = raw_lines[0]
     first_body, _ = _split_arrow(normalize_unicode(first_raw))
     first_body = _SOLVE_PREFIX.sub("", first_body)
-    mode = "equation" if _PLAIN_EQUALS.search(first_body) else "chain"
+    if looks_like_matrix(first_body):
+        mode = "matrix"
+    elif _PLAIN_EQUALS.search(first_body):
+        mode = "equation"
+    else:
+        mode = "chain"
 
     lines: list[Line] = []
     for number, raw in raw_lines:
@@ -99,6 +106,22 @@ def _split_arrow(body: str) -> tuple[str, str]:
 
 
 def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line:
+    if mode == "matrix":
+        if body.startswith("~"):
+            arrow, body = "~", body[1:].strip()
+        elif number != 1 and body.startswith("="):
+            arrow, body = "=", body[1:].strip()
+        matrix = parse_matrix(body)
+        return Line(
+            number=number,
+            raw=raw,
+            kind="matrix",
+            matrix=matrix,
+            arrow=arrow,
+            read_as=_compact_matrix(matrix),
+            read_as_latex=sp.latex(matrix),
+        )
+
     if mode == "chain":
         if number != 1 and body.startswith("="):
             body = body[1:].strip()
@@ -177,6 +200,14 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
         read_as_latex=rendered_latex,
         warnings=warnings,
     )
+
+
+def _compact_matrix(matrix: sp.Matrix) -> str:
+    rows = ", ".join(
+        "[" + ", ".join(read_as(entry) for entry in matrix.row(index)) + "]"
+        for index in range(matrix.rows)
+    )
+    return f"[{rows}]"
 
 
 def _expand_plus_minus(part: str) -> list[str]:
