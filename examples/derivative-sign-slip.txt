@@ -1,0 +1,5 @@
+# A product rule worked out, with a sign that flips on the last line.
+d/dx [x^2 sin x]
+= 2x sin x + x^2 cos x
+= x(2 sin x + x cos x)
+= x(2 sin x - x cos x)

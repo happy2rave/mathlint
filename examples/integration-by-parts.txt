@@ -1,0 +1,4 @@
+# Integration by parts, done correctly. The +C is checked too.
+int x e^x dx
+= x e^x - int e^x dx
+= x e^x - e^x + C

@@ -1,0 +1,39 @@
+name: mathlint misread my input
+description: A line was read as something you did not write, or correct work was marked wrong.
+labels: ["misread"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most important kind of bug here. Correct working must never
+        be called wrong, and a line must never be read as something else.
+  - type: textarea
+    id: input
+    attributes:
+      label: What you typed
+      description: The whole solution, exactly as you wrote it.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: What mathlint said
+      description: Paste the report, including the `read as:` lines.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you meant
+      description: What should that line have been read as?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "`mathlint --version`, or the version shown at the bottom of the web page."
+    validations:
+      required: true

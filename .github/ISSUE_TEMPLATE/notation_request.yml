@@ -1,0 +1,28 @@
+name: Let me write it this way
+description: Notation mathlint should understand but does not.
+labels: ["notation"]
+body:
+  - type: textarea
+    id: notation
+    attributes:
+      label: The notation
+      description: How you write it, and what it means.
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Where it comes from
+      options:
+        - Typed text
+        - LaTeX
+        - Pasted from a chat or a PDF (unicode)
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Where you met it
+      description: A course, a textbook, a country's convention — this helps judge how common it is.

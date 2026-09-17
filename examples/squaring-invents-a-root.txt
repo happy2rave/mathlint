@@ -1,0 +1,4 @@
+# Squaring both sides adds a solution that does not solve the original equation.
+sqrt(x) = x - 2
+x = (x-2)^2
+x = 1 or x = 4
