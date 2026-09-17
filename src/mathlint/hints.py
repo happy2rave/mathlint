@@ -1,0 +1,77 @@
+"""Guess what went wrong in a step, once we know it is wrong.
+
+Every hint is a guess about the *kind* of slip, never about the verdict. The
+verdict is decided by :mod:`mathlint.equivalence` with a counterexample.
+"""
+
+from __future__ import annotations
+
+import sympy as sp
+
+from .parse.plain import read_as
+
+MAX_HINTS = 3
+_COMPLEXITY_LIMIT = 200
+
+
+def find_hints(left: sp.Expr, right: sp.Expr) -> list[str]:
+    """Describe how ``right`` differs from ``left`` in plain words."""
+    hints: list[str] = []
+    if _is_small(left) and _is_small(right):
+        if _looks_zero(left + right):
+            hints.append("the sign of the whole expression flipped")
+        else:
+            difference = sp.expand(left - right)
+            if difference.is_number and difference != 0:
+                hints.append(f"off by a constant: {read_as(difference)}")
+            ratio = _ratio(left, right)
+            if ratio is not None:
+                hints.append(f"off by a factor of {read_as(ratio)}")
+    hints.extend(_term_hints(left, right))
+    return hints[:MAX_HINTS]
+
+
+def _term_hints(left: sp.Expr, right: sp.Expr) -> list[str]:
+    left_terms = set(sp.Add.make_args(sp.expand(left)))
+    right_terms = set(sp.Add.make_args(sp.expand(right)))
+    common = left_terms & right_terms
+    missing = left_terms - right_terms
+    extra = right_terms - left_terms
+    # Only talk about terms when the two sides are mostly the same expression.
+    if not common or len(missing) > 2 or len(extra) > 2:
+        return []
+
+    hints: list[str] = []
+    unmatched_extra = set(extra)
+    for term in sorted(missing, key=sp.default_sort_key):
+        if -term in unmatched_extra:
+            unmatched_extra.discard(-term)
+            hints.append(f"the sign of {read_as(term)} flipped")
+        else:
+            hints.append(f"the term {read_as(term)} disappeared")
+    for term in sorted(unmatched_extra, key=sp.default_sort_key):
+        hints.append(f"the term {read_as(term)} appeared out of nowhere")
+    return hints
+
+
+def _ratio(left: sp.Expr, right: sp.Expr) -> sp.Expr | None:
+    if right == 0 or not _is_small(left) or not _is_small(right):
+        return None
+    try:
+        ratio = sp.simplify(left / right)
+    except Exception:
+        return None
+    if ratio.is_number and ratio != 1 and ratio.is_finite:
+        return ratio
+    return None
+
+
+def _looks_zero(expr: sp.Expr) -> bool:
+    try:
+        return sp.simplify(expr) == 0
+    except Exception:
+        return False
+
+
+def _is_small(expr: sp.Expr) -> bool:
+    return sp.count_ops(expr) <= _COMPLEXITY_LIMIT
