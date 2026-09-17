@@ -45,6 +45,7 @@ class Line:
     no_solution: bool = False
     arrow: str = ""
     read_as: str = ""
+    read_as_latex: str = ""
     warnings: list[str] = field(default_factory=list)
 
 
@@ -109,6 +110,7 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
             expr=parsed.expr,
             arrow=arrow,
             read_as=read_as(parsed.expr),
+            read_as_latex=sp.latex(parsed.expr),
             warnings=parsed.warnings,
         )
 
@@ -121,6 +123,7 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
             no_solution=True,
             arrow=arrow,
             read_as="no solution",
+            read_as_latex=r"\text{no solution}",
         )
 
     parts = [part for part in _OR.split(body) if part.strip()]
@@ -145,6 +148,7 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
                 solutions=[right],
                 arrow=arrow,
                 read_as=f"{read_as(left)} = {read_as(right)}",
+                read_as_latex=f"{sp.latex(left)} = {sp.latex(right)}",
                 warnings=warnings,
             )
         return Line(
@@ -154,11 +158,15 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
             equation=(left, right),
             arrow=arrow,
             read_as=f"{read_as(left)} = {read_as(right)}",
+            read_as_latex=f"{sp.latex(left)} = {sp.latex(right)}",
             warnings=warnings,
         )
 
     solutions = [right for _, right in equations]
     rendered = " or ".join(f"{read_as(left)} = {read_as(right)}" for left, right in equations)
+    rendered_latex = r" \quad\text{or}\quad ".join(
+        f"{sp.latex(left)} = {sp.latex(right)}" for left, right in equations
+    )
     return Line(
         number=number,
         raw=raw,
@@ -166,6 +174,7 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
         solutions=solutions,
         arrow=arrow,
         read_as=rendered,
+        read_as_latex=rendered_latex,
         warnings=warnings,
     )
 

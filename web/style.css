@@ -1,0 +1,291 @@
+/* mathlint — the page is a sheet of ruled paper with a marking margin. */
+
+:root {
+  color-scheme: light dark;
+
+  --paper: #faf9f5;
+  --ink: #191b1f;
+  --ink-soft: #5c6270;
+  --rule: #dde3ec;
+  --margin-rule: #e2b3ad;
+  --pen: #243b8f;
+
+  --mark-ok: #1c7c4a;
+  --mark-wrong: #c0332b;
+  --mark-warning: #8f6408;
+  --mark-unsure: #5c6270;
+
+  --line-height: 2rem;
+  --gutter-width: 2.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #15171b;
+    --ink: #e8e9e3;
+    --ink-soft: #9aa2b0;
+    --rule: #272c35;
+    --margin-rule: #6a3b37;
+    --pen: #9db0ff;
+
+    --mark-ok: #5bbd84;
+    --mark-wrong: #f0756a;
+    --mark-warning: #d9a83c;
+    --mark-unsure: #9aa2b0;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 16px 4rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Spectral, Georgia, serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+main, .masthead, footer { max-width: 47rem; margin-inline: auto; }
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  position: static;
+  display: inline-block;
+  padding: 0.5rem;
+}
+
+.masthead { padding: 3rem 0 2rem; }
+
+h1 {
+  margin: 0;
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: clamp(2rem, 7vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.masthead p {
+  margin: 0.4rem 0 0;
+  max-width: 34rem;
+  color: var(--ink-soft);
+}
+
+.sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.examples { display: flex; gap: 0.5rem; align-items: baseline; }
+
+select {
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.2rem 0.3rem;
+  max-width: 15rem;
+}
+
+/* The sheet: horizontal rules, a red margin line, numbers in the margin. */
+.sheet {
+  display: flex;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(var(--line-height) - 1px),
+    var(--rule) calc(var(--line-height) - 1px),
+    var(--rule) var(--line-height)
+  );
+  background-position: 0 0.5rem;
+}
+
+.gutter {
+  flex: 0 0 var(--gutter-width);
+  padding: 0.5rem 0.6rem 0.5rem 0;
+  border-right: 1px solid var(--margin-rule);
+  text-align: right;
+  color: var(--ink-soft);
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 0.9375rem;
+  line-height: var(--line-height);
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+}
+
+textarea {
+  flex: 1 1 auto;
+  min-height: calc(var(--line-height) * 6 + 1rem);
+  padding: 0.5rem 0 0.5rem 0.9rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 1rem;
+  line-height: var(--line-height);
+  white-space: pre;
+  overflow-x: auto;
+  resize: vertical;
+}
+
+textarea:focus-visible, button:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 2px solid var(--pen);
+  outline-offset: 2px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+  margin-top: 1.25rem;
+}
+
+button {
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  color: var(--paper);
+  background: var(--pen);
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+button:disabled { opacity: 0.45; cursor: progress; }
+
+#status { margin: 0; color: var(--ink-soft); font-size: 0.9375rem; }
+
+.help {
+  margin: 1.5rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+code {
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 0.875em;
+}
+
+/* Results: a mark in the margin, then the line and what was found. */
+.results { margin-top: 2.5rem; }
+
+.results h2 {
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.verdict-line {
+  display: grid;
+  grid-template-columns: var(--gutter-width) 1fr;
+  column-gap: 0.9rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.verdict-line:last-child { border-bottom: 1px solid var(--rule); }
+
+.mark {
+  text-align: right;
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.mark b { font-weight: 600; }
+.mark-ok b { color: var(--mark-ok); }
+.mark-wrong b { color: var(--mark-wrong); }
+.mark-warning b { color: var(--mark-warning); }
+.mark-unsure b { color: var(--mark-unsure); }
+
+.step-raw {
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 1rem;
+  overflow-x: auto;
+}
+
+.step-read {
+  margin: 0.2rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.step-read .katex { font-size: 1em; }
+
+.step-note { margin: 0.35rem 0 0; font-size: 0.9375rem; }
+.step-note.wrong { color: var(--mark-wrong); }
+.step-note.warning { color: var(--mark-warning); }
+.step-note.unsure { color: var(--mark-unsure); }
+
+.evidence {
+  margin: 0.35rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--mark-wrong);
+  background: color-mix(in srgb, var(--mark-wrong) 7%, transparent);
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 0.9375rem;
+}
+
+.hint, .warn { margin: 0.3rem 0 0; font-size: 0.9375rem; color: var(--ink-soft); }
+.hint::before { content: "hint — "; color: var(--ink-soft); }
+.warn::before { content: "careful — "; color: var(--mark-warning); }
+
+.summary {
+  margin: 1.25rem 0 0;
+  font-size: 1.0625rem;
+}
+.summary strong { font-weight: 600; }
+.summary.clean strong { color: var(--mark-ok); }
+.summary.broken strong { color: var(--mark-wrong); }
+
+.failure {
+  margin-top: 1.5rem;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--mark-wrong);
+  background: color-mix(in srgb, var(--mark-wrong) 7%, transparent);
+}
+
+.failure p { margin: 0; }
+
+footer {
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+a { color: var(--pen); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .verdict-line { animation: settle 240ms ease-out both; }
+  @keyframes settle {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@media (max-width: 30rem) {
+  :root { --gutter-width: 2rem; }
+  body { font-size: 1rem; }
+  .masthead { padding: 2rem 0 1.5rem; }
+}

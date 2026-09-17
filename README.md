@@ -19,8 +19,8 @@ $ mathlint check solution.txt
   4  = x(2 sin x - x cos x)
      read as: x*(2*sin(x) - x*cos(x))
      WRONG  not equal to line 3
-     counterexample: x = 1  ->  line 3 = 2.2232, line 4 = 1.1426
-     hint: the sign of x*cos(x) flipped
+     counterexample: x = 1  ->  line 3 = 2.22324, line 4 = 1.14264
+     hint: the sign of x^2*cos(x) flipped
 
 First error: line 3 -> 4
 ```

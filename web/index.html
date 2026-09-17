@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mathlint — check your own working</title>
+<meta name="description" content="Write out your solution step by step. mathlint finds the first wrong line and proves it with a counterexample. Runs entirely in your browser.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>✓</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Spline+Sans+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#solution">Skip to the sheet</a>
+
+<header class="masthead">
+  <h1>mathlint</h1>
+  <p>Write out your working. This page marks it, line by line, and tells you where the first mistake is.</p>
+</header>
+
+<main>
+  <section class="sheet-block">
+    <div class="sheet-head">
+      <label for="solution">Your working, one step per line</label>
+      <label class="examples">
+        <span>Example</span>
+        <select id="examples"></select>
+      </label>
+    </div>
+
+    <div class="sheet">
+      <div class="gutter" id="gutter" aria-hidden="true"></div>
+      <textarea id="solution" spellcheck="false" autocapitalize="off" autocorrect="off"
+        aria-describedby="syntax-help"></textarea>
+    </div>
+
+    <div class="controls">
+      <button id="check" type="button" disabled>Check my working</button>
+      <p id="status" role="status" aria-live="polite">Starting the math engine…</p>
+    </div>
+
+    <p id="syntax-help" class="help">
+      Type it as you would say it: <code>2x sin x + x^2 cos x</code>, <code>e^x</code>,
+      <code>ln|x|</code>, <code>d/dx (x^2)</code>, <code>int x e^x dx</code>. LaTeX works too.
+      Solving an equation? Put the equation on line 1 and end with <code>x = 2 or x = 3</code>.
+    </p>
+  </section>
+
+  <section id="results" class="results" aria-live="polite"></section>
+</main>
+
+<footer>
+  <p>
+    Everything runs in your browser — nothing you type is sent anywhere.
+    <a href="https://github.com/mathlint/mathlint">Source and bug reports</a> ·
+    <span id="version"></span>
+  </p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

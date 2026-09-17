@@ -23,6 +23,7 @@ class Step:
     line: int
     raw: str
     read_as: str
+    read_as_latex: str = ""
     verdict: Verdict | None = None
     method: str | None = None
     message: str = ""
@@ -37,6 +38,7 @@ class Step:
             "line": self.line,
             "raw": self.raw,
             "read_as": self.read_as,
+            "read_as_latex": self.read_as_latex,
             "verdict": self.verdict.value if self.verdict else None,
             "method": self.method,
             "message": self.message,

@@ -34,6 +34,7 @@ def check_equation(document: Document) -> Report:
             line=line.number,
             raw=line.raw,
             read_as=line.read_as,
+            read_as_latex=line.read_as_latex,
             warnings=list(line.warnings),
         )
         if previous_line is not None:
