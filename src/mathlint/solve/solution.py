@@ -49,6 +49,14 @@ class EquationSolution(Solution):
         else:
             self.result = sp.FiniteSet(*self.answers)
 
+    def to_text(self) -> str:
+        text = super().to_text()
+        others = [method for method in self.methods if method != self.method]
+        if others:
+            options = ", ".join(f"--method {method}" for method in others)
+            text += f"\nOther ways to solve it: {options}\n"
+        return text
+
     def to_dict(self) -> dict:
         data = super().to_dict()
         data.update(

@@ -4,10 +4,12 @@
 [![Release](https://img.shields.io/github/v/release/happy2rave/mathlint)](https://github.com/happy2rave/mathlint/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**A linter for your math.** You write out a solution by hand, mathlint tells you
-which step is wrong — and proves it with a counterexample.
+**A linter for your math.** Type an equation and get it solved, step by step —
+or write out a solution yourself, and mathlint tells you which step is wrong and
+proves it with a counterexample.
 
-Other tools show you *their* solution. mathlint checks *yours*.
+Other tools show you *their* solution. mathlint also checks *yours*. It is free,
+open source, and runs on your own device. The plan is in [ROADMAP.md](ROADMAP.md).
 
 **[Try it in your browser](https://happy2rave.github.io/mathlint/)** — nothing to
 install, and nothing you type leaves the page. You write on a math editor with a
@@ -32,6 +34,59 @@ $ mathlint check solution.txt
      hint: the sign of x^2*cos(x) flipped
 
 First error: line 3 -> 4
+```
+
+## Solve an equation
+
+```console
+$ mathlint solve "x^2 - 5x + 6 = 0"
+Solve x^2 - 5*x + 6 = 0
+=======================
+
+1. Start from
+      x^2 - 5*x + 6 = 0
+
+2. Factor: find two numbers that multiply to 6 and add up to -5: -2 and -3
+      (x - 3)*(x - 2) = 0
+
+3. A product is zero exactly when one of its factors is zero
+      x - 3 = 0 or x - 2 = 0
+
+4. Solve each one
+      x = 2 or x = 3
+
+5. Check x = 2: both sides equal 0
+
+6. Check x = 3: both sides equal 0
+
+x = 2 or x = 3
+
+Other ways to solve it: --method formula, --method completing-square
+```
+
+One unknown, and the method a teacher would use for each kind of equation:
+
+| Kind | How it is solved |
+|---|---|
+| Linear | expand, clear fractions, collect the unknown, divide |
+| Quadratic | factoring, the quadratic formula, completing the square or square roots — your choice |
+| Higher powers | common factors, substitution (`x^4 - 5x^2 + 4 = 0`), the rational root theorem |
+| Unknown in a denominator | excluded values first, then multiply by the common denominator |
+| Square roots | isolate and square, as many times as needed |
+| Absolute values | split into two cases |
+| Exponentials | the same base, logarithms, or substitution (`e^(2x) - 3e^x + 2 = 0`) |
+| Logarithms | the domain first, combine, undo the logarithm |
+
+Every answer is put back into the original equation at the end. Squaring,
+clearing denominators and undoing logarithms can all produce answers that do not
+really work; those are rejected, with the reason. From Python:
+
+```python
+import mathlint
+
+solution = mathlint.solve("sqrt(x + 3) = x - 3")
+solution.answers      # [6] - x = 1 was rejected in the check
+solution.methods      # the methods that apply; pass method="..." to pick one
 ```
 
 ## What it checks

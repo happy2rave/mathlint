@@ -68,6 +68,20 @@ def build_parser() -> argparse.ArgumentParser:
         default="text",
         help="how to print the solution (default: text)",
     )
+
+    solve = subcommands.add_parser("solve", help="solve an equation, step by step")
+    solve.add_argument("equation", help='the equation, such as "x^2 - 5x + 6 = 0"')
+    solve.add_argument(
+        "--method",
+        help="how to solve it, when there is a choice (for a quadratic: factoring, "
+        "formula, completing-square, square-root)",
+    )
+    solve.add_argument(
+        "--format",
+        choices=["text", "markdown", "latex", "json"],
+        default="text",
+        help="how to print the solution (default: text)",
+    )
     return parser
 
 
@@ -76,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     _use_utf8()
 
+    if args.command == "solve":
+        return _run_solve(args)
     if args.command == "steps":
         return _run_steps(args)
     return _run_check(args)
@@ -88,15 +104,31 @@ def _run_steps(args) -> int:
         print(f"mathlint: {error}", file=sys.stderr)
         return EXIT_BAD_INPUT
 
-    if args.format == "json":
+    _print_solution(solution, args.format)
+    return EXIT_OK
+
+
+def _run_solve(args) -> int:
+    from .solve import solve
+
+    try:
+        solution = solve(args.equation, method=args.method)
+    except MathlintError as error:
+        print(f"mathlint: {error}", file=sys.stderr)
+        return EXIT_BAD_INPUT
+    _print_solution(solution, args.format)
+    return EXIT_OK
+
+
+def _print_solution(solution, output_format: str) -> None:
+    if output_format == "json":
         print(json.dumps(solution.to_dict(), indent=2))
-    elif args.format == "markdown":
+    elif output_format == "markdown":
         print(solution.to_markdown())
-    elif args.format == "latex":
+    elif output_format == "latex":
         print(solution.to_latex())
     else:
         print(solution.to_text())
-    return EXIT_OK
 
 
 def _build_solution(args):

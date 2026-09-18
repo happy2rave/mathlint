@@ -6,6 +6,37 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-09-18
+
+Solve it: type an equation, get the answer and the steps.
+
+### Added
+
+- `mathlint.solve(text, method=None)` and `mathlint solve EQUATION` — one
+  equation in one unknown, solved with the steps a teacher would write:
+  - linear equations: expand, clear fractions, collect the unknown, divide;
+  - quadratics with four methods to choose from: factoring, the quadratic
+    formula, completing the square, square roots;
+  - higher powers: common factors, substitution, the rational root theorem and
+    synthetic division, with approximate roots said to be approximate;
+  - rational equations: excluded values first, then the common denominator;
+  - radical equations: isolate and square, as many rounds as needed;
+  - absolute values: split into two cases;
+  - exponentials: the same base, logarithms, or substitution;
+  - logarithms: the domain, combining logarithms, undoing the logarithm.
+- Every answer is substituted back into the original equation as the last step;
+  answers that divide by zero or leave the domain are rejected with the reason.
+- A **Solve** tab, now the first thing on the web page: the answer first, chips
+  to switch the method, then the steps.
+- The math engine runs in a Web Worker, so the page never freezes; every request
+  has a 20 second limit and a Stop button.
+- A problem bank of equations with known answers runs with every test.
+
+### Changed
+
+- Expressions print as a student writes them: `|x|` instead of `Abs(x)`, `ln`
+  instead of `log`, `e^2` instead of `exp(2)`.
+
 ## [0.4.0] — 2026-09-18
 
 Math that looks like math while you write it.
@@ -103,7 +134,8 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.5.0
 [0.4.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.4.0
 [0.3.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.3.0
 [0.2.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.2.0

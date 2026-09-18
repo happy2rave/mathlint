@@ -22,7 +22,7 @@ real problems with known answers — runs on every commit.
 | Version | Theme | What you get |
 |---|---|---|
 | v0.1–v0.4 | Done | Mistake finder, linear algebra and calculus steps, math editor and keypad |
-| **v0.5** | Solve it | Type an equation, get the answer and the steps |
+| v0.5 | Done: Solve it | Type an equation, get the answer and the steps |
 | **v0.6** | Many unknowns | Systems of equations, and "solve this formula for y" |
 | v0.7 | Calculator | Arithmetic and simplifying with steps, a live answer as you type |
 | v0.8 | Inequalities and graphs | Sign charts, interval answers, interactive graphs, function analysis |
