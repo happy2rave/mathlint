@@ -16,6 +16,11 @@ All notable changes are recorded here. This project follows
   (`sqrt(72) = 6 sqrt(2)`), factorials, absolute values and exact values such
   as `sin(pi/6)` all have their own steps. The answer stays exact, with a
   decimal next to it, and is checked against SymPy before any step is shown.
+- Expanding with steps: the special products `(a + b)^2`, `(a - b)^2`,
+  `(a + b)(a - b)` and `(a + b)^3` by name, a number or letter in front of a
+  bracket, two brackets term by term, like terms collected inside a bracket
+  before it is multiplied out, and at the end. A product like `x^3 x^5` or
+  `2x + 3x` is first shown as written, with the rule that tidies it.
 
 ## [0.6.0] — 2026-09-18
 

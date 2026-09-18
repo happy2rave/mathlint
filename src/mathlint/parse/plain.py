@@ -166,6 +166,40 @@ def latex_of(expr: sp.Basic) -> str:
 
 def parse_expression(text: str) -> Parsed:
     """Parse one line of typed or LaTeX math."""
+    text = _prepare(text)
+    warnings = _ambiguity_warnings(text)
+    expr = _parse_sympy(text)
+    return Parsed(expr=expr, warnings=warnings)
+
+
+def parse_as_written(text: str) -> sp.Expr:
+    """The expression before SymPy tidies it up.
+
+    ``x^3 x^5`` stays a product of two powers and ``2x + 3x`` keeps both terms,
+    so a worked solution can start from what the student wrote.
+    """
+    unevaluated = _parse_sympy(_prepare(text), evaluate=False)
+    return _tidy_unevaluated(unevaluated)
+
+
+def _tidy_unevaluated(expr: sp.Basic) -> sp.Basic:
+    """Drop what the unevaluated parse adds by itself: ``1*4`` for ``4``, ``1*(1/x)``."""
+    if not expr.args or isinstance(expr, sp.Number):
+        return expr
+    args = [_tidy_unevaluated(arg) for arg in expr.args]
+    if isinstance(expr, sp.Mul):
+        if all(arg.is_Number for arg in args):
+            return sp.Mul(*args)
+        args = [arg for arg in args if arg != 1]
+        if len(args) == 1:
+            return args[0]
+    try:
+        return expr.func(*args, evaluate=False)
+    except TypeError:
+        return expr.func(*args)
+
+
+def _prepare(text: str) -> str:
     text = normalize_unicode(text)
     if "\\" in text:
         from .latex import latex_to_plain
@@ -179,11 +213,7 @@ def parse_expression(text: str) -> Parsed:
 
     text = rewrite_calculus(text)
     text = rewrite_abs(text)
-    text = rewrite_functions(text)
-
-    warnings = _ambiguity_warnings(text)
-    expr = _parse_sympy(text)
-    return Parsed(expr=expr, warnings=warnings)
+    return rewrite_functions(text)
 
 
 def _validate(text: str) -> None:
@@ -384,7 +414,7 @@ def _skip_spaces(text: str, index: int) -> int:
     return index
 
 
-def _parse_sympy(text: str) -> sp.Expr:
+def _parse_sympy(text: str, evaluate: bool = True) -> sp.Expr:
     if not text.strip():
         raise ParseError("this line has no math on it")
     try:
@@ -400,6 +430,8 @@ def _parse_sympy(text: str) -> sp.Expr:
     except Exception as exc:  # SyntaxError, TokenError, TypeError...
         raise ParseError(f"cannot read this line ({type(exc).__name__})") from exc
     _guard_size(unevaluated)
+    if not evaluate:
+        return unevaluated
     try:
         return parse_expr(
             text,

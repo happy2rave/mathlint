@@ -8,6 +8,7 @@ from ..errors import ParseError, UnsupportedError
 from ..steps.solution import SolutionStep
 from .arithmetic import value_of, work_out
 from .computation import Computation
+from .expression import compute_expression
 from .reader import NotArithmetic, read_arithmetic
 from .tree import Num, latex, plain
 
@@ -18,13 +19,18 @@ def compute(text: str, method: str | None = None) -> Computation:
     A calculation (numbers only) is worked out in the order of operations, with
     fractions, decimals, percentages, powers and roots done the way they are
     taught. The answer is exact, with a decimal alongside when they differ.
+
+    An expression with letters is simplified, expanded or factored; ``method``
+    picks one of the result's ``methods``, and by default brackets are
+    multiplied out, a polynomial without brackets is factored, and anything
+    else is simplified.
     """
     if "=" in text:
         raise ParseError("this is an equation — use solve for it")
     try:
         tree = read_arithmetic(text)
     except NotArithmetic:
-        raise UnsupportedError("only calculations with numbers can be worked out so far") from None
+        return compute_expression(text, method)
     if method not in (None, "calculate"):
         raise UnsupportedError(f"the method '{method}' does not apply here — try calculate")
     return calculate(tree)
