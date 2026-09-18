@@ -47,4 +47,16 @@ POLYNOMIAL = [
     ("x^6 - 9x^3 + 8 = 0", "polynomial", [1, 2]),
 ]
 
-BANK = LINEAR + QUADRATIC + POLYNOMIAL
+RATIONAL = [
+    ("1/x + 1/2 = 3/4", "rational", [4]),
+    ("x/(x - 1) = 2", "rational", [2]),
+    ("(x^2 - 1)/(x - 1) = 3", "rational", [2]),
+    ("2/(x + 1) = 1/(x - 1)", "rational", [3]),
+    ("x/(x - 2) = 2/(x - 2)", "rational", "none"),
+    ("1/(x^2 - 4) = 1/(x - 2)", "rational", [-1]),
+    ("x/(x + 1) + 1/(x - 1) = 2/(x^2 - 1)", "rational", "none"),
+    ("(x + 3)/x = x - 1", "rational", [-1, 3]),
+    (r"\frac{1}{x}=\frac{x}{4}", "rational", [-2, 2]),
+]
+
+BANK = LINEAR + QUADRATIC + POLYNOMIAL + RATIONAL

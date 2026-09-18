@@ -38,8 +38,13 @@ def classify(equation: Equation, variable: sp.Symbol) -> str:
     if any(node.has(variable) for node in expr.atoms(*_TRIG)):
         return "other"
 
-    _, denominator = sp.fraction(sp.together(expr))
-    if denominator.has(variable):
+    # term by term: combining both sides first could cancel the denominator away,
+    # and x/(x-2) = 2/(x-2) would lose the fact that x = 2 is excluded
+    if any(
+        sp.fraction(sp.together(term))[1].has(variable)
+        for side in (equation.lhs, equation.rhs)
+        for term in sp.Add.make_args(side)
+    ):
         return "rational"
 
     expanded = sp.expand(expr)
