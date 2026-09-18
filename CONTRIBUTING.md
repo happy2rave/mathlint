@@ -41,7 +41,7 @@ python -m http.server -d _site 8123
 | `src/mathlint/hints.py` | describe the kind of slip, never the verdict |
 | `src/mathlint/check/` | walk the lines and build the report |
 | `src/mathlint/report.py` | text, Markdown and JSON output |
-| `web/` | the browser version (Pyodide) |
+| `web/` | the browser version: `app.js` runs mathlint in Pyodide, `editor.js` is the sheet of MathLive math fields, `keypad.js` the keypad, `examples.json` the examples (checked by `tests/test_web_examples.py`) |
 
 ## House rules
 

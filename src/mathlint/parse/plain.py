@@ -100,6 +100,7 @@ _INDEXED_SYMBOL = re.compile(r"(?<![A-Za-z0-9_])([A-Za-z])(\d+)(?![A-Za-z0-9_.])
 _BIG_FACTORIAL = re.compile(r"\d{4,}\s*!")
 _BIG_POWER = re.compile(r"\^\s*-?\s*\d{5,}")
 _POWER_TOWER = re.compile(r"\d\s*\^\s*\(?\s*\d+\s*\)?\s*\^")
+_EMPTY_BRACKETS = re.compile(r"\(\s*\)")
 _AMBIGUOUS_SLASH = re.compile(r"(\d*)\s*/\s*(\d+)([A-Za-z(])")
 _AMBIGUOUS_POWER = re.compile(r"([A-Za-z0-9_]+)\s*\^\s*(-?\d+)([A-Za-z(])")
 
@@ -179,6 +180,9 @@ def _validate(text: str) -> None:
     for char in text:
         if not _ALLOWED_CHARS.match(char):
             raise ParseError(f"cannot read the character {char!r}")
+    if _EMPTY_BRACKETS.search(text):
+        # what an unfilled box in the web page's editor turns into
+        raise ParseError("there is an empty box on this line — fill it in or delete it")
     depth = 0
     for char in text:
         if char == "(":

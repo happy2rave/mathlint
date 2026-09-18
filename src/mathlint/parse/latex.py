@@ -80,19 +80,36 @@ _SYMBOLS = {
     "Leftrightarrow": " <=> ",
     "iff": " <=> ",
     "equiv": " <=> ",
+    "sim": " ~ ",
+    "lor": " or ",
+    # MathLive, the editor on the web page, writes these
+    "differentialD": " d ",
+    "exponentialE": " e ",
+    "imaginaryI": " i ",
+    "lvert": "|",
+    "rvert": "|",
+    "vert": "|",
+    "lbrack": "(",
+    "rbrack": ")",
+    "lbrace": "(",
+    "rbrace": ")",
 }
 
 _SPACING = {",", ";", ":", "!", " ", "quad", "qquad", "thinspace", "medspace", "\\"}
 _UNWRAP = {"mathrm", "operatorname", "text", "mathit"}
-_DROP = {"left", "right", "displaystyle", "limits"}
+_DROP = {"left", "right", "mleft", "mright", "displaystyle", "limits"}
 
 _COMMAND = re.compile(r"\\([A-Za-z]+|.)")
+_EMPTY_SCRIPT = re.compile(r"[\^_]\s*\{\s*\}")
+_EMPTY_BOX = "there is an empty box on this line — fill it in or delete it"
 _DERIVATIVE_NUMERATOR = re.compile(r"^\s*d(\s*\^\s*\d+)?\s*$")
 _DERIVATIVE_DENOMINATOR = re.compile(r"^\s*d\s*([A-Za-z][A-Za-z0-9_]*)(\s*\^\s*\d+)?\s*$")
 
 
 def latex_to_plain(text: str) -> str:
     """Convert LaTeX math into the plain format, or raise :class:`ParseError`."""
+    if r"\placeholder" in text or _EMPTY_SCRIPT.search(text):
+        raise ParseError(_EMPTY_BOX)
     out: list[str] = []
     index = 0
     while index < len(text):
@@ -145,6 +162,8 @@ def _fraction(text: str, index: int) -> tuple[str, int]:
     denominator, index = _read_group(text, index)
     numerator = latex_to_plain(numerator)
     denominator = latex_to_plain(denominator)
+    if not numerator.strip() or not denominator.strip():
+        raise ParseError(_EMPTY_BOX)
     if _DERIVATIVE_NUMERATOR.match(numerator) and _DERIVATIVE_DENOMINATOR.match(denominator):
         # \frac{d}{dx} is an operator, not a fraction.
         return f"{numerator.strip()}/{denominator.strip()}", index
@@ -161,6 +180,8 @@ def _root(text: str, index: int) -> tuple[str, int]:
         index = end + 1
     radicand, index = _read_group(text, index)
     radicand = latex_to_plain(radicand)
+    if not radicand.strip() or (degree is not None and not degree.strip()):
+        raise ParseError(_EMPTY_BOX)
     if degree is None:
         return f"sqrt(({radicand}))", index
     return f"(({radicand}))^(1/({degree}))", index

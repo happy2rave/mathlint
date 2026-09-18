@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 import sympy as sp
 
 from .errors import ParseError, UnsupportedError
+from .parse.latex import latex_to_plain
 from .parse.plain import parse_expression, read_as
 from .parse.unicode_math import normalize_unicode
 from .steps.matrix import looks_like_matrix, parse_matrix
@@ -25,6 +26,8 @@ _ARROWS = [
     (r"\equiv", "<=>"),
     (r"\Rightarrow", "=>"),
     (r"\implies", "=>"),
+    (r"\sim", "~"),
+    ("~", "~"),
 ]
 _PLAIN_EQUALS = re.compile(r"(?<![<>=!])=(?![=>])")
 _OR = re.compile(r"\s+or\s+|\s*,\s*", re.IGNORECASE)
@@ -121,6 +124,11 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
             read_as=_compact_matrix(matrix),
             read_as_latex=sp.latex(matrix),
         )
+
+    if "\\" in body:
+        # "x=2\text{ or }x=3" and "x=\pm 2" have to be plain text before they
+        # can be split into separate solutions
+        body = latex_to_plain(body).strip()
 
     if mode == "chain":
         if number != 1 and body.startswith("="):

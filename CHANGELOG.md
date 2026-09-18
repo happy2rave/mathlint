@@ -6,6 +6,35 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-09-18
+
+Math that looks like math while you write it.
+
+### Added
+
+- The web page's sheet is now a math editor (MathLive): every line is typeset as
+  you type — fractions stack, powers rise, roots, derivatives, integrals and
+  matrices look the way they do on paper.
+- A calculator-style keypad in the spirit of Photomath, with 123, f(x), calculus
+  and abc tabs. Keys insert whole structures (a fraction with two boxes, an
+  integral with its `dx`) and the cursor lands in the first empty box. The same
+  keypad drives the step-by-step tab, including the limits of an integral.
+- Enter starts a new line and Backspace on an empty line removes it. Typing still
+  works: `/` makes a fraction, `^` a power, `sqrt`, `sin`, `pi`, `int` become
+  symbols. "Type as text" switches back to the plain text box, and converts both
+  ways.
+- mathlint reads the LaTeX the editor writes: `\differentialD`, `\exponentialE`,
+  `\lvert`/`\rvert`, `\mleft`/`\mright`, `\lbrace`/`\rbrace`, `\lor`, `\sim`
+  between row-reduction steps, and `\text{ or }` between solutions.
+- An empty box left in a formula is reported as "there is an empty box on this
+  line" instead of a parse error.
+
+### Fixed
+
+- After a release, browsers could keep running the previous version of the web
+  page from their cache. The page's own files are now loaded with a version
+  stamp.
+
 ## [0.3.0] — 2026-09-17
 
 Calculus, worked out.
@@ -74,7 +103,8 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.4.0
 [0.3.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.3.0
 [0.2.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.2.0
 [0.1.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.1.0

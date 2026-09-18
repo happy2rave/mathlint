@@ -1,58 +1,103 @@
 import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.mjs";
-import { EXAMPLES } from "./examples.js";
+import { MathSheet, configureField, displayLatex } from "./editor.js";
+import { Keypad } from "./keypad.js";
 
 const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
 const STORAGE_KEY = "mathlint:last-solution";
 
-const solution = document.getElementById("solution");
-const gutter = document.getElementById("gutter");
-const status = document.getElementById("status");
-const checkButton = document.getElementById("check");
-const results = document.getElementById("results");
-const examplesSelect = document.getElementById("examples");
-const versionSlot = document.getElementById("version");
-const matrixInput = document.getElementById("matrix");
-const operationSelect = document.getElementById("operation");
-const stepsButton = document.getElementById("show-steps");
-const linalgStatus = document.getElementById("linalg-status");
-const worked = document.getElementById("worked");
-const bounds = document.getElementById("bounds");
-const lowerInput = document.getElementById("lower");
-const upperInput = document.getElementById("upper");
-const matrixLabel = document.getElementById("matrix-label");
-const matrixHelp = document.getElementById("matrix-help-text");
+const $ = (id) => document.getElementById(id);
+const status = $("status");
+const checkButton = $("check");
+const results = $("results");
+const examplesSelect = $("examples");
+const versionSlot = $("version");
+const mathLines = $("math-lines");
+const textSheet = $("text-sheet");
+const solutionText = $("solution");
+const gutter = $("gutter");
+const modeToggle = $("mode-toggle");
+const checkKeypadSlot = $("keypad-slot-check");
+const stepsKeypadSlot = $("keypad-slot-steps");
+const keypadRoot = $("keypad");
+const operationSelect = $("operation");
+const expressionBlock = $("expression-block");
+const expressionField = $("expression");
+const matrixBlock = $("matrix-block");
+const matrixInput = $("matrix");
+const bounds = $("bounds");
+const lowerField = $("lower");
+const upperField = $("upper");
+const stepsButton = $("show-steps");
+const stepsStatus = $("steps-status");
+const targetLabel = $("target-label");
+const targetHelp = $("target-help");
+const worked = $("worked");
 
-const MATRIX_EXAMPLE = "[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]";
-const EXPRESSION_EXAMPLE = "x^2 sin x";
+const MARKS = { OK: "✓", WRONG: "✗", WARNING: "!", UNSURE: "?" };
+const EXPRESSION_HELP =
+  "Tap the keys or type it: x^2 sin x, e^(2x), 1/(x^2+1). The variable is picked up from the expression.";
 const MATRIX_HELP =
   "Write it as [[2, 1], [3, 4]], MATLAB style [2 1; 3 4], or as a LaTeX pmatrix. " +
   "Fractions stay exact — no decimals.";
-const EXPRESSION_HELP =
-  "Write it as you would say it: x^2 sin x, e^(2x), 1/(x^2+1), sqrt(x). LaTeX works too.";
-
-const MARKS = { OK: "✓", WRONG: "✗", WARNING: "!", UNSURE: "?" };
 
 let runCheck = null;
 let runSteps = null;
+let examples = [];
+let sheet = null;
+let textMode = false;
+let lastField = null;
+let checkedAsMath = true;
+
+// ---------------------------------------------------------------- the sheet
 
 function drawGutter() {
-  const count = Math.max(solution.value.split("\n").length, 6);
+  const count = Math.max(solutionText.value.split("\n").length, 6);
   gutter.textContent = Array.from({ length: count }, (_, i) => i + 1).join("\n");
-  gutter.scrollTop = solution.scrollTop;
+  gutter.scrollTop = solutionText.scrollTop;
+}
+
+function currentText() {
+  return textMode ? solutionText.value : sheet.getText();
+}
+
+function setText(text) {
+  if (textMode) {
+    solutionText.value = text;
+    drawGutter();
+  } else {
+    sheet.setLines(text.split("\n"));
+  }
+}
+
+function setTextMode(on) {
+  if (on === textMode) return;
+  if (on) {
+    solutionText.value = sheet.getLines().join("\n");
+  } else {
+    sheet.setLines(solutionText.value.split("\n"));
+  }
+  textMode = on;
+  mathLines.hidden = on;
+  textSheet.hidden = !on;
+  checkKeypadSlot.hidden = on;
+  modeToggle.textContent = on ? "Use the math keypad" : "Type as text";
+  modeToggle.setAttribute("aria-pressed", String(on));
+  drawGutter();
+  if (on) solutionText.focus();
+  else sheet.fields[0]?.focus();
 }
 
 function fillExamples() {
-  EXAMPLES.forEach((example, index) => {
+  examples.forEach((example, index) => {
     const option = document.createElement("option");
     option.value = String(index);
     option.textContent = example.name;
     examplesSelect.append(option);
   });
   examplesSelect.addEventListener("change", () => {
-    const example = EXAMPLES[Number(examplesSelect.value)];
+    const example = examples[Number(examplesSelect.value)];
     if (!example) return;
-    solution.value = example.text;
-    drawGutter();
+    setText(example.lines.join("\n"));
     if (runCheck) check();
   });
 }
@@ -66,7 +111,7 @@ function initialText() {
   } catch {
     /* private browsing: fall through to the example */
   }
-  return EXAMPLES[0].text;
+  return examples.length ? examples[0].lines.join("\n") : "";
 }
 
 function remember(text) {
@@ -79,6 +124,30 @@ function remember(text) {
   params.set("s", text);
   history.replaceState(null, "", "#" + params.toString());
 }
+
+// ---------------------------------------------------------------- the keypad
+
+function isVisible(element) {
+  return Boolean(element) && element.isConnected && element.offsetParent !== null;
+}
+
+function onCheckTab() {
+  return $("tab-check").getAttribute("aria-selected") === "true";
+}
+
+function keypadTarget() {
+  const active = document.activeElement;
+  if (active && active.tagName === "MATH-FIELD" && isVisible(active)) return active;
+  if (isVisible(lastField)) return lastField;
+  return onCheckTab() ? sheet.fields.at(-1) : expressionField;
+}
+
+function handleEnter(field) {
+  if (sheet.contains(field)) sheet.newLineAfter(field);
+  else showSteps();
+}
+
+// ---------------------------------------------------------------- results
 
 function renderMath(target, latex) {
   if (!latex || !window.katex) {
@@ -106,7 +175,13 @@ function stepElement(step) {
 
   const raw = document.createElement("div");
   raw.className = "step-raw";
-  raw.textContent = step.raw;
+  raw.dataset.plain = step.raw;
+  if (checkedAsMath) {
+    raw.classList.add("as-math");
+    renderMath(raw, displayLatex(step.raw));
+  } else {
+    raw.textContent = step.raw;
+  }
   body.append(raw);
 
   const read = document.createElement("p");
@@ -187,19 +262,20 @@ function renderReport(report) {
   }
 }
 
-function renderFailure(message) {
-  results.replaceChildren();
+function renderFailure(target, message) {
+  target.replaceChildren();
   const box = document.createElement("div");
   box.className = "failure";
   const text = document.createElement("p");
   text.textContent = message;
   box.append(text);
-  results.append(box);
+  target.append(box);
 }
 
 function check() {
   if (!runCheck) return;
-  const text = solution.value;
+  const text = currentText();
+  checkedAsMath = !textMode;
   remember(text);
   status.textContent = "Checking…";
   checkButton.disabled = true;
@@ -208,32 +284,31 @@ function check() {
     try {
       const outcome = JSON.parse(runCheck(text));
       if (outcome.ok) renderReport(outcome.report);
-      else renderFailure(outcome.error);
-      status.textContent = "Ready";
+      else renderFailure(results, outcome.error);
     } catch (error) {
-      renderFailure("Something went wrong while checking: " + error);
-      status.textContent = "Ready";
+      renderFailure(results, "Something went wrong while checking: " + error);
     } finally {
+      status.textContent = "Ready";
       checkButton.disabled = false;
     }
   }, 16);
 }
 
-function setUpTabs() {
-  const tabs = [
-    { tab: document.getElementById("tab-check"), panels: ["panel-check", "results"] },
-    { tab: document.getElementById("tab-linalg"), panels: ["panel-linalg"] },
-  ];
-  for (const { tab } of tabs) {
-    tab.addEventListener("click", () => {
-      for (const entry of tabs) {
-        const selected = entry.tab === tab;
-        entry.tab.setAttribute("aria-selected", String(selected));
-        for (const id of entry.panels) document.getElementById(id).hidden = !selected;
-      }
-    });
-  }
-  document.getElementById("panel-linalg").hidden = true;
+// ---------------------------------------------------------------- worked solutions
+
+function isCalculus(operation) {
+  return operation === "diff" || operation === "integrate";
+}
+
+function updateOperationInput() {
+  const operation = operationSelect.value;
+  const calculus = isCalculus(operation);
+  expressionBlock.hidden = !calculus;
+  matrixBlock.hidden = calculus;
+  bounds.hidden = operation !== "integrate";
+  stepsKeypadSlot.hidden = !calculus;
+  targetLabel.textContent = calculus ? "Your expression" : "Your matrix";
+  targetHelp.textContent = calculus ? EXPRESSION_HELP : MATRIX_HELP;
 }
 
 function workedStep(step, index) {
@@ -283,71 +358,96 @@ function renderSolution(solution) {
   }
 }
 
-function isCalculus(operation) {
-  return operation === "diff" || operation === "integrate";
-}
-
-function updateOperationInput() {
-  const operation = operationSelect.value;
-  const calculus = isCalculus(operation);
-  bounds.hidden = operation !== "integrate";
-  matrixLabel.textContent = calculus ? "Your expression" : "Your matrix";
-  matrixHelp.textContent = calculus ? EXPRESSION_HELP : MATRIX_HELP;
-
-  const looksLikeMatrix = matrixInput.value.trim().startsWith("[");
-  if (calculus && looksLikeMatrix) matrixInput.value = EXPRESSION_EXAMPLE;
-  if (!calculus && !looksLikeMatrix) matrixInput.value = MATRIX_EXAMPLE;
-}
-
 function showSteps() {
   if (!runSteps) return;
-  linalgStatus.textContent = "Working…";
+  const operation = operationSelect.value;
+  const calculus = isCalculus(operation);
+  const lower = operation === "integrate" ? lowerField.value.trim() : "";
+  const upper = operation === "integrate" ? upperField.value.trim() : "";
+  if (Boolean(lower) !== Boolean(upper)) {
+    renderFailure(worked, "Fill in both limits for a definite integral, or leave both empty.");
+    return;
+  }
+  const target = calculus ? expressionField.value : matrixInput.value;
+
+  stepsStatus.textContent = "Working…";
   stepsButton.disabled = true;
   setTimeout(() => {
     try {
-      const integral = operationSelect.value === "integrate";
-      const outcome = JSON.parse(
-        runSteps(
-          operationSelect.value,
-          matrixInput.value,
-          integral ? lowerInput.value : "",
-          integral ? upperInput.value : ""
-        )
-      );
-      if (outcome.ok) {
-        renderSolution(outcome.solution);
-        linalgStatus.textContent = "";
-      } else {
-        worked.replaceChildren();
-        const box = document.createElement("div");
-        box.className = "failure";
-        box.textContent = outcome.error;
-        worked.append(box);
-        linalgStatus.textContent = "";
-      }
+      const outcome = JSON.parse(runSteps(operation, target, lower, upper));
+      if (outcome.ok) renderSolution(outcome.solution);
+      else renderFailure(worked, outcome.error);
+    } catch (error) {
+      renderFailure(worked, "Something went wrong: " + error);
     } finally {
+      stepsStatus.textContent = "";
       stepsButton.disabled = false;
     }
   }, 16);
 }
 
+// ---------------------------------------------------------------- start-up
+
+function setUpTabs() {
+  const tabs = [
+    { tab: $("tab-check"), panels: ["panel-check", "results"], slot: checkKeypadSlot },
+    { tab: $("tab-linalg"), panels: ["panel-linalg"], slot: stepsKeypadSlot },
+  ];
+  for (const entry of tabs) {
+    entry.tab.addEventListener("click", () => {
+      for (const other of tabs) {
+        const selected = other === entry;
+        other.tab.setAttribute("aria-selected", String(selected));
+        for (const id of other.panels) $(id).hidden = !selected;
+      }
+      entry.slot.append(keypadRoot);
+    });
+  }
+  $("panel-linalg").hidden = true;
+}
+
 async function boot() {
   setUpTabs();
+  await customElements.whenDefined("math-field");
+
+  for (const field of [expressionField, lowerField, upperField]) configureField(field);
+  expressionField.value = String.raw`x^2\sin x`;
+
+  sheet = new MathSheet(mathLines);
+  new Keypad(keypadRoot, { getTarget: keypadTarget, onEnter: handleEnter });
+  checkKeypadSlot.append(keypadRoot);
+
+  document.addEventListener("focusin", (event) => {
+    const field = event.composedPath().find((element) => element.tagName === "MATH-FIELD");
+    if (field) lastField = field;
+  });
+  window.addEventListener(
+    "keydown",
+    (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (onCheckTab()) check();
+        else showSteps();
+      }
+    },
+    true
+  );
+
+  examples = await fetch("examples.json").then((response) => response.json());
+  fillExamples();
+  setText(initialText());
+
+  modeToggle.addEventListener("click", () => setTextMode(!textMode));
+  solutionText.addEventListener("input", drawGutter);
+  solutionText.addEventListener("scroll", () => (gutter.scrollTop = solutionText.scrollTop));
+  checkButton.addEventListener("click", check);
   stepsButton.addEventListener("click", showSteps);
   operationSelect.addEventListener("change", () => {
     updateOperationInput();
     if (runSteps) showSteps();
   });
   updateOperationInput();
-  fillExamples();
-  solution.value = initialText();
-  drawGutter();
-  solution.addEventListener("input", drawGutter);
-  solution.addEventListener("scroll", () => (gutter.scrollTop = solution.scrollTop));
-  solution.addEventListener("keydown", (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") check();
-  });
-  checkButton.addEventListener("click", check);
 
   status.textContent = "Loading the math engine (about 12 MB, once)…";
   const pyodide = await loadPyodide({ indexURL: PYODIDE_URL });
@@ -411,17 +511,18 @@ def _steps(operation, text, lower, upper):
 
 _steps
 `);
-  stepsButton.disabled = false;
 
   versionSlot.textContent = "mathlint " + pyodide.runPython("import mathlint; mathlint.__version__");
   status.textContent = "Ready";
   checkButton.disabled = false;
+  stepsButton.disabled = false;
   check();
 }
 
 boot().catch((error) => {
   status.textContent = "The math engine could not start.";
   renderFailure(
+    results,
     "Loading failed: " + error + ". Check your connection and reload — the engine comes from a CDN."
   );
 });

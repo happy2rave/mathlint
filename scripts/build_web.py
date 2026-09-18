@@ -9,7 +9,9 @@ exactly the code that is in this repository.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -37,6 +39,23 @@ def build_wheel() -> Path:
     return wheels[-1]
 
 
+#: The page's own files, as they are referenced from index.html and the scripts.
+_LOCAL_FILES = ("style.css", "app.js", "editor.js", "keypad.js", "examples.json", "wheel.json")
+
+
+def stamp_references(site: Path, stamp: str) -> None:
+    """Add ``?v=<stamp>`` to every reference to the page's own files.
+
+    Browsers (and GitHub Pages, for ten minutes) keep serving a cached script
+    after a release; a new query string makes each release load fresh.
+    """
+    pattern = re.compile(r"""(["'`])(\./)?(""" + "|".join(map(re.escape, _LOCAL_FILES)) + r")\1")
+    for page in [site / "index.html", *site.glob("*.js")]:
+        text = page.read_text(encoding="utf-8")
+        text = pattern.sub(lambda m: f"{m[1]}{m[2] or ''}{m[3]}?v={stamp}{m[1]}", text)
+        page.write_text(text, encoding="utf-8")
+
+
 def main() -> None:
     wheel = build_wheel()
     if SITE.exists():
@@ -44,6 +63,12 @@ def main() -> None:
     shutil.copytree(WEB, SITE)
     shutil.copy2(wheel, SITE / wheel.name)
     (SITE / "wheel.json").write_text(json.dumps({"wheel": wheel.name}), encoding="utf-8")
+
+    digest = hashlib.sha256(wheel.read_bytes())
+    for source in sorted(WEB.rglob("*")):
+        if source.is_file():
+            digest.update(source.read_bytes())
+    stamp_references(SITE, digest.hexdigest()[:10])
     print(f"built {SITE} with {wheel.name}")
 
 

@@ -75,3 +75,29 @@ def test_read_as_is_filled_in():
     doc = parse_document("d/dx(x^2)\n= 2x")
     assert doc.lines[0].read_as == "d/dx [x^2]"
     assert doc.lines[1].read_as == "2*x"
+
+
+def test_latex_solution_list_from_the_math_editor():
+    doc = parse_document("x^2-5x+6=0\n" r"x=2\text{ or }x=3")
+    assert doc.lines[1].solutions == [sp.Integer(2), sp.Integer(3)]
+
+
+def test_logical_or_between_solutions():
+    doc = parse_document("x^2-5x+6=0\n" r"x=2\lor x=3")
+    assert doc.lines[1].solutions == [sp.Integer(2), sp.Integer(3)]
+
+
+def test_latex_plus_minus_and_arrow():
+    doc = parse_document("x^2=4\n" r"\Rightarrow x=\pm2")
+    assert doc.lines[1].arrow == "=>"
+    assert doc.lines[1].solutions == [sp.Integer(2), sp.Integer(-2)]
+
+
+def test_sim_marks_a_row_equivalent_matrix():
+    doc = parse_document(
+        r"\begin{pmatrix}2&4\\1&3\end{pmatrix}"
+        "\n"
+        r"\sim\begin{pmatrix}1&2\\1&3\end{pmatrix}"
+    )
+    assert doc.mode == "matrix"
+    assert doc.lines[1].arrow == "~"

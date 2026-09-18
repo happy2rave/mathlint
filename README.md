@@ -10,7 +10,9 @@ which step is wrong — and proves it with a counterexample.
 Other tools show you *their* solution. mathlint checks *yours*.
 
 **[Try it in your browser](https://happy2rave.github.io/mathlint/)** — nothing to
-install, and nothing you type leaves the page.
+install, and nothing you type leaves the page. You write on a math editor with a
+calculator-style keypad, so fractions, powers, roots and integrals look like they
+do on paper while you type.
 
 ```console
 $ mathlint check solution.txt
@@ -177,6 +179,12 @@ each line, not the rule you named).
 Issues and pull requests are welcome. Bug reports about **misread input** are the most valuable kind — if mathlint
 reads your line differently than you meant it, that's a bug. See
 [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Built on
+
+[SymPy](https://www.sympy.org) for the math; in the browser,
+[Pyodide](https://pyodide.org), [MathLive](https://mathlive.io) for the editor and
+[KaTeX](https://katex.org) for the results.
 
 ## License
 
