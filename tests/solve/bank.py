@@ -21,4 +21,18 @@ LINEAR = [
     ("2x + 1 = 2x + 3", "linear", "none"),
 ]
 
-BANK = LINEAR
+QUADRATIC = [
+    ("x^2 - 5x + 6 = 0", "quadratic", [2, 3]),
+    ("2x^2 = 8", "quadratic", [-2, 2]),
+    ("x^2 + 2x + 5 = 0", "quadratic", "none"),
+    ("x^2 - 2x - 1 = 0", "quadratic", [1 - sqrt(2), 1 + sqrt(2)]),
+    ("x^2 = 3x", "quadratic", [0, 3]),
+    ("(x + 1)^2 = 4", "quadratic", [-3, 1]),
+    ("4x^2 - 12x + 9 = 0", "quadratic", [sp.Rational(3, 2)]),
+    ("2x^2 + 3x - 2 = 0", "quadratic", [-2, sp.Rational(1, 2)]),
+    ("-x^2 + 4 = 0", "quadratic", [-2, 2]),
+    ("x^2/2 - x = 4", "quadratic", [-2, 4]),
+    ("x^{2}-5x+6=0", "quadratic", [2, 3]),
+]
+
+BANK = LINEAR + QUADRATIC
