@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..parse.plain import latex_of
 from .core import Equation, Outcome, Work, show
 from .dispatch import register
 from .polyform import standard_form
@@ -192,7 +193,7 @@ def _paren(value: sp.Expr) -> str:
 
 
 def _paren_latex(value: sp.Expr) -> str:
-    text = sp.latex(value)
+    text = latex_of(value)
     return rf"\left({text}\right)" if _needs_brackets(value) else text
 
 
@@ -200,17 +201,17 @@ def _by_formula(a: sp.Expr, b: sp.Expr, c: sp.Expr, variable: sp.Symbol, work: W
     work.show(
         "Read off the coefficients of a x^2 + b x + c = 0",
         f"a = {show(a)}, b = {show(b)}, c = {show(c)}",
-        rf"a = {sp.latex(a)},\quad b = {sp.latex(b)},\quad c = {sp.latex(c)}",
+        rf"a = {latex_of(a)},\quad b = {latex_of(b)},\quad c = {latex_of(c)}",
     )
     discriminant = sp.simplify(b**2 - 4 * a * c)
     work.show(
         "Work out the discriminant D = b^2 - 4ac",
         f"D = {_paren(b)}^2 - 4*{_paren(a)}*{_paren(c)} = {show(discriminant)}",
         rf"D = {_paren_latex(b)}^2 - 4 \cdot {_paren_latex(a)} \cdot {_paren_latex(c)} "
-        rf"= {sp.latex(discriminant)}",
+        rf"= {latex_of(discriminant)}",
     )
 
-    v = sp.latex(variable)
+    v = latex_of(variable)
     if discriminant.is_negative:
         low = sp.simplify((-b - sp.sqrt(discriminant)) / (2 * a))
         high = sp.simplify((-b + sp.sqrt(discriminant)) / (2 * a))
@@ -225,14 +226,14 @@ def _by_formula(a: sp.Expr, b: sp.Expr, c: sp.Expr, variable: sp.Symbol, work: W
         work.show(
             f"D = 0, so there is exactly one solution: {variable} = -b / (2a)",
             f"{variable} = {show(root)}",
-            rf"{v} = {sp.latex(root)}",
+            rf"{v} = {latex_of(root)}",
         )
         return Outcome.of([root])
 
     work.show(
         f"Use the quadratic formula {variable} = (-b +/- sqrt(D)) / (2a)",
         f"{variable} = (-{_paren(b)} +/- sqrt({show(discriminant)})) / (2*{_paren(a)})",
-        rf"{v} = \frac{{-{_paren_latex(b)} \pm \sqrt{{{sp.latex(discriminant)}}}}}"
+        rf"{v} = \frac{{-{_paren_latex(b)} \pm \sqrt{{{latex_of(discriminant)}}}}}"
         rf"{{2 \cdot {_paren_latex(a)}}}",
     )
     low = sp.simplify((-b - sp.sqrt(discriminant)) / (2 * a))

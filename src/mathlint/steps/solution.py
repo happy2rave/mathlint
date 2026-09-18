@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 import sympy as sp
 
-from ..parse.plain import read_as
+from ..parse.plain import latex_of, read_as
 from .matrix import format_matrix
 
 
@@ -34,9 +34,9 @@ class SolutionStep:
 
     def latex(self) -> str:
         if self.matrix is not None:
-            return sp.latex(self.matrix)
+            return latex_of(self.matrix)
         if self.expression is not None:
-            return sp.latex(self.expression)
+            return latex_of(self.expression)
         return self.display_latex
 
     def to_dict(self) -> dict:
@@ -114,7 +114,7 @@ class Solution:
             "steps": [step.to_dict() for step in self.steps],
             "summary": self.summary,
             "result": None if self.result is None else sp.sstr(self.result),
-            "result_latex": None if self.result is None else sp.latex(self.result),
+            "result_latex": None if self.result is None else latex_of(self.result),
         }
 
 

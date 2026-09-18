@@ -7,8 +7,10 @@ from __future__ import annotations
 
 from . import (  # noqa: F401  (importing registers each solver)
     absolute,
+    exponential,
     fallback,
     linear,
+    logarithmic,
     polynomial,
     quadratic,
     radical,

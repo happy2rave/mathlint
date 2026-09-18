@@ -36,6 +36,7 @@ METHOD_LABELS = {
     "same-base": "Same base",
     "logarithms": "Take logarithms",
     "combine-logs": "Combine the logarithms",
+    "substitution": "Substitution",
     "sympy": "Computer algebra",
 }
 

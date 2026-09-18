@@ -14,7 +14,7 @@ import sympy as sp
 
 from .errors import ParseError, UnsupportedError
 from .parse.latex import latex_to_plain
-from .parse.plain import parse_expression, read_as
+from .parse.plain import latex_of, parse_expression, read_as
 from .parse.unicode_math import normalize_unicode
 from .steps.matrix import looks_like_matrix, parse_matrix
 
@@ -122,7 +122,7 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
             matrix=matrix,
             arrow=arrow,
             read_as=_compact_matrix(matrix),
-            read_as_latex=sp.latex(matrix),
+            read_as_latex=latex_of(matrix),
         )
 
     if "\\" in body:
@@ -141,7 +141,7 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
             expr=parsed.expr,
             arrow=arrow,
             read_as=read_as(parsed.expr),
-            read_as_latex=sp.latex(parsed.expr),
+            read_as_latex=latex_of(parsed.expr),
             warnings=parsed.warnings,
         )
 
@@ -179,7 +179,7 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
                 solutions=[right],
                 arrow=arrow,
                 read_as=f"{read_as(left)} = {read_as(right)}",
-                read_as_latex=f"{sp.latex(left)} = {sp.latex(right)}",
+                read_as_latex=f"{latex_of(left)} = {latex_of(right)}",
                 warnings=warnings,
             )
         return Line(
@@ -189,14 +189,14 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
             equation=(left, right),
             arrow=arrow,
             read_as=f"{read_as(left)} = {read_as(right)}",
-            read_as_latex=f"{sp.latex(left)} = {sp.latex(right)}",
+            read_as_latex=f"{latex_of(left)} = {latex_of(right)}",
             warnings=warnings,
         )
 
     solutions = [right for _, right in equations]
     rendered = " or ".join(f"{read_as(left)} = {read_as(right)}" for left, right in equations)
     rendered_latex = r" \quad\text{or}\quad ".join(
-        f"{sp.latex(left)} = {sp.latex(right)}" for left, right in equations
+        f"{latex_of(left)} = {latex_of(right)}" for left, right in equations
     )
     return Line(
         number=number,

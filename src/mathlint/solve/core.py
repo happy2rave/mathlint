@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 import sympy as sp
 
-from ..parse.plain import read_as
+from ..parse.plain import latex_of, read_as
 from ..steps.solution import Solution
 
 
@@ -87,7 +87,7 @@ class Work:
             text,
             " or ".join(f"{read_as(eq.lhs)} = {read_as(eq.rhs)}" for eq in equations),
             r" \quad\text{or}\quad ".join(
-                f"{sp.latex(eq.lhs)} = {sp.latex(eq.rhs)}" for eq in equations
+                f"{latex_of(eq.lhs)} = {latex_of(eq.rhs)}" for eq in equations
             ),
         )
 
@@ -108,13 +108,13 @@ def answer_text(variable: sp.Symbol, outcome: Outcome) -> str:
 
 def answer_latex(variable: sp.Symbol, outcome: Outcome) -> str:
     if outcome.everything:
-        return rf"{sp.latex(variable)} \in \mathbb{{R}}"
+        return rf"{latex_of(variable)} \in \mathbb{{R}}"
     if outcome.solution_set is not None:
-        return rf"{sp.latex(variable)} \in {sp.latex(outcome.solution_set)}"
+        return rf"{latex_of(variable)} \in {latex_of(outcome.solution_set)}"
     if not outcome.values:
         return r"\text{no real solution}"
     return r" \quad\text{or}\quad ".join(
-        f"{sp.latex(variable)} = {sp.latex(value)}" for value in outcome.values
+        f"{latex_of(variable)} = {latex_of(value)}" for value in outcome.values
     )
 
 

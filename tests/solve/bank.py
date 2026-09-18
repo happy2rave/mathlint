@@ -80,4 +80,28 @@ ABSOLUTE = [
     ("|x - 4| = 0", "absolute", [4]),
 ]
 
-BANK = LINEAR + QUADRATIC + POLYNOMIAL + RATIONAL + RADICAL + ABSOLUTE
+EXPONENTIAL = [
+    ("2^x = 8", "exponential", [3]),
+    ("3^(x+1) = 27", "exponential", [2]),
+    ("e^x = 5", "exponential", [log(5)]),
+    ("4^x = 8", "exponential", [sp.Rational(3, 2)]),
+    ("5e^(2x) - 3 = 7", "exponential", [log(2) / 2]),
+    ("2^x = 3^(x-1)", "exponential", [log(3) / (log(3) - log(2))]),
+    ("2^x = -4", "exponential", "none"),
+    ("e^(2x) - 3e^x + 2 = 0", "exponential", [0, log(2)]),
+    ("9^x = 3^(x+1)", "exponential", [1]),
+    ("2^x = 1", "exponential", [0]),
+]
+
+LOGARITHMIC = [
+    ("ln(x) = 2", "logarithmic", [E**2]),
+    ("ln(x + 1) = ln(3)", "logarithmic", [2]),
+    ("ln(x) + ln(x - 2) = ln(3)", "logarithmic", [3]),
+    ("2ln(x) = 4", "logarithmic", [E**2]),
+    ("ln(x) - ln(2) = 1", "logarithmic", [2 * E]),
+    ("ln(x^2) = 0", "logarithmic", [-1, 1]),
+]
+
+BANK = (
+    LINEAR + QUADRATIC + POLYNOMIAL + RATIONAL + RADICAL + ABSOLUTE + EXPONENTIAL + LOGARITHMIC
+)

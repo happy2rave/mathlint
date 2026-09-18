@@ -130,6 +130,16 @@ class _PlainPrinter(sp.printing.str.StrPrinter):
     def _print_Abs(self, expr: sp.Abs) -> str:
         return f"|{self._print(expr.args[0])}|"
 
+    # mathlint reads log as the natural logarithm, so it writes it as ln too
+    def _print_log(self, expr: sp.log) -> str:
+        return f"ln({self._print(expr.args[0])})"
+
+    def _print_exp(self, expr: sp.exp) -> str:
+        power = expr.args[0]
+        text = self._print(power)
+        simple = power.is_Atom and not power.could_extract_minus_sign()
+        return f"e^{text}" if simple else f"e^({text})"
+
     def _print_Integral(self, expr: sp.Integral) -> str:
         body = self._print(expr.function)
         for limit in expr.limits:
@@ -147,6 +157,11 @@ class _PlainPrinter(sp.printing.str.StrPrinter):
 def read_as(expr: sp.Expr) -> str:
     """Render an expression the way this parser reads it back."""
     return _PlainPrinter().doprint(expr).replace("**", "^")
+
+
+def latex_of(expr: sp.Basic) -> str:
+    """LaTeX for display, with the natural logarithm written as ln."""
+    return sp.latex(expr, ln_notation=True)
 
 
 def parse_expression(text: str) -> Parsed:

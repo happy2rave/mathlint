@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 import sympy as sp
 
+from ..parse.plain import latex_of
 from ..steps.solution import Solution
 from .core import Outcome, answer_latex, answer_text
 from .dispatch import METHOD_LABELS
@@ -48,7 +49,7 @@ class EquationSolution(Solution):
                 ],
                 "variable": str(self.variable),
                 "answers": [sp.sstr(value) for value in self.answers],
-                "answers_latex": [sp.latex(value) for value in self.answers],
+                "answers_latex": [latex_of(value) for value in self.answers],
                 "answer_text": self.summary,
                 "answer_latex": self.answer_latex,
                 "everything": self.everything,

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..parse.plain import latex_of
 from . import dispatch
 from .core import Equation, Outcome, Work, show, sort_values
 from .dispatch import register
@@ -25,7 +26,7 @@ def solve_rational(
         work.show(
             "A denominator can never be zero, so these values are excluded",
             ", ".join(f"{variable} != {show(value)}" for value in excluded),
-            r",\quad ".join(rf"{sp.latex(variable)} \neq {sp.latex(value)}" for value in excluded),
+            r",\quad ".join(rf"{latex_of(variable)} \neq {latex_of(value)}" for value in excluded),
         )
 
     common = sp.factor(sp.lcm_list(denominators))

@@ -18,6 +18,7 @@ import math
 
 import sympy as sp
 
+from ..parse.plain import latex_of
 from . import dispatch
 from .core import Equation, Outcome, Work, show, sort_values
 from .dispatch import register
@@ -119,7 +120,7 @@ def _rational_root(poly: sp.Poly, variable: sp.Symbol, work: Work, depth: int) -
     candidates = _candidates(poly)
     shown = sorted({abs(value) for value in candidates}, key=float)
     listed = ", ".join(f"+/-{show(value)}" for value in shown[:_MAX_CANDIDATES_SHOWN])
-    listed_latex = ", ".join(rf"\pm {sp.latex(value)}" for value in shown[:_MAX_CANDIDATES_SHOWN])
+    listed_latex = ", ".join(rf"\pm {latex_of(value)}" for value in shown[:_MAX_CANDIDATES_SHOWN])
     if len(shown) > _MAX_CANDIDATES_SHOWN:
         listed += ", ..."
         listed_latex += r", \ldots"
