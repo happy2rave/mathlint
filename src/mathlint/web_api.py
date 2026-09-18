@@ -61,6 +61,12 @@ def _steps(data: dict) -> dict:
     ).to_dict()
 
 
+def _solve(data: dict) -> dict:
+    from .solve import solve
+
+    return solve(data["text"], method=data.get("method") or None).to_dict()
+
+
 def _only_variable(expression: sp.Expr) -> sp.Symbol:
     symbols = sorted(expression.free_symbols, key=lambda symbol: symbol.name)
     return symbols[0] if len(symbols) == 1 else sp.Symbol("x")
@@ -70,4 +76,5 @@ _HANDLERS = {
     "version": _version,
     "check": _check,
     "steps": _steps,
+    "solve": _solve,
 }

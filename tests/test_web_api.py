@@ -35,6 +35,25 @@ def test_steps_for_a_definite_integral():
     assert reply["result"]["result"] == "1/3"
 
 
+def test_solve():
+    reply = call("solve", text="x^2 - 5x + 6 = 0")
+    assert reply["ok"] is True
+    assert reply["result"]["answers"] == ["2", "3"]
+    assert reply["result"]["kind_label"] == "Quadratic equation"
+    assert [method["id"] for method in reply["result"]["methods"]][0] == "factoring"
+
+
+def test_solve_with_a_chosen_method():
+    reply = call("solve", text="x^2 - 5x + 6 = 0", method="formula")
+    assert reply["result"]["method"] == "formula"
+
+
+def test_solve_without_an_equals_sign_explains_itself():
+    reply = call("solve", text="x^2 - 5x + 6")
+    assert reply["ok"] is False
+    assert "'=' sign" in reply["error"]
+
+
 def test_unknown_request():
     reply = call("nonsense")
     assert reply["ok"] is False

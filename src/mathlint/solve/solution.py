@@ -11,6 +11,18 @@ from ..steps.solution import Solution
 from .core import Outcome, answer_latex, answer_text
 from .dispatch import METHOD_LABELS
 
+KIND_LABELS = {
+    "linear": "Linear equation",
+    "quadratic": "Quadratic equation",
+    "polynomial": "Polynomial equation",
+    "rational": "Rational equation",
+    "radical": "Equation with roots",
+    "absolute": "Absolute-value equation",
+    "exponential": "Exponential equation",
+    "logarithmic": "Logarithmic equation",
+    "other": "Equation",
+}
+
 
 @dataclass
 class EquationSolution(Solution):
@@ -42,6 +54,7 @@ class EquationSolution(Solution):
         data.update(
             {
                 "kind": self.kind,
+                "kind_label": KIND_LABELS.get(self.kind, "Equation"),
                 "method": self.method,
                 "methods": [
                     {"id": method, "label": METHOD_LABELS.get(method, method)}

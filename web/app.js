@@ -31,6 +31,12 @@ const stepsStatus = $("steps-status");
 const targetLabel = $("target-label");
 const targetHelp = $("target-help");
 const worked = $("worked");
+const equationField = $("equation");
+const solveKeypadSlot = $("keypad-slot-solve");
+const solveButton = $("solve-button");
+const solveStatus = $("solve-status");
+const solved = $("solved");
+const solveExamplesSelect = $("solve-examples");
 
 const MARKS = { OK: "✓", WRONG: "✗", WARNING: "!", UNSURE: "?" };
 const EXPRESSION_HELP =
@@ -46,6 +52,7 @@ let sheet = null;
 let textMode = false;
 let lastField = null;
 let checkedAsMath = true;
+let checkedOnce = false;
 
 // ---------------------------------------------------------------- the sheet
 
@@ -130,31 +137,37 @@ function isVisible(element) {
   return Boolean(element) && element.isConnected && element.offsetParent !== null;
 }
 
-function onCheckTab() {
-  return $("tab-check").getAttribute("aria-selected") === "true";
+function activeTab() {
+  for (const name of ["solve", "check", "linalg"]) {
+    if ($(`tab-${name}`).getAttribute("aria-selected") === "true") return name;
+  }
+  return "solve";
 }
 
 function keypadTarget() {
   const active = document.activeElement;
   if (active && active.tagName === "MATH-FIELD" && isVisible(active)) return active;
   if (isVisible(lastField)) return lastField;
-  return onCheckTab() ? sheet.fields.at(-1) : expressionField;
+  const tab = activeTab();
+  if (tab === "solve") return equationField;
+  return tab === "check" ? sheet.fields.at(-1) : expressionField;
 }
 
 function handleEnter(field) {
   if (sheet.contains(field)) sheet.newLineAfter(field);
+  else if (field === equationField) solve();
   else showSteps();
 }
 
 // ---------------------------------------------------------------- results
 
-function renderMath(target, latex) {
+function renderMath(target, latex, displayMode = false) {
   if (!latex || !window.katex) {
     target.textContent = target.dataset.plain || "";
     return;
   }
   try {
-    window.katex.render(latex, target, { throwOnError: false, displayMode: false });
+    window.katex.render(latex, target, { throwOnError: false, displayMode });
   } catch {
     target.textContent = target.dataset.plain || "";
   }
@@ -287,6 +300,7 @@ async function run(kind, payload, { statusLine, button, stopButton, label }) {
 
 async function check() {
   if (!engineReady) return;
+  checkedOnce = true;
   const text = currentText();
   checkedAsMath = !textMode;
   remember(text);
@@ -297,6 +311,79 @@ async function check() {
   );
   if (outcome.ok) renderReport(outcome.result);
   else renderFailure(results, outcome.error);
+}
+
+// ---------------------------------------------------------------- solving
+
+function fillSolveExamples(list) {
+  list.forEach((example, index) => {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = example.name;
+    solveExamplesSelect.append(option);
+  });
+  solveExamplesSelect.addEventListener("change", () => {
+    const example = list[Number(solveExamplesSelect.value)];
+    if (!example) return;
+    equationField.value = example.latex;
+    solve();
+  });
+}
+
+async function solve(method = null) {
+  if (!engineReady) return;
+  const text = equationField.value.trim();
+  if (!text) {
+    renderFailure(solved, "Type an equation first — for example x^2 - 5x + 6 = 0.");
+    return;
+  }
+  const outcome = await run(
+    "solve",
+    { text, method },
+    { statusLine: solveStatus, button: solveButton, stopButton: $("stop-solve"), label: "Solving…" }
+  );
+  if (outcome.ok) renderSolved(outcome.result);
+  else renderFailure(solved, outcome.error);
+}
+
+function renderSolved(solution) {
+  solved.replaceChildren();
+
+  const kind = document.createElement("p");
+  kind.className = "solved-kind";
+  kind.textContent = solution.kind_label;
+  solved.append(kind);
+
+  const answer = document.createElement("div");
+  answer.className = "answer" + (solution.answers.length || solution.everything ? "" : " none");
+  answer.dataset.plain = solution.answer_text;
+  renderMath(answer, solution.answer_latex, true);
+  solved.append(answer);
+
+  if (solution.methods.length > 1) {
+    const chips = document.createElement("div");
+    chips.className = "method-chips";
+    chips.setAttribute("role", "group");
+    chips.setAttribute("aria-label", "Solve it by");
+    const label = document.createElement("span");
+    label.textContent = "Solve it by";
+    chips.append(label);
+    for (const method of solution.methods) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.textContent = method.label;
+      chip.setAttribute("aria-pressed", String(method.id === solution.method));
+      chip.addEventListener("click", () => solve(method.id));
+      chips.append(chip);
+    }
+    solved.append(chips);
+  }
+
+  const heading = document.createElement("h2");
+  heading.textContent = "Steps";
+  solved.append(heading);
+  solution.steps.forEach((step, index) => solved.append(workedStep(step, index)));
 }
 
 // ---------------------------------------------------------------- worked solutions
@@ -387,6 +474,7 @@ async function showSteps() {
 
 function setUpTabs() {
   const tabs = [
+    { tab: $("tab-solve"), panels: ["panel-solve"], slot: solveKeypadSlot },
     { tab: $("tab-check"), panels: ["panel-check", "results"], slot: checkKeypadSlot },
     { tab: $("tab-linalg"), panels: ["panel-linalg"], slot: stepsKeypadSlot },
   ];
@@ -398,6 +486,8 @@ function setUpTabs() {
         for (const id of other.panels) $(id).hidden = !selected;
       }
       entry.slot.append(keypadRoot);
+      // the check tab runs its example the first time it is opened
+      if (entry.tab.id === "tab-check" && engineReady && !checkedOnce) check();
     });
   }
   $("panel-linalg").hidden = true;
@@ -407,12 +497,14 @@ async function boot() {
   setUpTabs();
   await customElements.whenDefined("math-field");
 
-  for (const field of [expressionField, lowerField, upperField]) configureField(field);
+  for (const field of [equationField, expressionField, lowerField, upperField]) {
+    configureField(field);
+  }
   expressionField.value = String.raw`x^2\sin x`;
 
   sheet = new MathSheet(mathLines);
   new Keypad(keypadRoot, { getTarget: keypadTarget, onEnter: handleEnter });
-  checkKeypadSlot.append(keypadRoot);
+  solveKeypadSlot.append(keypadRoot);
 
   document.addEventListener("focusin", (event) => {
     const field = event.composedPath().find((element) => element.tagName === "MATH-FIELD");
@@ -424,12 +516,18 @@ async function boot() {
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
         event.preventDefault();
         event.stopImmediatePropagation();
-        if (onCheckTab()) check();
+        const tab = activeTab();
+        if (tab === "solve") solve();
+        else if (tab === "check") check();
         else showSteps();
       }
     },
     true
   );
+
+  const solveExamples = await fetch("solve-examples.json").then((response) => response.json());
+  fillSolveExamples(solveExamples);
+  equationField.value = solveExamples[0].latex;
 
   examples = await fetch("examples.json").then((response) => response.json());
   fillExamples();
@@ -439,6 +537,7 @@ async function boot() {
   solutionText.addEventListener("input", drawGutter);
   solutionText.addEventListener("scroll", () => (gutter.scrollTop = solutionText.scrollTop));
   checkButton.addEventListener("click", check);
+  solveButton.addEventListener("click", () => solve());
   stepsButton.addEventListener("click", showSteps);
   operationSelect.addEventListener("change", () => {
     updateOperationInput();
@@ -448,20 +547,29 @@ async function boot() {
 
   const stop = () => engine.stop("Stopped. The engine restarts in the background.");
   $("stop-check").addEventListener("click", stop);
+  $("stop-solve").addEventListener("click", stop);
   $("stop-steps").addEventListener("click", stop);
 
-  engine = new Engine({ onStatus: (text) => (status.textContent = text) });
+  engine = new Engine({
+    onStatus: (text) => {
+      status.textContent = text;
+      solveStatus.textContent = text;
+    },
+  });
   const version = await engine.ready;
   engineReady = true;
   versionSlot.textContent = "mathlint " + version;
   status.textContent = "Ready";
+  solveStatus.textContent = "Ready";
   checkButton.disabled = false;
   stepsButton.disabled = false;
-  check();
+  solveButton.disabled = false;
+  solve();
 }
 
 boot().catch((error) => {
   status.textContent = "The math engine could not start.";
+  solveStatus.textContent = "The math engine could not start.";
   renderFailure(
     results,
     "Loading failed: " + error.message + ". Check your connection and reload — the engine comes from a CDN."

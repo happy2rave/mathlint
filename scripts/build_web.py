@@ -48,6 +48,7 @@ _LOCAL_FILES = (
     "engine.js",
     "worker.js",
     "examples.json",
+    "solve-examples.json",
     "wheel.json",
 )
 

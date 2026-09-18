@@ -535,3 +535,59 @@ math-field.bound {
   .key { min-height: 2.75rem; padding: 0.1rem; font-size: 0.9375rem; }
   math-field { font-size: 1.2rem; }
 }
+
+/* Solve: the equation large, the answer first, then how to get there. */
+.equation-field math-field { font-size: 1.6rem; padding: 0.6rem 0; }
+
+.solved-kind {
+  margin: 0 0 0.4rem;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.answer {
+  padding: 0.35rem 1rem;
+  border-left: 3px solid var(--mark-ok);
+  background: color-mix(in srgb, var(--mark-ok) 7%, transparent);
+  overflow-x: auto;
+  font-size: 1.15rem;
+}
+
+.answer.none {
+  border-left-color: var(--mark-unsure);
+  background: color-mix(in srgb, var(--mark-unsure) 7%, transparent);
+}
+
+/* left-aligned, like the rest of the sheet (KaTeX centres display math) */
+.answer .katex-display { margin: 0.6rem 0; text-align: left; }
+.answer .katex-display > .katex { text-align: left; }
+
+.method-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 1.1rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.chip {
+  padding: 0.3rem 0.75rem;
+  background: transparent;
+  color: var(--pen);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-size: 0.875rem;
+}
+
+.chip:hover { border-color: var(--pen); }
+
+.chip[aria-pressed="true"] {
+  background: var(--pen);
+  border-color: var(--pen);
+  color: var(--paper);
+}
+
+#solved h2 { margin-top: 1.75rem; }
+#solve-status { margin: 0; color: var(--ink-soft); font-size: 0.9375rem; }

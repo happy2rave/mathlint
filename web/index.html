@@ -13,20 +13,50 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<a class="skip" href="#math-lines">Skip to the sheet</a>
+<a class="skip" href="#equation">Skip to the equation</a>
 
 <header class="masthead">
   <h1>mathlint</h1>
-  <p>Write out your working. This page marks it, line by line, and tells you where the first mistake is.</p>
+  <p>Type an equation and see it solved step by step — or write out your own working and find your first mistake.</p>
 </header>
 
 <main>
   <div class="tabs" role="tablist">
-    <button role="tab" id="tab-check" aria-controls="panel-check" aria-selected="true">Check my working</button>
+    <button role="tab" id="tab-solve" aria-controls="panel-solve" aria-selected="true">Solve</button>
+    <button role="tab" id="tab-check" aria-controls="panel-check" aria-selected="false">Check my working</button>
     <button role="tab" id="tab-linalg" aria-controls="panel-linalg" aria-selected="false">Work it out step by step</button>
   </div>
 
-  <section class="sheet-block" id="panel-check" role="tabpanel" aria-labelledby="tab-check">
+  <section class="sheet-block" id="panel-solve" role="tabpanel" aria-labelledby="tab-solve">
+    <div class="sheet-head">
+      <span id="equation-label">Your equation</span>
+      <label class="examples">
+        <span>Example</span>
+        <select id="solve-examples"></select>
+      </label>
+    </div>
+
+    <div class="math-single equation-field">
+      <math-field id="equation" aria-labelledby="equation-label" aria-describedby="solve-help"></math-field>
+    </div>
+
+    <div class="keypad-slot" id="keypad-slot-solve"></div>
+
+    <div class="controls">
+      <button id="solve-button" class="primary" type="button" disabled>Solve</button>
+      <p id="solve-status" role="status" aria-live="polite">Starting the math engine…</p>
+      <button id="stop-solve" class="text-button" type="button" hidden>Stop</button>
+    </div>
+
+    <p id="solve-help" class="help">
+      One equation, one unknown: linear, quadratic, higher powers, fractions, roots, absolute
+      values, exponentials and logarithms. Every answer is checked in the original equation.
+    </p>
+
+    <section id="solved" class="results" aria-live="polite"></section>
+  </section>
+
+  <section class="sheet-block" id="panel-check" role="tabpanel" aria-labelledby="tab-check" hidden>
     <div class="sheet-head">
       <span id="sheet-label">Your working, one step per line</span>
       <div class="sheet-tools">
@@ -62,7 +92,7 @@
     </p>
   </section>
 
-  <section id="results" class="results" aria-live="polite"></section>
+  <section id="results" class="results" aria-live="polite" hidden></section>
 
   <section class="sheet-block" id="panel-linalg" role="tabpanel" aria-labelledby="tab-linalg" hidden>
     <div class="sheet-head">
