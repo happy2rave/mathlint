@@ -46,5 +46,13 @@
       "\\sim\\begin{pmatrix}1&\\frac{1}{2}&-\\frac{1}{2}\\\\-3&-1&2\\\\-2&1&2\\end{pmatrix}",
       "\\sim\\begin{pmatrix}1&\\frac{1}{2}&-\\frac{1}{2}\\\\0&\\frac{1}{2}&\\frac{1}{2}\\\\0&2&1\\end{pmatrix}"
     ]
+  },
+  {
+    "name": "System, with a slip",
+    "lines": [
+      "2x+y=5;x-y=1",
+      "3x=6;x-y=1",
+      "x=2;y=3"
+    ]
   }
 ]

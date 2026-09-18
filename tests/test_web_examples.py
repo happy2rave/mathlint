@@ -21,6 +21,7 @@ EXPECTED = {
     "Squaring invents a root": 3,
     "Dividing loses a root": 2,
     "Row reduction": None,
+    "System, with a slip": 3,
 }
 
 

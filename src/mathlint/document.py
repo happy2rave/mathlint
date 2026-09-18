@@ -42,9 +42,10 @@ class Line:
 
     number: int
     raw: str
-    kind: str  # "expression" | "equation" | "solutions" | "matrix"
+    kind: str  # "expression" | "equation" | "solutions" | "matrix" | "system"
     expr: sp.Expr | None = None
     matrix: sp.Matrix | None = None
+    system: list[tuple[sp.Expr, sp.Expr]] = field(default_factory=list)
     equation: tuple[sp.Expr, sp.Expr] | None = None
     solutions: list[sp.Expr] | None = None
     no_solution: bool = False
@@ -58,7 +59,7 @@ class Line:
 class Document:
     """A whole solution: its mode, its lines and the unknown being solved for."""
 
-    mode: str  # "chain" | "equation" | "matrix"
+    mode: str  # "chain" | "equation" | "matrix" | "system"
     lines: list[Line]
     variable: sp.Symbol | None = None
 
@@ -78,6 +79,8 @@ def parse_document(text: str) -> Document:
     first_body = _SOLVE_PREFIX.sub("", first_body)
     if looks_like_matrix(first_body):
         mode = "matrix"
+    elif _is_system(first_body):
+        mode = "system"
     elif _PLAIN_EQUALS.search(first_body):
         mode = "equation"
     else:
@@ -124,6 +127,9 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
             read_as=_compact_matrix(matrix),
             read_as_latex=latex_of(matrix),
         )
+
+    if mode == "system":
+        return _system_line(number, raw, body, arrow)
 
     if "\\" in body:
         # "x=2\text{ or }x=3" and "x=\pm 2" have to be plain text before they
@@ -207,6 +213,33 @@ def _parse_line(number: int, raw: str, body: str, arrow: str, mode: str) -> Line
         read_as=rendered,
         read_as_latex=rendered_latex,
         warnings=warnings,
+    )
+
+
+def _is_system(body: str) -> bool:
+    """Several equations on one line: ``2x + y = 5; x - y = 1``, or a LaTeX cases block."""
+    return r"\begin{cases}" in body or (";" in body and bool(_PLAIN_EQUALS.search(body)))
+
+
+def _system_line(number: int, raw: str, body: str, arrow: str) -> Line:
+    # imported here: the solver itself imports this module
+    from .solve.api import parse_equation
+    from .solve.system import split_equations
+
+    system = []
+    for part in split_equations(body):
+        equation = parse_equation(part)
+        system.append((equation.lhs, equation.rhs))
+    return Line(
+        number=number,
+        raw=raw,
+        kind="system",
+        system=system,
+        arrow=arrow,
+        read_as="; ".join(f"{read_as(lhs)} = {read_as(rhs)}" for lhs, rhs in system),
+        read_as_latex=r"\begin{cases} "
+        + r" \\ ".join(f"{latex_of(lhs)} = {latex_of(rhs)}" for lhs, rhs in system)
+        + r" \end{cases}",
     )
 
 
