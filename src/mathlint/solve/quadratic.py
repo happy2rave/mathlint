@@ -14,6 +14,7 @@ import sympy as sp
 
 from .core import Equation, Outcome, Work, show
 from .dispatch import register
+from .polyform import standard_form
 
 
 def _methods(equation: Equation, variable: sp.Symbol) -> list[str]:
@@ -56,47 +57,7 @@ def _standard_form(
     equation: Equation, variable: sp.Symbol, work: Work
 ) -> tuple[sp.Expr, sp.Expr, sp.Expr]:
     """Bring the equation to ``a x^2 + b x + c = 0`` with nice coefficients."""
-    polynomial = sp.expand(equation.expr)
-    already = equation.rhs == 0 and sp.expand(equation.lhs) == equation.lhs
-    if not already:
-        expanded = (sp.expand(equation.lhs), sp.expand(equation.rhs)) != (
-            equation.lhs,
-            equation.rhs,
-        )
-        text = (
-            "Expand the brackets and move every term to the left side"
-            if expanded
-            else "Move every term to the left side"
-        )
-        work.equation(text, Equation(polynomial, 0))
-
-    a, b, c = _abc(polynomial, variable)
-    if all(coefficient.is_Rational for coefficient in (a, b, c)):
-        denominator = sp.ilcm(*[coefficient.q for coefficient in (a, b, c)])
-        if denominator != 1:
-            polynomial = sp.expand(polynomial * denominator)
-            work.equation(
-                f"Multiply both sides by {denominator} to clear the fractions",
-                Equation(polynomial, 0),
-                operation=f"* {denominator}",
-            )
-    a, b, c = _abc(polynomial, variable)
-    if a.is_negative:
-        polynomial = sp.expand(-polynomial)
-        work.equation(
-            f"Multiply both sides by -1 so the {variable}^2 term is positive",
-            Equation(polynomial, 0),
-            operation="* (-1)",
-        )
-    a, b, c = _abc(polynomial, variable)
-    if all(coefficient.is_Integer for coefficient in (a, b, c)):
-        divisor = sp.gcd_list([a, b, c])
-        if divisor > 1:
-            polynomial = sp.expand(polynomial / divisor)
-            work.equation(
-                f"Divide both sides by {divisor}", Equation(polynomial, 0), operation=f"/ {divisor}"
-            )
-    return _abc(polynomial, variable)
+    return _abc(standard_form(equation, variable, work), variable)
 
 
 def _abc(polynomial: sp.Expr, variable: sp.Symbol) -> tuple[sp.Expr, sp.Expr, sp.Expr]:

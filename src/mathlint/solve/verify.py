@@ -12,6 +12,7 @@ import sympy as sp
 from .core import Equation, Outcome, Work, show, sort_values
 
 _TOLERANCE = sp.Float("1e-12")
+_APPROXIMATE_TOLERANCE = sp.Float("1e-8")
 
 
 def verify(original: Equation, variable: sp.Symbol, outcome: Outcome, work: Work) -> Outcome:
@@ -48,7 +49,10 @@ def _check(original: Equation, variable: sp.Symbol, value: sp.Expr) -> str | Non
     if _simplify(left - right) == 0:
         return None
     difference = sp.N(left - right, 30)
-    if difference.is_number and abs(difference) < _TOLERANCE:
+    # an approximate root (a decimal) can only agree to about as many digits as it has
+    tolerance = _APPROXIMATE_TOLERANCE if value.has(sp.Float) else _TOLERANCE
+    scale = max(sp.Integer(1), abs(sp.N(left, 30)), abs(sp.N(right, 30)))
+    if difference.is_number and abs(difference) < tolerance * scale:
         return None
     return f"the left side is {show(left)} but the right side is {show(right)}"
 

@@ -5,7 +5,7 @@ Importing the solver modules registers them with the dispatcher.
 
 from __future__ import annotations
 
-from . import fallback, linear, quadratic  # noqa: F401  (registration)
+from . import fallback, linear, polynomial, quadratic  # noqa: F401  (registration)
 from .api import parse_equation, solve
 from .solution import EquationSolution
 

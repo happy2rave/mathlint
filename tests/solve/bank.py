@@ -35,4 +35,16 @@ QUADRATIC = [
     ("x^{2}-5x+6=0", "quadratic", [2, 3]),
 ]
 
-BANK = LINEAR + QUADRATIC
+POLYNOMIAL = [
+    ("x^3 - 6x^2 + 11x - 6 = 0", "polynomial", [1, 2, 3]),
+    ("x^3 = 4x", "polynomial", [-2, 0, 2]),
+    ("x^4 - 5x^2 + 4 = 0", "polynomial", [-2, -1, 1, 2]),
+    ("x^3 + x - 2 = 0", "polynomial", [1]),
+    ("2x^3 - 3x^2 - 3x + 2 = 0", "polynomial", [-1, sp.Rational(1, 2), 2]),
+    ("x^4 = 16", "polynomial", [-2, 2]),
+    ("x^3 - 2 = 0", "polynomial", [sp.cbrt(2)]),
+    ("x^5 - x = 0", "polynomial", [-1, 0, 1]),
+    ("x^6 - 9x^3 + 8 = 0", "polynomial", [1, 2]),
+]
+
+BANK = LINEAR + QUADRATIC + POLYNOMIAL
