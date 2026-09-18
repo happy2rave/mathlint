@@ -6,6 +6,17 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+### Added
+
+- `mathlint.compute(text)` — arithmetic worked out one operation at a time, in
+  the order of operations: brackets, powers and roots, multiplying and dividing,
+  adding and subtracting. Fractions get a common denominator and are reduced;
+  dividing by a fraction multiplies by its reciprocal; decimals, percentages
+  (`20% of 150`), negative and fractional exponents, square and cube roots
+  (`sqrt(72) = 6 sqrt(2)`), factorials, absolute values and exact values such
+  as `sin(pi/6)` all have their own steps. The answer stays exact, with a
+  decimal next to it, and is checked against SymPy before any step is shown.
+
 ## [0.6.0] — 2026-09-18
 
 Many unknowns.

@@ -12,6 +12,7 @@ wrong and why.
 from __future__ import annotations
 
 from ._version import __version__
+from .calc import Computation, compute
 from .check import check_document
 from .document import parse_document
 from .equivalence import Comparison, Verdict, compare
@@ -23,6 +24,8 @@ __all__ = [
     "__version__",
     "check",
     "solve",
+    "compute",
+    "Computation",
     "EquationSolution",
     "SystemSolution",
     "Report",
