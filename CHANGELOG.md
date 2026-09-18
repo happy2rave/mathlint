@@ -6,6 +6,20 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+Towards v0.6, "Many unknowns".
+
+### Added
+
+- Systems of linear equations — one per line, separated by `;`, or a LaTeX
+  `cases` block — solved by elimination, substitution, Gaussian elimination,
+  Cramer's rule or the inverse matrix, and checked in every equation. A system
+  with no solution says why; one with infinitely many names its free unknowns.
+- Solving a formula for a chosen letter: `variable="t"`, `... for t`, or
+  `mathlint solve --for t`. Dividing by a letter comes with the reminder that
+  it must not be 0.
+- The Solve tab takes several equations (Add an equation), asks which letter
+  to solve a formula for when there is no x, and has "Solve for" chips.
+
 ## [0.5.0] — 2026-09-18
 
 Solve it: type an equation, get the answer and the steps.
