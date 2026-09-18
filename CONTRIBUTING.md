@@ -63,3 +63,21 @@ Most requests come down to "let me write it this way". That usually means:
 - a unicode character people paste → `src/mathlint/parse/unicode_math.py`
 
 Add the case to the matching test file first, watch it fail, then make it pass.
+
+## Releasing (maintainers)
+
+1. Move the "Unreleased" notes in `CHANGELOG.md` under a new version heading.
+2. Bump `src/mathlint/_version.py` and the version assertions in the tests.
+3. Commit, then `git tag -a vX.Y.Z -m "mathlint X.Y.Z"` and push the tag.
+
+The `Release` workflow tests, builds, and publishes a GitHub release with the
+wheel and sdist attached; `Pages` redeploys the web page with the new wheel.
+
+Publishing to PyPI is switched off until it is set up once:
+
+1. On PyPI, add a *pending trusted publisher* for project `mathlint`: owner
+   `happy2rave`, repository `mathlint`, workflow `release.yml`, environment `pypi`.
+2. In the repository settings, create the environment `pypi` and the repository
+   variable `PYPI_PUBLISH` = `true`.
+
+From then on every tag also publishes to PyPI.

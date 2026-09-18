@@ -1,8 +1,8 @@
 # mathlint
 
 [![CI](https://github.com/happy2rave/mathlint/actions/workflows/ci.yml/badge.svg)](https://github.com/happy2rave/mathlint/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/mathlint.svg)](https://pypi.org/project/mathlint/)
-[![Python](https://img.shields.io/pypi/pyversions/mathlint.svg)](https://pypi.org/project/mathlint/)
+[![Release](https://img.shields.io/github/v/release/happy2rave/mathlint)](https://github.com/happy2rave/mathlint/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **A linter for your math.** You write out a solution by hand, mathlint tells you
 which step is wrong — and proves it with a counterexample.
@@ -58,10 +58,13 @@ First error: line 3 -> 4
 ## Install
 
 ```bash
-pip install mathlint
+pip install "mathlint @ git+https://github.com/happy2rave/mathlint"
 ```
 
-Python 3.10 or newer. The only dependency is [SymPy](https://www.sympy.org).
+or install the wheel attached to the
+[latest release](https://github.com/happy2rave/mathlint/releases/latest). Python
+3.10 or newer; the only dependency is [SymPy](https://www.sympy.org). Nothing to
+install at all: [use it in the browser](https://happy2rave.github.io/mathlint/).
 
 ## Use it
 
