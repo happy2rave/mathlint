@@ -48,6 +48,17 @@ def test_solve_with_a_chosen_method():
     assert reply["result"]["method"] == "formula"
 
 
+def test_a_formula_without_x_asks_for_the_letter():
+    reply = call("solve", text="v = u + a t")
+    assert reply["result"] == {"needs_letter": True, "letters": ["a", "t", "u", "v"]}
+
+
+def test_a_formula_solved_for_the_chosen_letter():
+    reply = call("solve", text="v = u + a t", variable="t")
+    assert reply["result"]["variable"] == "t"
+    assert reply["result"]["kind_label"] == "Formula, solved for t"
+
+
 def test_solve_without_an_equals_sign_explains_itself():
     reply = call("solve", text="x^2 - 5x + 6")
     assert reply["ok"] is False

@@ -24,6 +24,7 @@ EXPECTED = {
     "Logarithms": ["3"],
     "System of two equations": [{"x": "2", "y": "5"}],
     "System of three equations": [{"x": "1", "y": "2", "z": "3"}],
+    "Formula (solve for a letter)": None,
 }
 
 
@@ -34,5 +35,11 @@ def test_every_example_has_an_expectation():
 @pytest.mark.parametrize("example", EXAMPLES, ids=lambda example: example["name"])
 def test_solve_example(example):
     # the page sends the lines of the Solve sheet joined by new lines
-    solution = mathlint.solve("\n".join(example["lines"]))
-    assert solution.to_dict()["answers"] == EXPECTED[example["name"]]
+    text = "\n".join(example["lines"])
+    expected = EXPECTED[example["name"]]
+    if expected is None:
+        # no x: the page asks which letter, and every letter must then solve
+        for letter in "atuv":
+            assert mathlint.solve(text, variable=letter).answers
+        return
+    assert mathlint.solve(text).to_dict()["answers"] == expected

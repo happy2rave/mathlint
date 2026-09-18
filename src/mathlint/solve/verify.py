@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..equivalence import Verdict, compare
 from .core import Equation, Outcome, Work, show, sort_values
 
 _TOLERANCE = sp.Float("1e-12")
@@ -33,6 +34,9 @@ def verify(original: Equation, variable: sp.Symbol, outcome: Outcome, work: Work
 
 def _check(original: Equation, variable: sp.Symbol, value: sp.Expr) -> str | None:
     """None when ``value`` solves the equation, otherwise the reason it does not."""
+    letters = original.lhs.free_symbols | original.rhs.free_symbols | value.free_symbols
+    if letters - {variable}:
+        return _check_formula(original, variable, value)
     if not _is_real(value):
         return "it is not a real number"
     for side in (original.lhs, original.rhs):
@@ -55,6 +59,18 @@ def _check(original: Equation, variable: sp.Symbol, value: sp.Expr) -> str | Non
     if difference.is_number and abs(difference) < tolerance * scale:
         return None
     return f"the left side is {show(left)} but the right side is {show(right)}"
+
+
+def _check_formula(original: Equation, variable: sp.Symbol, value: sp.Expr) -> str | None:
+    """With other letters in play, compare the two sides as expressions."""
+    left = original.lhs.subs(variable, value)
+    right = original.rhs.subs(variable, value)
+    result = compare(left, right)
+    if result.verdict is not Verdict.WRONG:
+        return None
+    point = result.counterexample or {}
+    where = ", ".join(f"{name} = {number}" for name, number in point.items())
+    return f"the two sides differ (for example at {where})" if where else "the two sides differ"
 
 
 def _is_real(value: sp.Expr) -> bool:

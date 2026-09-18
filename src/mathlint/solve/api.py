@@ -20,28 +20,46 @@ from .system import SystemSolution, solve_system, split_equations
 from .verify import verify
 
 _SOLVE_PREFIX = re.compile(r"^solve\s+", re.IGNORECASE)
+_FOR_SUFFIX = re.compile(r"\s+for\s+([A-Za-z][A-Za-z0-9_]*)\s*$", re.IGNORECASE)
 
 
-def solve(text: str, method: str | None = None) -> EquationSolution | SystemSolution:
+def solve(
+    text: str, method: str | None = None, variable: str | None = None
+) -> EquationSolution | SystemSolution:
     """Solve an equation, or a system of equations, showing every step.
 
     One equation gives an :class:`EquationSolution`; several (one per line,
     separated by ``;``, or a LaTeX ``cases`` block) give a :class:`SystemSolution`.
     ``method`` picks one of the solution's ``methods`` (for a quadratic:
     ``"factoring"``, ``"formula"``, ...); by default the most natural one is used.
+
+    With several letters in one equation, ``variable`` (or ``"... for t"`` at the
+    end of the text) says which one to solve for; the others are treated as known.
+    ``x`` is chosen when it is there and nothing else is asked for.
     """
+    suffix = _FOR_SUFFIX.search(text)
+    if suffix:
+        variable = variable or suffix.group(1)
+        text = text[: suffix.start()]
     parts = split_equations(text)
     if len(parts) > 1:
         return solve_system([parse_equation(part) for part in parts], method)
     equation = parse_equation(text)
-    variable = _unknown(equation)
+    letters = sorted(
+        equation.lhs.free_symbols | equation.rhs.free_symbols, key=lambda symbol: symbol.name
+    )
+    unknown = _unknown(letters, variable, text)
 
+    title = f"Solve {show(equation.lhs)} = {show(equation.rhs)}"
+    if len(letters) > 1:
+        title += f" for {unknown}"
     solution = EquationSolution(
         operation="solve",
-        title=f"Solve {show(equation.lhs)} = {show(equation.rhs)}",
-        variable=variable,
+        title=title,
+        variable=unknown,
+        letters=[letter.name for letter in letters],
     )
-    work = Work(solution, variable)
+    work = Work(solution, unknown)
     work.equation("Start from", equation)
 
     if equation.lhs.has(sp.Float) or equation.rhs.has(sp.Float):
@@ -50,15 +68,15 @@ def solve(text: str, method: str | None = None) -> EquationSolution | SystemSolu
         )
         work.equation("Write the decimals as fractions, so the answer stays exact", equation)
 
-    solution.kind = classify(equation, variable)
-    solution.methods = dispatch.methods_for(solution.kind, equation, variable)
+    solution.kind = classify(equation, unknown)
+    solution.methods = dispatch.methods_for(solution.kind, equation, unknown)
     if method is not None and method not in solution.methods:
         options = ", ".join(solution.methods)
         raise UnsupportedError(f"the method '{method}' does not apply here — try {options}")
     solution.method = method or solution.methods[0]
 
-    outcome = dispatch.solve_equation(equation, variable, work, method=solution.method)
-    solution.finish(verify(equation, variable, outcome, work))
+    outcome = dispatch.solve_equation(equation, unknown, work, method=solution.method)
+    solution.finish(verify(equation, unknown, outcome, work))
     return solution
 
 
@@ -77,16 +95,21 @@ def parse_equation(text: str) -> Equation:
     return Equation(left, right)
 
 
-def _unknown(equation: Equation) -> sp.Symbol:
-    unknowns = sorted(
-        equation.lhs.free_symbols | equation.rhs.free_symbols, key=lambda symbol: symbol.name
-    )
-    if not unknowns:
+def _unknown(letters: list[sp.Symbol], variable: str | None, text: str) -> sp.Symbol:
+    if not letters:
         raise ParseError("there is nothing to solve for — this equation has no unknown")
-    if len(unknowns) > 1:
-        names = ", ".join(symbol.name for symbol in unknowns)
-        raise UnsupportedError(
-            f"this equation has more than one unknown ({names}); systems of equations "
-            "and solving for one letter are coming in v0.6"
-        )
-    return unknowns[0]
+    if variable:
+        chosen = next((letter for letter in letters if letter.name == variable), None)
+        if chosen is None:
+            raise ParseError(f"{variable} does not appear in this equation")
+        return chosen
+    if len(letters) == 1:
+        return letters[0]
+    x = next((letter for letter in letters if letter.name == "x"), None)
+    if x is not None:
+        return x
+    names = ", ".join(letter.name for letter in letters)
+    raise UnsupportedError(
+        f"this equation has several letters ({names}) — say which one to solve for by "
+        f"adding 'for {letters[-1].name}' at the end"
+    )

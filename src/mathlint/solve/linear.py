@@ -71,8 +71,11 @@ def solve_linear(
 
     answer = sp.simplify(value / coefficient)
     if coefficient != 1:
+        divide = f"Divide both sides by {show(coefficient)}"
+        if coefficient.free_symbols:
+            divide += f" ({show(coefficient)} must not be 0)"
         work.equation(
-            f"Divide both sides by {show(coefficient)}",
+            divide,
             Equation(variable, answer),
             operation=f"/ {show(coefficient)}",
         )

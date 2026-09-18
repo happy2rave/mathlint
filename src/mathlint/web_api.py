@@ -62,9 +62,22 @@ def _steps(data: dict) -> dict:
 
 
 def _solve(data: dict) -> dict:
-    from .solve import solve
+    from .solve import parse_equation, solve
+    from .solve.system import split_equations
 
-    return solve(data["text"], method=data.get("method") or None).to_dict()
+    text = data["text"]
+    variable = data.get("variable") or None
+    if variable is None:
+        parts = split_equations(text)
+        if len(parts) == 1:
+            # a formula with no x: the page asks which letter, rather than guessing
+            equation = parse_equation(parts[0])
+            letters = sorted(
+                symbol.name for symbol in equation.lhs.free_symbols | equation.rhs.free_symbols
+            )
+            if len(letters) > 1 and "x" not in letters:
+                return {"needs_letter": True, "letters": letters}
+    return solve(text, method=data.get("method") or None, variable=variable).to_dict()
 
 
 def _only_variable(expression: sp.Expr) -> sp.Symbol:

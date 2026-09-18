@@ -52,9 +52,9 @@ def test_equation_needs_an_equals_sign():
         mathlint.solve("x + 1")
 
 
-def test_two_unknowns_need_v06():
+def test_several_letters_without_x_need_a_chosen_letter():
     with pytest.raises(mathlint.UnsupportedError):
-        mathlint.solve("x + y = 1")
+        mathlint.solve("a + b = c")
 
 
 def test_fallback_is_labelled():

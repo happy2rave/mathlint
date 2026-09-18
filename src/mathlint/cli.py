@@ -72,6 +72,11 @@ def build_parser() -> argparse.ArgumentParser:
     solve = subcommands.add_parser("solve", help="solve an equation, step by step")
     solve.add_argument("equation", help='the equation, such as "x^2 - 5x + 6 = 0"')
     solve.add_argument(
+        "--for",
+        dest="variable",
+        help="the letter to solve for, when the equation has several (default: x)",
+    )
+    solve.add_argument(
         "--method",
         help="how to solve it, when there is a choice (for a quadratic: factoring, "
         "formula, completing-square, square-root)",
@@ -112,7 +117,7 @@ def _run_solve(args) -> int:
     from .solve import solve
 
     try:
-        solution = solve(args.equation, method=args.method)
+        solution = solve(args.equation, method=args.method, variable=args.variable)
     except MathlintError as error:
         print(f"mathlint: {error}", file=sys.stderr)
         return EXIT_BAD_INPUT

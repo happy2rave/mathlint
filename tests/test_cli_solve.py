@@ -35,3 +35,13 @@ def test_a_method_that_does_not_apply_exits_with_two(capsys):
 def test_no_equals_sign_exits_with_two(capsys):
     assert main(["solve", "2x + 3"]) == 2
     assert "'=' sign" in capsys.readouterr().err
+
+
+def test_solve_a_formula_for_a_letter(capsys):
+    assert main(["solve", "v = u + a t", "--for", "t"]) == 0
+    assert "must not be 0" in capsys.readouterr().out
+
+
+def test_a_system_from_the_command_line(capsys):
+    assert main(["solve", "2x + y = 5; x - y = 1"]) == 0
+    assert "x = 2, y = 1" in capsys.readouterr().out

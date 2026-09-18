@@ -34,6 +34,7 @@ class EquationSolution(Solution):
     everything: bool = False
     solution_set: sp.Set | None = None
     answer_latex: str = ""
+    letters: list[str] = field(default_factory=list)
 
     def finish(self, outcome: Outcome) -> None:
         assert self.variable is not None
@@ -62,7 +63,12 @@ class EquationSolution(Solution):
         data.update(
             {
                 "kind": self.kind,
-                "kind_label": KIND_LABELS.get(self.kind, "Equation"),
+                "kind_label": (
+                    f"Formula, solved for {self.variable}"
+                    if len(self.letters) > 1
+                    else KIND_LABELS.get(self.kind, "Equation")
+                ),
+                "letters": list(self.letters),
                 "method": self.method,
                 "methods": [
                     {"id": method, "label": METHOD_LABELS.get(method, method)}

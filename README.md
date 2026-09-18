@@ -77,6 +77,23 @@ One unknown, and the method a teacher would use for each kind of equation:
 | Exponentials | the same base, logarithms, or substitution (`e^(2x) - 3e^x + 2 = 0`) |
 | Logarithms | the domain first, combine, undo the logarithm |
 
+Several equations are solved as a system — one per line, or separated by `;` —
+by elimination, substitution, Gaussian elimination, Cramer's rule or the inverse
+matrix, and a system with no solution or infinitely many says so and why:
+
+```bash
+mathlint solve "3x + 2y = 16; 4x - 5y = -17" --method cramer
+```
+
+A formula with several letters is solved for the one you name, the others
+treated as known — and dividing by a letter comes with the reminder that it
+must not be 0:
+
+```bash
+mathlint solve "v = u + a t" --for t
+mathlint solve "1/f = 1/u + 1/v" --for v
+```
+
 Every answer is put back into the original equation at the end. Squaring,
 clearing denominators and undoing logarithms can all produce answers that do not
 really work; those are rejected, with the reason. From Python:

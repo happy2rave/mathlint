@@ -50,6 +50,7 @@ let engineReady = false;
 let examples = [];
 let sheet = null;
 let solveSheet = null;
+let solveVariable = null;
 let textMode = false;
 let lastField = null;
 let checkedAsMath = true;
@@ -327,11 +328,13 @@ function fillSolveExamples(list) {
     const example = list[Number(solveExamplesSelect.value)];
     if (!example) return;
     solveSheet.setLines(example.lines);
+    solveVariable = null;
     solve();
   });
 }
 
 async function solve(method = null) {
+  const variable = solveVariable;
   if (!engineReady) return;
   // one line is an equation; several lines are a system
   const text = solveSheet.getText();
@@ -341,15 +344,47 @@ async function solve(method = null) {
   }
   const outcome = await run(
     "solve",
-    { text, method },
+    { text, method, variable },
     { statusLine: solveStatus, button: solveButton, stopButton: $("stop-solve"), label: "Solving…" }
   );
   if (outcome.ok) renderSolved(outcome.result);
   else renderFailure(solved, outcome.error);
 }
 
+// Chips for the letter to solve for; the chosen one is pressed.
+function letterChips(letters, current, label) {
+  const chips = document.createElement("div");
+  chips.className = "method-chips";
+  chips.setAttribute("role", "group");
+  chips.setAttribute("aria-label", label);
+  const text = document.createElement("span");
+  text.textContent = label;
+  chips.append(text);
+  for (const letter of letters) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.textContent = letter;
+    chip.setAttribute("aria-pressed", String(letter === current));
+    chip.addEventListener("click", () => {
+      solveVariable = letter;
+      solve();
+    });
+    chips.append(chip);
+  }
+  return chips;
+}
+
 function renderSolved(solution) {
   solved.replaceChildren();
+
+  if (solution.needs_letter) {
+    const question = document.createElement("p");
+    question.className = "solved-kind";
+    question.textContent = "This equation has several letters. Which one do you want to solve for?";
+    solved.append(question, letterChips(solution.letters, null, "Solve for"));
+    return;
+  }
 
   const kind = document.createElement("p");
   kind.className = "solved-kind";
@@ -361,6 +396,10 @@ function renderSolved(solution) {
   answer.dataset.plain = solution.answer_text;
   renderMath(answer, solution.answer_latex, true);
   solved.append(answer);
+
+  if (solution.letters && solution.letters.length > 1) {
+    solved.append(letterChips(solution.letters, solution.variable, "Solve for"));
+  }
 
   if (solution.methods.length > 1) {
     const chips = document.createElement("div");
@@ -502,6 +541,8 @@ async function boot() {
   for (const field of [expressionField, lowerField, upperField]) configureField(field);
   solveSheet = new MathSheet(equationLines, {
     onEnter: () => solve(),
+    // a new equation means the letter has to be chosen again
+    onChange: () => (solveVariable = null),
     lineLabel: "An equation",
   });
   $("add-equation").addEventListener("click", () => solveSheet.addLine());
