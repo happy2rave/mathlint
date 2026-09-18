@@ -39,6 +39,8 @@ SYSTEM_METHOD_LABELS = {
     "gaussian": "Gaussian elimination",
     "cramer": "Cramer's rule",
     "inverse": "Inverse matrix",
+    "squares": "Squares as unknowns",
+    "computer": "Computer algebra",
 }
 
 
@@ -67,10 +69,15 @@ class SystemSolution(Solution):
             self.summary = "no solution"
             self.answer_latex = r"\text{no solution}"
             return
-        solution = assignments[0]
         shown = [name for name in self.unknowns if name not in free]
-        text = ", ".join(f"{name} = {show(solution[name])}" for name in shown)
-        latex = r",\quad ".join(f"{latex_of(name)} = {latex_of(solution[name])}" for name in shown)
+        text = " or ".join(
+            ", ".join(f"{name} = {show(solution[name])}" for name in shown)
+            for solution in assignments
+        )
+        latex = r" \quad\text{or}\quad ".join(
+            r",\ ".join(f"{latex_of(name)} = {latex_of(solution[name])}" for name in shown)
+            for solution in assignments
+        )
         if free:
             names = ", ".join(str(name) for name in free)
             verb = "can be any real number" if len(free) == 1 else "can be any real numbers"
@@ -91,7 +98,11 @@ class SystemSolution(Solution):
         data.update(
             {
                 "kind": self.kind,
-                "kind_label": "System of linear equations",
+                "kind_label": (
+                    "System of linear equations"
+                    if self.kind == "linear-system"
+                    else "System of equations"
+                ),
                 "method": self.method,
                 "methods": [
                     {"id": method, "label": SYSTEM_METHOD_LABELS[method]} for method in self.methods
@@ -120,12 +131,10 @@ def solve_system(equations: list[Equation], method: str | None = None) -> System
     )
     if not unknowns:
         raise ParseError("these equations have no unknowns to solve for")
-    for index, eq in enumerate(equations, start=1):
-        if not _is_linear(eq, unknowns):
-            raise UnsupportedError(
-                f"equation {index} is not linear; systems with squares, products or "
-                "functions of the unknowns are coming later in v0.6"
-            )
+    if not all(_is_linear(eq, unknowns) for eq in equations):
+        from .nonlinear import solve_nonlinear
+
+        return solve_nonlinear(equations, list(unknowns), method)
 
     matrix, right = sp.linear_eq_to_matrix([eq.lhs - eq.rhs for eq in equations], unknowns)
     methods = _methods(matrix, unknowns)
