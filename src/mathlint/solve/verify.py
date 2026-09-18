@@ -1,0 +1,67 @@
+"""Put every answer back into the original equation.
+
+Squaring both sides, clearing denominators and undoing logarithms can all create
+answers that do not solve the equation you started with. This is the step that
+catches them, and it shows its work either way.
+"""
+
+from __future__ import annotations
+
+import sympy as sp
+
+from .core import Equation, Outcome, Work, show, sort_values
+
+_TOLERANCE = sp.Float("1e-12")
+
+
+def verify(original: Equation, variable: sp.Symbol, outcome: Outcome, work: Work) -> Outcome:
+    if outcome.everything or outcome.solution_set is not None:
+        return outcome
+    kept = []
+    for value in sort_values(outcome.values):
+        verdict = _check(original, variable, value)
+        label = f"Check {variable} = {show(value)}"
+        if verdict is None:
+            left = _simplify(original.lhs.subs(variable, value))
+            work.note(f"{label}: both sides equal {show(left)}")
+            kept.append(value)
+        else:
+            work.note(f"{label}: {verdict}, so {variable} = {show(value)} is not a solution")
+    return Outcome.of(kept)
+
+
+def _check(original: Equation, variable: sp.Symbol, value: sp.Expr) -> str | None:
+    """None when ``value`` solves the equation, otherwise the reason it does not."""
+    if not _is_real(value):
+        return "it is not a real number"
+    for side in (original.lhs, original.rhs):
+        _, denominator = sp.fraction(sp.together(side))
+        if denominator.has(variable) and _simplify(denominator.subs(variable, value)) == 0:
+            return "it makes a denominator zero"
+    left = _simplify(original.lhs.subs(variable, value))
+    right = _simplify(original.rhs.subs(variable, value))
+    for side in (left, right):
+        if side.has(sp.zoo, sp.nan, sp.oo, -sp.oo):
+            return "it makes a denominator zero"
+        if not _is_real(side):
+            return "it takes the root or the logarithm of a negative number"
+    if _simplify(left - right) == 0:
+        return None
+    difference = sp.N(left - right, 30)
+    if difference.is_number and abs(difference) < _TOLERANCE:
+        return None
+    return f"the left side is {show(left)} but the right side is {show(right)}"
+
+
+def _is_real(value: sp.Expr) -> bool:
+    if value.is_real is True:
+        return True
+    number = sp.N(value, 30)
+    return number.is_number and abs(sp.im(number)) < _TOLERANCE
+
+
+def _simplify(value: sp.Expr) -> sp.Expr:
+    try:
+        return sp.simplify(value)
+    except Exception:
+        return value

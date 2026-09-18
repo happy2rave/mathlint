@@ -18,6 +18,9 @@ class SolutionStep:
     operation: str = ""
     matrix: sp.Matrix | None = None
     expression: sp.Expr | None = None
+    # for math that is not one expression, such as "x = 2 or x = 3"
+    display: str = ""
+    display_latex: str = ""
 
     def rendered(self) -> str:
         if self.matrix is not None:
@@ -27,14 +30,14 @@ class SolutionStep:
             return f"{_plain(left)} = {_plain(right)}"
         if self.expression is not None:
             return _plain(self.expression)
-        return ""
+        return self.display
 
     def latex(self) -> str:
         if self.matrix is not None:
             return sp.latex(self.matrix)
         if self.expression is not None:
             return sp.latex(self.expression)
-        return ""
+        return self.display_latex
 
     def to_dict(self) -> dict:
         return {
