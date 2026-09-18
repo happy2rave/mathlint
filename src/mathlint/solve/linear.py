@@ -39,10 +39,15 @@ def solve_linear(
     left_x, left_c = _split(lhs, variable)
     right_x, right_c = _split(rhs, variable)
 
-    if left_x == 0 and right_x != 0:
+    # keep the unknown's coefficient positive: x + 1 = 2x is easier read as 2x = x + 1
+    more_on_right = right_x.is_number and left_x.is_number and right_x > left_x
+    if right_x != 0 and (left_x == 0 or more_on_right):
         lhs, rhs = rhs, lhs
         left_x, left_c, right_x, right_c = right_x, right_c, left_x, left_c
-        work.equation("Swap the sides so the unknown is on the left", Equation(lhs, rhs))
+        work.equation(
+            f"Swap the sides, so the side with more {variable} is on the left",
+            Equation(lhs, rhs),
+        )
 
     if right_x != 0:
         term = right_x * variable

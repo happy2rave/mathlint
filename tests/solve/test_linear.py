@@ -8,7 +8,7 @@ def texts(solution):
 def test_linear_steps_name_what_they_do():
     solution = mathlint.solve("5 - x = 2x - 4")
     steps = " | ".join(texts(solution))
-    assert "from both sides" in steps
+    assert "Add x to both sides" in steps
     assert "Divide both sides by" in steps
     assert solution.summary == "x = 3"
 

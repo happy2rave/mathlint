@@ -59,4 +59,25 @@ RATIONAL = [
     (r"\frac{1}{x}=\frac{x}{4}", "rational", [-2, 2]),
 ]
 
-BANK = LINEAR + QUADRATIC + POLYNOMIAL + RATIONAL
+RADICAL = [
+    ("sqrt(x) = 3", "radical", [9]),
+    ("sqrt(x + 3) = x - 3", "radical", [6]),
+    ("sqrt(2x - 1) + 2 = x", "radical", [5]),
+    ("sqrt(x) = -2", "radical", "none"),
+    ("sqrt(x + 5) = sqrt(2x + 1)", "radical", [4]),
+    ("sqrt(x) + sqrt(x + 5) = 5", "radical", [4]),
+    ("x^(1/3) = 2", "radical", [8]),
+    (r"\sqrt{x+7}=x+1", "radical", [2]),
+]
+
+ABSOLUTE = [
+    ("|x - 3| = 5", "absolute", [-2, 8]),
+    ("|2x + 1| = 7", "absolute", [-4, 3]),
+    ("|x| = -1", "absolute", "none"),
+    ("|x - 1| + 2 = 6", "absolute", [-3, 5]),
+    ("|x - 2| = |2x + 1|", "absolute", [-3, sp.Rational(1, 3)]),
+    ("|x + 1| = 2x", "absolute", [1]),
+    ("|x - 4| = 0", "absolute", [4]),
+]
+
+BANK = LINEAR + QUADRATIC + POLYNOMIAL + RATIONAL + RADICAL + ABSOLUTE

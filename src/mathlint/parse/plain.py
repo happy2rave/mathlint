@@ -127,6 +127,9 @@ class _PlainPrinter(sp.printing.str.StrPrinter):
         )
         return f"{operators} [{self._print(expr.expr)}]"
 
+    def _print_Abs(self, expr: sp.Abs) -> str:
+        return f"|{self._print(expr.args[0])}|"
+
     def _print_Integral(self, expr: sp.Integral) -> str:
         body = self._print(expr.function)
         for limit in expr.limits:
