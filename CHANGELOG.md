@@ -6,7 +6,9 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
-Towards v0.6, "Many unknowns".
+## [0.6.0] — 2026-09-18
+
+Many unknowns.
 
 ### Added
 
@@ -19,6 +21,12 @@ Towards v0.6, "Many unknowns".
   it must not be 0.
 - The Solve tab takes several equations (Add an equation), asks which letter
   to solve a formula for when there is no x, and has "Solve for" chips.
+- Nonlinear systems in two unknowns: substitution from the equation that is
+  linear in one unknown, or u = x^2, v = y^2 when both unknowns only appear
+  squared; every pair is checked in both equations.
+- Checking your own working on a system: one stage of the system per line,
+  equations separated by `;`. A lost solution is an error that names the
+  solution and the equation that breaks; extra solutions are a warning.
 
 ## [0.5.0] — 2026-09-18
 
@@ -148,7 +156,8 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.6.0
 [0.5.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.5.0
 [0.4.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.4.0
 [0.3.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.3.0

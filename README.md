@@ -83,7 +83,11 @@ matrix, and a system with no solution or infinitely many says so and why:
 
 ```bash
 mathlint solve "3x + 2y = 16; 4x - 5y = -17" --method cramer
+mathlint solve "x + y = 5; x^2 + y^2 = 13"
 ```
+
+Systems with squares or products in them are solved by substitution, or by
+treating `x^2` and `y^2` as the unknowns when nothing else appears.
 
 A formula with several letters is solved for the one you name, the others
 treated as known — and dividing by a letter comes with the reminder that it
@@ -112,6 +116,8 @@ solution.methods      # the methods that apply; pass method="..." to pick one
   (equal up to a constant, so `+ C` is handled), definite integrals.
 - **Solving equations** — one unknown: it catches solutions you lost (dividing by
   `x`) and solutions that appeared out of nowhere (squaring both sides).
+- **Systems** — write each stage of the system on one line, equations separated
+  by `;`; a solution that goes missing is caught and named.
 - **Row reduction** — write your matrices one per line with `~` between them, and
   mathlint works out which row operation you did and whether it is really one.
 - **Input** — typed text (`2x sin x + x^2 cos x`) or LaTeX
