@@ -18,5 +18,6 @@ from . import (  # noqa: F401  (importing registers each solver)
 )
 from .api import parse_equation, solve
 from .solution import EquationSolution
+from .system import SystemSolution, solve_system
 
-__all__ = ["solve", "parse_equation", "EquationSolution"]
+__all__ = ["solve", "solve_system", "parse_equation", "EquationSolution", "SystemSolution"]

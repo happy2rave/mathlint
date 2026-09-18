@@ -17,13 +17,14 @@ from .document import parse_document
 from .equivalence import Comparison, Verdict, compare
 from .errors import MathlintError, ParseError, UnsupportedError
 from .report import Report, Step
-from .solve import EquationSolution, solve
+from .solve import EquationSolution, SystemSolution, solve
 
 __all__ = [
     "__version__",
     "check",
     "solve",
     "EquationSolution",
+    "SystemSolution",
     "Report",
     "Step",
     "Verdict",

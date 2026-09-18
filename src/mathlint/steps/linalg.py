@@ -251,3 +251,8 @@ def _require_square(matrix: sp.Matrix, what: str) -> None:
 
 def _show(value: sp.Expr) -> str:
     return read_as(value)
+
+
+#: Gauss-Jordan elimination that writes each row operation into a solution;
+#: the systems solver uses it on the augmented matrix.
+reduce_rows = _reduce

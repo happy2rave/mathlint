@@ -16,17 +16,23 @@ from . import dispatch
 from .classify import classify
 from .core import Equation, Work, show
 from .solution import EquationSolution
+from .system import SystemSolution, solve_system, split_equations
 from .verify import verify
 
 _SOLVE_PREFIX = re.compile(r"^solve\s+", re.IGNORECASE)
 
 
-def solve(text: str, method: str | None = None) -> EquationSolution:
-    """Solve one equation in one unknown, showing every step.
+def solve(text: str, method: str | None = None) -> EquationSolution | SystemSolution:
+    """Solve an equation, or a system of equations, showing every step.
 
-    ``method`` picks one of ``EquationSolution.methods`` (for a quadratic:
+    One equation gives an :class:`EquationSolution`; several (one per line,
+    separated by ``;``, or a LaTeX ``cases`` block) give a :class:`SystemSolution`.
+    ``method`` picks one of the solution's ``methods`` (for a quadratic:
     ``"factoring"``, ``"formula"``, ...); by default the most natural one is used.
     """
+    parts = split_equations(text)
+    if len(parts) > 1:
+        return solve_system([parse_equation(part) for part in parts], method)
     equation = parse_equation(text)
     variable = _unknown(equation)
 
