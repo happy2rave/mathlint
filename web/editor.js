@@ -79,9 +79,12 @@ export function displayLatex(latex) {
 }
 
 export class MathSheet {
-  constructor(list, { onChange } = {}) {
+  // onEnter: what Enter does in this sheet (by default it starts a new line)
+  constructor(list, { onChange, onEnter, lineLabel } = {}) {
     this.list = list;
+    this.lineLabel = lineLabel || "A line of your working";
     this.onChange = onChange || (() => {});
+    this.onEnter = onEnter || ((field) => this.newLineAfter(field));
     this.active = null;
     // capture phase: see Enter and Backspace before MathLive handles them
     window.addEventListener("keydown", (event) => this.#onKeydown(event), true);
@@ -117,6 +120,10 @@ export class MathSheet {
       .join("\n");
   }
 
+  addLine() {
+    return this.newLineAfter(this.fields.at(-1));
+  }
+
   newLineAfter(field) {
     const next = this.#append(field ? field.closest("li") : null);
     next.focus();
@@ -139,7 +146,7 @@ export class MathSheet {
     const row = document.createElement("li");
     row.className = "math-line";
     const field = document.createElement("math-field");
-    field.setAttribute("aria-label", "A line of your working");
+    field.setAttribute("aria-label", this.lineLabel);
     row.append(field);
     if (afterRow) afterRow.after(row);
     else this.list.append(row);
@@ -167,7 +174,7 @@ export class MathSheet {
     if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      this.newLineAfter(field);
+      this.onEnter(field);
       return;
     }
     if (event.key === "Backspace" && field.value === "" && this.fields.length > 1) {

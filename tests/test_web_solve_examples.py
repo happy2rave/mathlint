@@ -22,6 +22,8 @@ EXPECTED = {
     "Absolute value": ["-3", "5"],
     "Exponential": ["1"],
     "Logarithms": ["3"],
+    "System of two equations": [{"x": "2", "y": "5"}],
+    "System of three equations": [{"x": "1", "y": "2", "z": "3"}],
 }
 
 
@@ -31,5 +33,6 @@ def test_every_example_has_an_expectation():
 
 @pytest.mark.parametrize("example", EXAMPLES, ids=lambda example: example["name"])
 def test_solve_example(example):
-    solution = mathlint.solve(example["latex"])
-    assert [str(value) for value in solution.answers] == EXPECTED[example["name"]]
+    # the page sends the lines of the Solve sheet joined by new lines
+    solution = mathlint.solve("\n".join(example["lines"]))
+    assert solution.to_dict()["answers"] == EXPECTED[example["name"]]

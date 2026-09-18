@@ -31,7 +31,7 @@ const stepsStatus = $("steps-status");
 const targetLabel = $("target-label");
 const targetHelp = $("target-help");
 const worked = $("worked");
-const equationField = $("equation");
+const equationLines = $("equation-lines");
 const solveKeypadSlot = $("keypad-slot-solve");
 const solveButton = $("solve-button");
 const solveStatus = $("solve-status");
@@ -49,6 +49,7 @@ let engine = null;
 let engineReady = false;
 let examples = [];
 let sheet = null;
+let solveSheet = null;
 let textMode = false;
 let lastField = null;
 let checkedAsMath = true;
@@ -149,13 +150,13 @@ function keypadTarget() {
   if (active && active.tagName === "MATH-FIELD" && isVisible(active)) return active;
   if (isVisible(lastField)) return lastField;
   const tab = activeTab();
-  if (tab === "solve") return equationField;
+  if (tab === "solve") return solveSheet.active || solveSheet.fields[0];
   return tab === "check" ? sheet.fields.at(-1) : expressionField;
 }
 
 function handleEnter(field) {
   if (sheet.contains(field)) sheet.newLineAfter(field);
-  else if (field === equationField) solve();
+  else if (solveSheet.contains(field)) solve();
   else showSteps();
 }
 
@@ -325,14 +326,15 @@ function fillSolveExamples(list) {
   solveExamplesSelect.addEventListener("change", () => {
     const example = list[Number(solveExamplesSelect.value)];
     if (!example) return;
-    equationField.value = example.latex;
+    solveSheet.setLines(example.lines);
     solve();
   });
 }
 
 async function solve(method = null) {
   if (!engineReady) return;
-  const text = equationField.value.trim();
+  // one line is an equation; several lines are a system
+  const text = solveSheet.getText();
   if (!text) {
     renderFailure(solved, "Type an equation first — for example x^2 - 5x + 6 = 0.");
     return;
@@ -497,9 +499,12 @@ async function boot() {
   setUpTabs();
   await customElements.whenDefined("math-field");
 
-  for (const field of [equationField, expressionField, lowerField, upperField]) {
-    configureField(field);
-  }
+  for (const field of [expressionField, lowerField, upperField]) configureField(field);
+  solveSheet = new MathSheet(equationLines, {
+    onEnter: () => solve(),
+    lineLabel: "An equation",
+  });
+  $("add-equation").addEventListener("click", () => solveSheet.addLine());
   expressionField.value = String.raw`x^2\sin x`;
 
   sheet = new MathSheet(mathLines);
@@ -527,7 +532,7 @@ async function boot() {
 
   const solveExamples = await fetch("solve-examples.json").then((response) => response.json());
   fillSolveExamples(solveExamples);
-  equationField.value = solveExamples[0].latex;
+  solveSheet.setLines(solveExamples[0].lines);
 
   examples = await fetch("examples.json").then((response) => response.json());
   fillExamples();

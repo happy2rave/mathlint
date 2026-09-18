@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<a class="skip" href="#equation">Skip to the equation</a>
+<a class="skip" href="#equation-lines">Skip to the equation</a>
 
 <header class="masthead">
   <h1>mathlint</h1>
@@ -36,9 +36,9 @@
       </label>
     </div>
 
-    <div class="math-single equation-field">
-      <math-field id="equation" aria-labelledby="equation-label" aria-describedby="solve-help"></math-field>
-    </div>
+    <ol class="math-lines equation-lines" id="equation-lines" aria-labelledby="equation-label"
+      aria-describedby="solve-help"></ol>
+    <button type="button" class="text-button add-equation" id="add-equation">Add an equation (for a system)</button>
 
     <div class="keypad-slot" id="keypad-slot-solve"></div>
 
@@ -49,8 +49,9 @@
     </div>
 
     <p id="solve-help" class="help">
-      One equation, one unknown: linear, quadratic, higher powers, fractions, roots, absolute
-      values, exponentials and logarithms. Every answer is checked in the original equation.
+      One equation — linear, quadratic, higher powers, fractions, roots, absolute values,
+      exponentials, logarithms — or a system of linear equations, one per line. Every answer is
+      checked in the original equations.
     </p>
 
     <section id="solved" class="results" aria-live="polite"></section>

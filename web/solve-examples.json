@@ -1,11 +1,13 @@
 [
-  { "name": "Quadratic", "latex": "x^2-5x+6=0" },
-  { "name": "Brackets", "latex": "3\\left(x-1\\right)=2x+5" },
-  { "name": "Fractions", "latex": "\\frac{x}{2}+\\frac{1}{3}=\\frac{5}{6}" },
-  { "name": "Cubic", "latex": "x^3-6x^2+11x-6=0" },
-  { "name": "Unknown in a denominator", "latex": "\\frac{2}{x+1}=\\frac{1}{x-1}" },
-  { "name": "Square root", "latex": "\\sqrt{2x-1}+2=x" },
-  { "name": "Absolute value", "latex": "\\left|x-1\\right|+2=6" },
-  { "name": "Exponential", "latex": "9^{x}=3^{x+1}" },
-  { "name": "Logarithms", "latex": "\\ln\\left(x\\right)+\\ln\\left(x-2\\right)=\\ln\\left(3\\right)" }
+  { "name": "Quadratic", "lines": ["x^2-5x+6=0"] },
+  { "name": "Brackets", "lines": ["3\\left(x-1\\right)=2x+5"] },
+  { "name": "Fractions", "lines": ["\\frac{x}{2}+\\frac{1}{3}=\\frac{5}{6}"] },
+  { "name": "Cubic", "lines": ["x^3-6x^2+11x-6=0"] },
+  { "name": "Unknown in a denominator", "lines": ["\\frac{2}{x+1}=\\frac{1}{x-1}"] },
+  { "name": "Square root", "lines": ["\\sqrt{2x-1}+2=x"] },
+  { "name": "Absolute value", "lines": ["\\left|x-1\\right|+2=6"] },
+  { "name": "Exponential", "lines": ["9^{x}=3^{x+1}"] },
+  { "name": "Logarithms", "lines": ["\\ln\\left(x\\right)+\\ln\\left(x-2\\right)=\\ln\\left(3\\right)"] },
+  { "name": "System of two equations", "lines": ["3x+2y=16", "4x-5y=-17"] },
+  { "name": "System of three equations", "lines": ["x+y+z=6", "2x-y+z=3", "x+2y-z=2"] }
 ]
