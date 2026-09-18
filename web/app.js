@@ -1,8 +1,7 @@
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.mjs";
 import { MathSheet, configureField, displayLatex } from "./editor.js";
+import { Engine } from "./engine.js";
 import { Keypad } from "./keypad.js";
 
-const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
 const STORAGE_KEY = "mathlint:last-solution";
 
 const $ = (id) => document.getElementById(id);
@@ -40,8 +39,8 @@ const MATRIX_HELP =
   "Write it as [[2, 1], [3, 4]], MATLAB style [2 1; 3 4], or as a LaTeX pmatrix. " +
   "Fractions stay exact — no decimals.";
 
-let runCheck = null;
-let runSteps = null;
+let engine = null;
+let engineReady = false;
 let examples = [];
 let sheet = null;
 let textMode = false;
@@ -98,7 +97,7 @@ function fillExamples() {
     const example = examples[Number(examplesSelect.value)];
     if (!example) return;
     setText(example.lines.join("\n"));
-    if (runCheck) check();
+    if (engineReady) check();
   });
 }
 
@@ -272,26 +271,32 @@ function renderFailure(target, message) {
   target.append(box);
 }
 
-function check() {
-  if (!runCheck) return;
+// Run one engine request while showing a status and a Stop button.
+async function run(kind, payload, { statusLine, button, stopButton, label }) {
+  statusLine.textContent = label;
+  button.disabled = true;
+  stopButton.hidden = false;
+  try {
+    return await engine.call(kind, payload);
+  } finally {
+    statusLine.textContent = engineReady ? "Ready" : statusLine.textContent;
+    button.disabled = false;
+    stopButton.hidden = true;
+  }
+}
+
+async function check() {
+  if (!engineReady) return;
   const text = currentText();
   checkedAsMath = !textMode;
   remember(text);
-  status.textContent = "Checking…";
-  checkButton.disabled = true;
-  // let the browser paint the status before SymPy takes the thread
-  setTimeout(() => {
-    try {
-      const outcome = JSON.parse(runCheck(text));
-      if (outcome.ok) renderReport(outcome.report);
-      else renderFailure(results, outcome.error);
-    } catch (error) {
-      renderFailure(results, "Something went wrong while checking: " + error);
-    } finally {
-      status.textContent = "Ready";
-      checkButton.disabled = false;
-    }
-  }, 16);
+  const outcome = await run(
+    "check",
+    { text },
+    { statusLine: status, button: checkButton, stopButton: $("stop-check"), label: "Checking…" }
+  );
+  if (outcome.ok) renderReport(outcome.result);
+  else renderFailure(results, outcome.error);
 }
 
 // ---------------------------------------------------------------- worked solutions
@@ -358,8 +363,8 @@ function renderSolution(solution) {
   }
 }
 
-function showSteps() {
-  if (!runSteps) return;
+async function showSteps() {
+  if (!engineReady) return;
   const operation = operationSelect.value;
   const calculus = isCalculus(operation);
   const lower = operation === "integrate" ? lowerField.value.trim() : "";
@@ -369,21 +374,13 @@ function showSteps() {
     return;
   }
   const target = calculus ? expressionField.value : matrixInput.value;
-
-  stepsStatus.textContent = "Working…";
-  stepsButton.disabled = true;
-  setTimeout(() => {
-    try {
-      const outcome = JSON.parse(runSteps(operation, target, lower, upper));
-      if (outcome.ok) renderSolution(outcome.solution);
-      else renderFailure(worked, outcome.error);
-    } catch (error) {
-      renderFailure(worked, "Something went wrong: " + error);
-    } finally {
-      stepsStatus.textContent = "";
-      stepsButton.disabled = false;
-    }
-  }, 16);
+  const outcome = await run(
+    "steps",
+    { operation, target, lower, upper },
+    { statusLine: stepsStatus, button: stepsButton, stopButton: $("stop-steps"), label: "Working…" }
+  );
+  if (outcome.ok) renderSolution(outcome.result);
+  else renderFailure(worked, outcome.error);
 }
 
 // ---------------------------------------------------------------- start-up
@@ -445,74 +442,18 @@ async function boot() {
   stepsButton.addEventListener("click", showSteps);
   operationSelect.addEventListener("change", () => {
     updateOperationInput();
-    if (runSteps) showSteps();
+    if (engineReady) showSteps();
   });
   updateOperationInput();
 
-  status.textContent = "Loading the math engine (about 12 MB, once)…";
-  const pyodide = await loadPyodide({ indexURL: PYODIDE_URL });
-  await pyodide.loadPackage(["sympy", "micropip"]);
+  const stop = () => engine.stop("Stopped. The engine restarts in the background.");
+  $("stop-check").addEventListener("click", stop);
+  $("stop-steps").addEventListener("click", stop);
 
-  const wheelInfo = await fetch("wheel.json").then((response) => response.json());
-  const micropip = pyodide.pyimport("micropip");
-  await micropip.install(new URL(wheelInfo.wheel, location.href).href);
-
-  runCheck = pyodide.runPython(`
-import json
-import mathlint
-
-def _run(text):
-    try:
-        return json.dumps({"ok": True, "report": mathlint.check(text).to_dict()})
-    except mathlint.MathlintError as error:
-        return json.dumps({"ok": False, "error": str(error)})
-    except Exception as error:  # never leave the page without an explanation
-        return json.dumps({"ok": False, "error": f"{type(error).__name__}: {error}"})
-
-_run
-`);
-
-  runSteps = pyodide.runPython(`
-import json
-import sympy
-from mathlint.parse.plain import parse_expression
-from mathlint.steps import (
-    differentiate_solution,
-    integrate_solution,
-    parse_matrix,
-    solve_linalg,
-)
-
-def _variable(expression):
-    symbols = sorted(expression.free_symbols, key=lambda symbol: symbol.name)
-    return symbols[0] if len(symbols) == 1 else sympy.Symbol("x")
-
-def _steps(operation, text, lower, upper):
-    try:
-        if operation in ("diff", "integrate"):
-            expression = parse_expression(text).expr
-            variable = _variable(expression)
-            if operation == "diff":
-                solution = differentiate_solution(expression, variable)
-            else:
-                solution = integrate_solution(
-                    expression,
-                    variable,
-                    lower=parse_expression(lower).expr if lower.strip() else None,
-                    upper=parse_expression(upper).expr if upper.strip() else None,
-                )
-        else:
-            solution = solve_linalg(operation, parse_matrix(text))
-        return json.dumps({"ok": True, "solution": solution.to_dict()})
-    except mathlint.MathlintError as error:
-        return json.dumps({"ok": False, "error": str(error)})
-    except Exception as error:
-        return json.dumps({"ok": False, "error": f"{type(error).__name__}: {error}"})
-
-_steps
-`);
-
-  versionSlot.textContent = "mathlint " + pyodide.runPython("import mathlint; mathlint.__version__");
+  engine = new Engine({ onStatus: (text) => (status.textContent = text) });
+  const version = await engine.ready;
+  engineReady = true;
+  versionSlot.textContent = "mathlint " + version;
   status.textContent = "Ready";
   checkButton.disabled = false;
   stepsButton.disabled = false;
@@ -523,6 +464,6 @@ boot().catch((error) => {
   status.textContent = "The math engine could not start.";
   renderFailure(
     results,
-    "Loading failed: " + error + ". Check your connection and reload — the engine comes from a CDN."
+    "Loading failed: " + error.message + ". Check your connection and reload — the engine comes from a CDN."
   );
 });

@@ -40,7 +40,16 @@ def build_wheel() -> Path:
 
 
 #: The page's own files, as they are referenced from index.html and the scripts.
-_LOCAL_FILES = ("style.css", "app.js", "editor.js", "keypad.js", "examples.json", "wheel.json")
+_LOCAL_FILES = (
+    "style.css",
+    "app.js",
+    "editor.js",
+    "keypad.js",
+    "engine.js",
+    "worker.js",
+    "examples.json",
+    "wheel.json",
+)
 
 
 def stamp_references(site: Path, stamp: str) -> None:
