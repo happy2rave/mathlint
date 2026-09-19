@@ -15,6 +15,9 @@ All notable changes are recorded here. This project follows
   divided by the highest power of the bottom; a number over 0 is looked at from
   each side, and a limit whose sides disagree is said not to exist.
 
+- Keys for limits, infinity and the inequality signs on the keypad's calculus
+  tab.
+
 ### Changed
 
 - Plain-text output writes negative powers as fractions: `1/x^2`, not `x^(-2)`.
