@@ -28,6 +28,13 @@ All notable changes are recorded here. This project follows
   for ends that do not, arrows for intervals that go on forever — under the
   answer and its interval notation. Sign charts show as tables. There are
   examples of each kind of inequality.
+- A graph under every answer that has one: both sides of an equation with the
+  solutions marked where they meet, the left side of an inequality with its
+  answer shaded and its ends marked open or closed, each equation of a system
+  in x and y (vertical lines too) with the solutions marked, and an expression
+  as a function with its zeros. Drag to move, scroll or pinch to zoom, or use
+  the buttons and the keyboard; the page asks for fresh points across the new
+  range, and curves break at asymptotes instead of joining across them.
 
 ## [0.7.0] — 2026-09-19
 

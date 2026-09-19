@@ -16,6 +16,7 @@ from ._version import __version__
 from .check import check_document
 from .document import parse_document
 from .errors import MathlintError
+from .graph import graph_for, sample
 from .parse.plain import parse_expression
 from .steps import differentiate_solution, integrate_solution, parse_matrix, solve_linalg
 
@@ -79,7 +80,16 @@ def _solve(data: dict) -> dict:
             )
             if len(letters) > 1 and "x" not in letters:
                 return {"needs_letter": True, "letters": letters}
-    return solve(text, method=data.get("method") or None, variable=variable).to_dict()
+    result = solve(text, method=data.get("method") or None, variable=variable)
+    reply = result.to_dict()
+    reply["graph"] = graph_for(text, result)
+    return reply
+
+
+def _plot(data: dict) -> dict:
+    """More points for a graph that was moved or zoomed."""
+    count = data.get("count", 400)
+    return sample(data["curves"], data["variable"], data["x_min"], data["x_max"], count)
 
 
 _SLOW = re.compile(r"\\int|\bint\b")
@@ -124,4 +134,5 @@ _HANDLERS = {
     "steps": _steps,
     "solve": _solve,
     "preview": _preview,
+    "plot": _plot,
 }

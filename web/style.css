@@ -559,7 +559,7 @@ math-field.bound {
   margin: 0.6rem 0 0;
   max-width: 36rem;
 }
-.number-line svg { display: block; width: 100%; height: auto; overflow: visible; }
+.number-line > svg { display: block; width: 100%; height: auto; overflow: visible; }
 .number-line .axis { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; }
 .number-line .tick { stroke: var(--ink-soft); stroke-width: 1; }
 .number-line .tick-label { fill: var(--ink-soft); font-size: 12px; text-anchor: middle; }
@@ -576,6 +576,51 @@ math-field.bound {
   font-size: 0.875rem;
   white-space: nowrap;
 }
+
+/* a graph under the answer */
+.graph { margin: 0.4rem 0 0; max-width: 40rem; }
+.graph > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  touch-action: none;
+  cursor: grab;
+}
+.graph > svg:active { cursor: grabbing; }
+.graph > svg:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; }
+.graph .grid { stroke: var(--rule); stroke-width: 1; }
+.graph .axis { stroke: var(--ink-soft); stroke-width: 1.5; }
+.graph .shade { fill: color-mix(in srgb, var(--pen) 12%, transparent); }
+.graph .curve { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+.graph .curve-0 { stroke: var(--pen); color: var(--pen); }
+.graph .curve-1 { stroke: var(--mark-warning); color: var(--mark-warning); }
+.graph .curve-2 { stroke: var(--mark-ok); color: var(--mark-ok); }
+.graph .curve-3 { stroke: var(--mark-wrong); color: var(--mark-wrong); }
+.graph .vertical { stroke: var(--mark-ok); color: var(--mark-ok); stroke-dasharray: 6 4; }
+.graph .mark { stroke: var(--ink); stroke-width: 2; }
+.graph .mark.closed { fill: var(--ink); }
+.graph .mark.open { fill: var(--paper); }
+.graph .tick-label { fill: var(--ink-soft); font-size: 11px; }
+.graph .mark-label { fill: var(--ink); font-size: 12px; }
+.graph-controls { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
+.graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.2rem;
+  margin-top: 0.4rem;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+.legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+.legend-item .swatch { display: inline-block; width: 1.1rem; height: 3px; background: currentColor; }
+.legend-item.curve-0 { color: var(--pen); }
+.legend-item.curve-1 { color: var(--mark-warning); }
+.legend-item.curve-2 { color: var(--mark-ok); }
+.legend-item.curve-3 { color: var(--mark-wrong); }
+.legend-item.vertical { color: var(--mark-ok); }
+.legend-item > span:last-child { color: var(--ink); }
 
 /* the answer while you type, before pressing Solve */
 .live-answer {

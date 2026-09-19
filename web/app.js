@@ -2,6 +2,7 @@ import { MathSheet, configureField, displayLatex } from "./editor.js";
 import { Engine } from "./engine.js";
 import { Keypad } from "./keypad.js";
 import { numberLine } from "./numberline.js";
+import { Graph } from "./graph.js";
 
 const STORAGE_KEY = "mathlint:last-solution";
 
@@ -498,10 +499,32 @@ function renderSolved(solution) {
     solved.append(chips);
   }
 
+  if (solution.graph) solved.append(graphSection(solution.graph));
+
   const heading = document.createElement("h2");
   heading.textContent = "Steps";
   solved.append(heading);
   solution.steps.forEach((step, index) => solved.append(workedStep(step, index)));
+}
+
+function graphSection(spec) {
+  const section = document.createElement("section");
+  section.className = "graph-section";
+  const heading = document.createElement("h2");
+  heading.textContent = "Graph";
+  const graph = new Graph(spec, {
+    renderMath,
+    fetchSamples: async (xMin, xMax) => {
+      const outcome = await engine.call(
+        "plot",
+        { curves: spec.curves.map((curve) => curve.expr), variable: spec.variable, x_min: xMin, x_max: xMax },
+        { timeLimit: PREVIEW_LIMIT_MS, quiet: true }
+      );
+      return outcome.ok ? outcome.result : null;
+    },
+  });
+  section.append(heading, graph.element);
+  return section;
 }
 
 // ---------------------------------------------------------------- worked solutions
