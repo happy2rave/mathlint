@@ -137,8 +137,13 @@ class _PlainPrinter(sp.printing.str.StrPrinter):
     def _print_exp(self, expr: sp.exp) -> str:
         power = expr.args[0]
         text = self._print(power)
-        simple = power.is_Atom and not power.could_extract_minus_sign()
+        # e^3/2 would read back as (e^3)/2, so a fraction gets brackets too
+        simple = (power.is_Symbol or power.is_Integer) and not power.could_extract_minus_sign()
         return f"e^{text}" if simple else f"e^({text})"
+
+    # e is Euler's number when read, so it is written that way too, not as E
+    def _print_Exp1(self, expr: sp.Expr) -> str:
+        return "e"
 
     def _print_Integral(self, expr: sp.Integral) -> str:
         body = self._print(expr.function)

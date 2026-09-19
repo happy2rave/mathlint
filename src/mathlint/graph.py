@@ -38,7 +38,7 @@ def _graph_for(text: str, result) -> dict | None:
         return _inequality(text, result)
     if isinstance(result, SystemSolution):
         return _system(text, result)
-    if isinstance(result, Computation) and result.kind == "expression":
+    if isinstance(result, Computation) and result.kind in ("expression", "analysis"):
         return _expression(result)
     return None
 
@@ -136,6 +136,12 @@ def _expression(computation) -> dict | None:
     x = sp.Symbol(computation.letters[0])
     function = computation.answer
     marks = []
+    if computation.marks:
+        # an analysis: its intercepts, extrema and inflection points
+        for point in computation.marks:
+            label = f"{point['what']} {_pair(point['x'], point['y'])}"
+            marks.append({"x": point["x"], "y": point["y"], "label": label, "closed": True})
+        return _spec(x, [function], marks=marks)
     if function.is_polynomial(x):
         # where it crosses the x-axis, which also puts the interesting part in view
         for root in sp.real_roots(sp.Poly(function, x)):

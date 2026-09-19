@@ -14,6 +14,7 @@ KIND_LABELS = {
     "expression": "Expression",
     "derivative": "Derivative",
     "integral": "Integral",
+    "analysis": "Function analysis",
 }
 
 METHOD_LABELS = {
@@ -23,6 +24,7 @@ METHOD_LABELS = {
     "factor": "Factor",
     "derivative": "Differentiate",
     "integral": "Integrate",
+    "analyze": "Analyze the function",
 }
 
 SIGNIFICANT_DIGITS = 10
@@ -41,6 +43,8 @@ class Computation(Solution):
     letters: list[str] = field(default_factory=list)
     #: conditions the answer comes with, such as "x != 2"
     conditions: list[str] = field(default_factory=list)
+    #: points worth marking on a graph: {"x", "y", "what"}
+    marks: list[dict] = field(default_factory=list)
 
     def finish(self, value: sp.Expr, shown: str | None = None, shown_latex: str | None = None):
         self.answer = value

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from ._version import __version__
 from .calc import Computation, compute
+from .calc import analyze_function as analyze
 from .check import check_document
 from .document import parse_document
 from .equivalence import Comparison, Verdict, compare
@@ -25,6 +26,7 @@ __all__ = [
     "check",
     "solve",
     "compute",
+    "analyze",
     "Computation",
     "EquationSolution",
     "SystemSolution",

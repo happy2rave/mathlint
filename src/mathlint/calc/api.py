@@ -38,6 +38,12 @@ def compute(text: str, method: str | None = None) -> Computation:
     return calculate(tree)
 
 
+def analyze_function(text: str) -> Computation:
+    """Domain, intercepts, asymptotes, rising and falling, extrema, bending and
+    inflection points of a function of one letter, each with its reason."""
+    return compute(text, method="analyze")
+
+
 def calculate(tree) -> Computation:
     computation = Computation(
         operation="calculate",

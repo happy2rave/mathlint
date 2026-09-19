@@ -47,8 +47,10 @@ class Method:
     run: Callable[[sp.Expr, Steps], sp.Expr]
 
 
-#: filled in by the modules that write the steps, in the order they are offered
+#: filled in by the modules that write the steps
 METHODS: dict[str, Method] = {}
+#: the order the methods are offered in
+METHOD_ORDER = ["expand", "factor", "simplify", "analyze"]
 
 
 def method(name: str, applies: Callable[[sp.Expr], bool]):
@@ -63,7 +65,9 @@ def compute_expression(text: str, method_name: str | None = None) -> Computation
     with distribute(False):
         expression = parse_expression(text).expr
     letters = sorted(symbol.name for symbol in expression.free_symbols)
-    available = [name for name, entry in METHODS.items() if entry.applies(expression)]
+    available = [
+        name for name in METHOD_ORDER if name in METHODS and METHODS[name].applies(expression)
+    ]
     if not available:
         raise UnsupportedError("there is nothing to simplify, expand or factor here")
     choice = method_name or default_method(expression, available)

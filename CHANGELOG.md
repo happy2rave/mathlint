@@ -35,6 +35,19 @@ All notable changes are recorded here. This project follows
   as a function with its zeros. Drag to move, scroll or pinch to zoom, or use
   the buttons and the keyboard; the page asks for fresh points across the new
   range, and curves break at asymptotes instead of joining across them.
+- Function analysis: `mathlint.analyze("x^3 - 3x")`, `--method analyze`, or
+  "Analyze the function" on the Solve tab. The domain with what restricts it,
+  the intercepts, vertical asymptotes (only from the sides the function is
+  defined on) and holes, horizontal and oblique asymptotes, where it rises and
+  falls with its local maxima and minima, where it bends up or down with its
+  inflection points — each with its reason, and each point marked on the
+  graph. Periodic functions list their infinitely many zeros; anything SymPy
+  cannot settle exactly is said to be left out.
+
+### Fixed
+
+- Plain-text output wrote Euler's number as `E`, which reads back as a letter,
+  and `e^(3/2)` as `e^3/2`, which reads back as `(e^3)/2`.
 
 ## [0.7.0] — 2026-09-19
 
