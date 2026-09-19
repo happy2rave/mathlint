@@ -49,7 +49,7 @@ def texts(text):
 
 def test_an_expanded_polynomial_is_factored_by_default():
     assert mathlint.compute("x^2 - 9").method == "factor"
-    assert mathlint.compute("(x+1)^2 - 4").methods == ["expand", "factor"]
+    assert mathlint.compute("(x+1)^2 - 4").methods == ["expand", "factor", "simplify"]
 
 
 def test_common_factor_first():

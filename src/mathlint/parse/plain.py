@@ -187,6 +187,8 @@ def _tidy_unevaluated(expr: sp.Basic) -> sp.Basic:
     if not expr.args or isinstance(expr, sp.Number):
         return expr
     args = [_tidy_unevaluated(arg) for arg in expr.args]
+    if isinstance(expr, sp.Pow) and args[0] == sp.E:
+        return sp.exp(args[1], evaluate=False)
     if isinstance(expr, sp.Mul):
         if all(arg.is_Number for arg in args):
             return sp.Mul(*args)

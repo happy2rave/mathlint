@@ -12,6 +12,7 @@ import sympy as sp
 from .expression import Steps, method, show, sum_of, terms_of
 
 MAX_ROUNDS = 30
+MAX_TERMS = 40
 
 SQUARE_PLUS = "Use (a + b)^2 = a^2 + 2ab + b^2"
 SQUARE_MINUS = "Use (a - b)^2 = a^2 - 2ab + b^2"
@@ -26,7 +27,16 @@ def has_brackets(expression: sp.Expr) -> bool:
     return any(_open_term(term) is not None for term in terms_of(expression))
 
 
-@method("expand", applies=has_brackets)
+def can_expand(expression: sp.Expr) -> bool:
+    """Brackets to multiply out, and no letter in a denominator (that is simplifying)."""
+    divides_by_a_letter = any(
+        isinstance(node, sp.Pow) and node.exp.is_negative and node.base.free_symbols
+        for node in sp.preorder_traversal(expression)
+    )
+    return not divides_by_a_letter and has_brackets(expression)
+
+
+@method("expand", applies=can_expand)
 def expand_steps(expression: sp.Expr, steps: Steps) -> sp.Expr:
     terms = terms_of(expression)
     for _ in range(MAX_ROUNDS):
@@ -50,6 +60,11 @@ def expand_steps(expression: sp.Expr, steps: Steps) -> sp.Expr:
                 texts.append(text)
         if not texts:
             break
+        if len(opened) > MAX_TERMS:
+            # too many to be worth reading: the result at once
+            result = sp.expand(expression)
+            steps.show("Multiply out the remaining brackets and collect like terms", result)
+            return result
         terms = opened
         steps.show(texts[0] if len(texts) == 1 else "Multiply out the brackets", sum_of(terms))
     result = sp.expand(expression)
@@ -105,16 +120,30 @@ def _open_term(term: sp.Expr) -> tuple[list[sp.Expr], str] | None:
         if rest == -1:
             return pieces, MINUS_SIGN
         return pieces, f"Multiply each term in the bracket by {show(rest)}"
-    # a power of a bracket with no formula: take one copy out and multiply it in
+    # a higher power of a bracket
     index = brackets[0]
     power = factors[index]
     outside = rest_without(index)
     terms = _ordered(power.base)
-    if power.exp == 2:  # three or more terms, squared
-        return _times(outside, [a * b for a in terms for b in terms]), TWO_BRACKETS
-    lower = power.base ** (power.exp - 1)
-    text = f"Write {show(power)} as ({show(power.base)}) * {show(lower)}, then multiply out"
-    return [outside * lower * piece for piece in terms], text
+    exponent = int(power.exp)
+    if len(terms) == 2:
+        first, second = terms
+        pieces = [
+            sp.binomial(exponent, k) * first ** (exponent - k) * second**k
+            for k in range(exponent + 1)
+        ]
+        return _times(outside, pieces), (
+            f"Use the binomial theorem: (a + b)^{exponent} is the sum of "
+            f"C({exponent}, k) a^({exponent} - k) b^k for k = 0 to {exponent}"
+        )
+    squared = [a * b for a in terms for b in terms]
+    if exponent == 2:
+        return _times(outside, squared), TWO_BRACKETS
+    lower = power.base ** (exponent - 2)
+    rest = f"({show(power.base)})" + (f"^{exponent - 2}" if exponent > 3 else "")
+    return _times(outside * lower, squared), (
+        f"Write {show(power)} as ({show(power.base)})^2 * {rest} and square the bracket"
+    )
 
 
 def _times(rest: sp.Expr, pieces: list[sp.Expr]) -> list[sp.Expr]:

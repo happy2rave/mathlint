@@ -13,6 +13,7 @@ from dataclasses import dataclass
 import sympy as sp
 from sympy.core.parameters import distribute
 
+from ..equivalence import Verdict, compare
 from ..errors import UnsupportedError
 from ..parse.plain import latex_of, parse_as_written, parse_expression, read_as
 from ..steps.solution import SolutionStep
@@ -105,10 +106,11 @@ def default_method(expression: sp.Expr, available: list[str]) -> str:
 
 
 def same_value(result: sp.Expr, expression: sp.Expr) -> bool:
+    """Equal wherever both are defined (ln(xy) and ln(x) + ln(y) count as equal)."""
     difference = sp.expand(sp.together(result - expression))
-    if difference == 0:
+    if difference == 0 or sp.simplify(difference) == 0:
         return True
-    return sp.simplify(difference) == 0
+    return compare(result, expression).verdict is Verdict.OK
 
 
 def _fallback(choice: str, expression: sp.Expr) -> sp.Expr:

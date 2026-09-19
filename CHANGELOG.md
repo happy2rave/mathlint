@@ -28,6 +28,15 @@ All notable changes are recorded here. This project follows
   (`x^4 - 5x^2 + 4`), grouping in pairs, and the factor theorem for higher
   powers. Every new factor is factored again. A polynomial without brackets is
   factored by default.
+- Simplifying with steps. Algebraic fractions are put over a common
+  denominator, their numerators added, the top and bottom factored and the
+  common factors cancelled, and the answer keeps the values the original was
+  not defined for (`x != -2`). Logarithm, exponent, trigonometric and root
+  rules each have their own step; anything they miss is simplified last.
+  Anything else is simplified by default, and expressions that are already as
+  simple as they get say so.
+- High powers of a bracket, such as `(x + 1)^10`, are expanded with the
+  binomial theorem in one step.
 
 ## [0.6.0] — 2026-09-18
 

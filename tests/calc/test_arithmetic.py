@@ -101,9 +101,13 @@ def test_an_equation_is_not_a_calculation():
         mathlint.compute("2 + 3 = 5")
 
 
-def test_letters_are_not_arithmetic_yet():
-    with pytest.raises(UnsupportedError):
-        mathlint.compute("2x + 1")
+def test_letters_make_an_expression():
+    assert mathlint.compute("2x + 1").kind == "expression"
+
+
+def test_an_unknown_method_is_explained():
+    with pytest.raises(UnsupportedError, match="does not apply"):
+        mathlint.compute("2 + 3", method="factor")
 
 
 def test_to_dict_matches_the_solve_tab():
