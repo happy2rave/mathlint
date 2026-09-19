@@ -2,7 +2,7 @@ import mathlint
 
 
 def test_version_is_exposed():
-    assert mathlint.__version__ == "0.7.0"
+    assert mathlint.__version__ == "0.8.0"
 
 
 def test_errors_are_exposed():

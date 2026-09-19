@@ -6,6 +6,10 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-09-19
+
+Inequalities and graphs.
+
 ### Added
 
 - Inequalities: `mathlint.solve("3 - 2x < 7")` and the Solve tab take `<`, `<=`,
@@ -247,7 +251,8 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.8.0
 [0.7.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.7.0
 [0.6.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.6.0
 [0.5.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.5.0

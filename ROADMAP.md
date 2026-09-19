@@ -25,7 +25,7 @@ real problems with known answers — runs on every commit.
 | v0.5 | Done: Solve it | Type an equation, get the answer and the steps |
 | v0.6 | Done: Many unknowns | Systems of equations, and "solve this formula for y" |
 | v0.7 | Done: Calculator | Arithmetic and simplifying with steps, a live answer as you type |
-| v0.8 | Inequalities and graphs | Sign charts, interval answers, interactive graphs, function analysis |
+| v0.8 | Done: Inequalities and graphs | Sign charts, interval answers, interactive graphs, function analysis |
 | v0.9 | Calculus, complete | Limits, implicit derivatives, harder integrals, differential equations |
 | v0.10 | Premium, free | "Why?" on every step, step-by-step reveal, animated steps, tutor mode, practice |
 | v0.11 | App quality | Installable, offline, history, speed, accessibility, translations |
@@ -76,10 +76,14 @@ real problems with known answers — runs on every commit.
 
 ### v0.8 — Inequalities and graphs
 
-Linear, quadratic, rational and absolute-value inequalities with sign charts and
-interval answers on a number line; an interactive graph panel with solutions
-marked; function analysis (domain, intercepts, zeros, asymptotes, extrema,
-monotonicity, concavity).
+- Linear inequalities by balancing, saying every time the sign turns around;
+  double inequalities.
+- Polynomial and rational inequalities with a sign chart; absolute values split
+  into two inequalities.
+- The answer as an inequality, in interval notation and on a number line.
+- A graph under every answer that has one: drag, scroll and pinch.
+- Function analysis: domain, intercepts, asymptotes and holes, rising and
+  falling, extrema, bending and inflection points, each with its reason.
 
 ### v0.9 — Calculus, complete
 
