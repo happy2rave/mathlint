@@ -71,4 +71,5 @@ def test_analysis_is_offered_last_and_marks_the_graph():
     assert result["kind_label"] == "Function analysis"
     labels = [mark["label"] for mark in result["graph"]["marks"]]
     assert "local maximum (-1, 2)" in labels
-    assert "inflection point (0, 0)" in labels
+    # three findings at the origin share one label
+    assert "y-intercept, zero, inflection point (0, 0)" in labels

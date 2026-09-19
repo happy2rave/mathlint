@@ -137,10 +137,15 @@ def _expression(computation) -> dict | None:
     function = computation.answer
     marks = []
     if computation.marks:
-        # an analysis: its intercepts, extrema and inflection points
+        # an analysis: its intercepts, extrema and inflection points, one label per point
+        grouped: dict[tuple[float, float], list[str]] = {}
         for point in computation.marks:
-            label = f"{point['what']} {_pair(point['x'], point['y'])}"
-            marks.append({"x": point["x"], "y": point["y"], "label": label, "closed": True})
+            key = (round(point["x"], 9), round(point["y"], 9))
+            if point["what"] not in grouped.setdefault(key, []):
+                grouped[key].append(point["what"])
+        for (a, b), what in grouped.items():
+            label = f"{', '.join(what)} {_pair(a, b)}"
+            marks.append({"x": a, "y": b, "label": label, "closed": True})
         return _spec(x, [function], marks=marks)
     if function.is_polynomial(x):
         # where it crosses the x-axis, which also puts the interesting part in view
