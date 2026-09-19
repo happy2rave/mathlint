@@ -47,7 +47,9 @@ class Computation(Solution):
         self.result = value
         self.answer_plain = shown if shown is not None else read_as(value)
         self.answer_latex = shown_latex if shown_latex is not None else latex_of(value)
-        self.decimal, self.decimal_latex = approximate(value, self.answer_plain)
+        self.decimal, decimal_latex = approximate(value, self.answer_plain)
+        # ready to show under the answer
+        self.decimal_latex = None if decimal_latex is None else rf"\approx {decimal_latex}"
         self.summary = f"Answer: {self.answer_plain}"
         if self.decimal is not None:
             self.summary += f" (about {self.decimal})"

@@ -400,6 +400,15 @@ function renderSolved(solution) {
   renderMath(answer, solution.answer_latex, true);
   solved.append(answer);
 
+  // the exact answer stays first; the decimal is what a calculator would say
+  if (solution.decimal_latex) {
+    const decimal = document.createElement("p");
+    decimal.className = "answer-note answer-decimal";
+    decimal.dataset.plain = "about " + solution.decimal;
+    renderMath(decimal, solution.decimal_latex);
+    solved.append(decimal);
+  }
+
   // what the answer is only true for, such as x != -2 after cancelling (x + 2)
   if (solution.conditions && solution.conditions.length) {
     const note = document.createElement("p");

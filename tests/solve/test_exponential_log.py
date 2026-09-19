@@ -49,4 +49,4 @@ def test_logarithms_are_combined_and_the_domain_is_checked():
 def test_undo_the_logarithm():
     solution = mathlint.solve("ln(x) = 2")
     assert "Undo the logarithm" in words(solution)
-    assert solution.summary == "x = exp(2)" or solution.summary == "x = e^2"
+    assert solution.summary == "x = e^2 (about x = 7.389056099)"
