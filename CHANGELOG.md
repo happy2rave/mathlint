@@ -6,6 +6,16 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+### Added
+
+- Inequalities: `mathlint.solve("3 - 2x < 7")` and the Solve tab take `<`, `<=`,
+  `>`, `>=` (and `\le`, `\ge`, `≤`, `≥`). Linear inequalities are solved by the
+  balance method; dividing by a negative number says that it turns the sign
+  around, swapping sides says the same, and a number on each side of the answer
+  is checked. Double inequalities like `1 < 2x + 3 <= 7` are split in two and
+  intersected. The answer comes in inequality form (`x > -2`), in interval
+  notation (`(-2, inf)`), and as the pieces of a number line.
+
 ## [0.7.0] — 2026-09-19
 
 Calculator: anything without an equals sign, worked out step by step.

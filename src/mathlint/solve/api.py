@@ -16,6 +16,7 @@ from ..parse.unicode_math import normalize_unicode
 from . import dispatch
 from .classify import classify
 from .core import Equation, Work, show
+from .inequality import InequalitySolution, looks_like_inequality, solve_inequality
 from .solution import EquationSolution
 from .system import SystemSolution, solve_system, split_equations
 from .verify import verify
@@ -26,7 +27,7 @@ _FOR_SUFFIX = re.compile(r"\s+for\s+([A-Za-z][A-Za-z0-9_]*)\s*$", re.IGNORECASE)
 
 def solve(
     text: str, method: str | None = None, variable: str | None = None
-) -> EquationSolution | SystemSolution | Computation:
+) -> EquationSolution | SystemSolution | InequalitySolution | Computation:
     """Solve an equation, or a system of equations, showing every step.
 
     One equation gives an :class:`EquationSolution`; several (one per line,
@@ -38,9 +39,12 @@ def solve(
     end of the text) says which one to solve for; the others are treated as known.
     ``x`` is chosen when it is there and nothing else is asked for.
 
-    Text without an ``=`` has nothing to solve; it is worked out by
+    An inequality (``<``, ``<=``, ``>``, ``>=``) gives an :class:`InequalitySolution`.
+    Other text without an ``=`` has nothing to solve; it is worked out by
     :func:`mathlint.compute` instead, so one input takes everything.
     """
+    if looks_like_inequality(text):
+        return solve_inequality(text, method=method, variable=variable)
     if "=" not in text:
         from ..calc import compute
 

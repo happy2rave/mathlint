@@ -17,7 +17,16 @@ from . import (  # noqa: F401  (importing registers each solver)
     rational,
 )
 from .api import parse_equation, solve
+from .inequality import InequalitySolution, solve_inequality
 from .solution import EquationSolution
 from .system import SystemSolution, solve_system
 
-__all__ = ["solve", "solve_system", "parse_equation", "EquationSolution", "SystemSolution"]
+__all__ = [
+    "solve",
+    "solve_system",
+    "solve_inequality",
+    "parse_equation",
+    "EquationSolution",
+    "SystemSolution",
+    "InequalitySolution",
+]

@@ -64,11 +64,12 @@ def _steps(data: dict) -> dict:
 
 def _solve(data: dict) -> dict:
     from .solve import parse_equation, solve
+    from .solve.inequality import looks_like_inequality
     from .solve.system import split_equations
 
     text = data["text"]
     variable = data.get("variable") or None
-    if variable is None and "=" in text:
+    if variable is None and "=" in text and not looks_like_inequality(text):
         parts = split_equations(text)
         if len(parts) == 1:
             # a formula with no x: the page asks which letter, rather than guessing
