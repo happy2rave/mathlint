@@ -15,8 +15,11 @@ from .solution import Solution, SolutionStep
 _ORDINALS = {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth"}
 MAX_ORDER = 10
 
+# "dy/dx: x^2 + y^2 = 25" or "y' for x y = 1": the separator is what tells it
+# apart from a differential equation such as "dy/dx = 2y" or "y' + y = x"
 _IMPLICIT = re.compile(
-    r"^\s*(?:dy\s*/\s*dx|\\frac\s*\{\s*d\s*y\s*\}\s*\{\s*d\s*x\s*\}|y')\s*[:,]?\s*(?:(?:for|of)\s+)?",
+    r"^\s*(?:dy\s*/\s*dx|\\frac\s*\{\s*d\s*y\s*\}\s*\{\s*d\s*x\s*\}|y')\s*"
+    r"(?::|,|\b(?:for|of)\b)\s*",
     re.IGNORECASE,
 )
 _TANGENT = re.compile(
@@ -63,7 +66,9 @@ def higher_derivative_solution(expression: sp.Expr, variable: sp.Symbol, order: 
 
 
 def looks_like_implicit(text: str) -> bool:
-    return bool(_IMPLICIT.match(text)) and "=" in text
+    match = _IMPLICIT.match(text)
+    # "y' = 2y" is a differential equation; "dy/dx: x^2 + y^2 = 25" asks for dy/dx
+    return bool(match) and "=" in text and not text[match.end() :].lstrip().startswith("=")
 
 
 def implicit_solution(text: str) -> Solution:

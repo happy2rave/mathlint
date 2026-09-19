@@ -15,6 +15,7 @@ from ..parse.plain import parse_expression
 from ..parse.unicode_math import normalize_unicode
 from ..steps.derivatives import looks_like_implicit, looks_like_tangent
 from ..steps.limits import looks_like_limit
+from ..steps.odes import looks_like_ode
 from . import dispatch
 from .classify import classify
 from .core import Equation, Work, show
@@ -45,7 +46,12 @@ def solve(
     Other text without an ``=`` has nothing to solve; it is worked out by
     :func:`mathlint.compute` instead, so one input takes everything.
     """
-    if looks_like_limit(text) or looks_like_tangent(text) or looks_like_implicit(text):
+    if (
+        looks_like_limit(text)
+        or looks_like_tangent(text)
+        or looks_like_implicit(text)
+        or looks_like_ode(text)
+    ):
         # an arrow is not an inequality, and a tangent or dy/dx is worked out, not solved
         from ..calc import compute
 

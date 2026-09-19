@@ -27,8 +27,8 @@ def test_third_derivative_of_a_polynomial():
     ("text", "slope"),
     [
         ("dy/dx: x^2 + y^2 = 25", -x / y),
-        ("dy/dx x^3 + y^3 = 6xy", (x**2 - 2 * y) / (2 * x - y**2)),
-        (r"\frac{dy}{dx}x^2+y^2=25", -x / y),
+        ("dy/dx: x^3 + y^3 = 6xy", (x**2 - 2 * y) / (2 * x - y**2)),
+        (r"\frac{dy}{dx}:x^2+y^2=25", -x / y),
         ("y' for x y = 1", -y / x),
     ],
 )

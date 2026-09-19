@@ -19,6 +19,7 @@ KIND_LABELS = {
     "implicit": "Implicit differentiation",
     "tangent": "Tangent line",
     "normal": "Normal line",
+    "ode": "Differential equation",
 }
 
 METHOD_LABELS = {
@@ -33,6 +34,7 @@ METHOD_LABELS = {
     "implicit": "Implicit differentiation",
     "tangent": "Tangent line",
     "normal": "Normal line",
+    "ode": "Differential equation",
 }
 
 SIGNIFICANT_DIGITS = 10

@@ -31,6 +31,15 @@ All notable changes are recorded here. This project follows
   and the way back to x through the right triangle. Every answer from either
   method is differentiated back before it is shown.
 
+- Differential equations: `y' = 2y`, `dy/dx + 2y = e^x`, `y'' + 3y' + 2y = 0`,
+  with initial conditions after a `;` (`y(0) = 1, y'(0) = 0`). First order is
+  solved by separating the variables (with `ln|y|`) or with an integrating
+  factor; second order with constant coefficients through the characteristic
+  equation and its three cases, plus undetermined coefficients when the right
+  side is not 0. Initial conditions fix the constants, and a particular
+  solution is drawn on the graph. Every answer is put back into the equation.
+  Implicit differentiation now needs `dy/dx:` with a colon, since
+  `dy/dx = ...` is a differential equation.
 - A definite integral's graph shades the area between the curve and the
   x-axis, above the axis and below it in different colours, with the bounds
   marked.

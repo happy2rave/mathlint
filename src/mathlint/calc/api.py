@@ -15,6 +15,7 @@ from ..steps.derivatives import (
     tangent_solution,
 )
 from ..steps.limits import DOES_NOT_EXIST, limit_solution, looks_like_limit, parse_limit
+from ..steps.odes import looks_like_ode, ode_solution, parse_ode
 from ..steps.solution import SolutionStep
 from .arithmetic import value_of, work_out
 from .computation import Computation
@@ -41,6 +42,8 @@ def compute(text: str, method: str | None = None) -> Computation:
         return _tangent(text)
     if looks_like_implicit(text):
         return _implicit(text)
+    if looks_like_ode(text):
+        return _ode(text)
     if "=" in text:
         raise ParseError("this is an equation — use solve for it")
     try:
@@ -175,6 +178,32 @@ def _tangent(text: str) -> Computation:
         solution.result,
         f"{read_as(left)} = {read_as(right)}",
         f"{latex_of(left)} = {latex_of(right)}",
+    )
+    return computation
+
+
+def _ode(text: str) -> Computation:
+    problem = parse_ode(text)
+    solution = ode_solution(problem)
+    computation = Computation(
+        operation="ode",
+        title=solution.title,
+        kind="ode",
+        method="ode",
+        methods=["ode"],
+        letters=[str(problem.x), "y"],
+    )
+    computation.steps = list(solution.steps)
+    value = solution.result.rhs
+    if problem.conditions and not (value.free_symbols - {problem.x}):
+        # one particular solution: draw it, with the starting point
+        computation.plot = [value]
+        computation.letters = [str(problem.x)]
+        for order, at, wanted in problem.conditions:
+            if order == 0 and _finite(at) and _finite(wanted):
+                computation.marks.append({"x": float(at), "y": float(wanted), "what": "start"})
+    computation.finish(
+        solution.result, f"y = {read_as(value)}", f"y = {latex_of(value)}"
     )
     return computation
 

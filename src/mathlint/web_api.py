@@ -69,10 +69,16 @@ def _solve(data: dict) -> dict:
     from .solve.system import split_equations
     from .steps.derivatives import looks_like_implicit, looks_like_tangent
     from .steps.limits import looks_like_limit
+    from .steps.odes import looks_like_ode
 
     text = data["text"]
     variable = data.get("variable") or None
-    worked_out = looks_like_limit(text) or looks_like_tangent(text) or looks_like_implicit(text)
+    worked_out = (
+        looks_like_limit(text)
+        or looks_like_tangent(text)
+        or looks_like_implicit(text)
+        or looks_like_ode(text)
+    )
     if variable is None and "=" in text and not looks_like_inequality(text) and not worked_out:
         parts = split_equations(text)
         if len(parts) == 1:
