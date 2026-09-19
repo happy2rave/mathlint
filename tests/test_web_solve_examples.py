@@ -35,6 +35,9 @@ EXPECTED = {
     "Inequality with a sign chart": "x <= -2 or x >= 3, that is (-inf, -2] U [3, inf)",
     "Absolute-value inequality": "-2 < x < 3, that is (-2, 3)",
     "Limit": ["4"],
+    "Second derivative": ["x*(-x^2*sin(x) + 6*x*cos(x) + 6*sin(x))"],
+    "Integral by partial fractions": ["2*ln|x + 1| + ln|x + 2| + C"],
+    "Differential equation": ["y = cos(2*x)"],
 }
 
 

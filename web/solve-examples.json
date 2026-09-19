@@ -127,5 +127,23 @@
     "lines": [
       "\\lim_{x\\to2}\\frac{x^2-4}{x-2}"
     ]
+  },
+  {
+    "name": "Second derivative",
+    "lines": [
+      "\\frac{d^2}{dx^2}\\left(x^3\\sin x\\right)"
+    ]
+  },
+  {
+    "name": "Integral by partial fractions",
+    "lines": [
+      "\\int\\frac{3x+5}{\\left(x+1\\right)\\left(x+2\\right)}\\,dx"
+    ]
+  },
+  {
+    "name": "Differential equation",
+    "lines": [
+      "y^{\\prime\\prime}+4y=0;y(0)=1,y^{\\prime}(0)=0"
+    ]
   }
 ]

@@ -200,6 +200,33 @@ vertical asymptotes and holes, horizontal and oblique asymptotes, where it rises
 and falls with its maxima and minima, where it bends with its inflection points —
 each with its reason, each point marked on the graph.
 
+## Calculus
+
+```bash
+mathlint solve "lim x->0 (1 - cos(x))/x^2"
+mathlint solve "d^2/dx^2 x^3 sin x"
+mathlint solve "dy/dx: x^2 + y^2 = 25"
+mathlint solve "tangent to y = x^3 - 2x at x = 2"
+mathlint solve "int (3x + 5)/((x + 1)(x + 2)) dx"
+mathlint solve "int 1/(x^2 sqrt(x^2 - 9)) dx"
+mathlint solve "y'' + 4y = 0; y(0) = 1, y'(0) = 0"
+mathlint solve "taylor ln(x) at 1 order 4"
+```
+
+- **Limits**: put the number in first; 0/0 by factoring, the conjugate or
+  L'Hopital's rule; at infinity, divide by the highest power; each side of a
+  limit that runs off to infinity, and "does not exist" when they disagree.
+- **Derivatives**: every rule named, higher derivatives one after the other,
+  implicit differentiation, tangent and normal lines.
+- **Integrals**: SymPy's by-hand rules explained, and partial fractions and
+  trigonometric substitution written out in full; a definite integral's area is
+  shaded on the graph.
+- **Differential equations**: separable, linear with an integrating factor, and
+  second order with constant coefficients through the characteristic equation;
+  initial conditions fix the constants.
+- **Taylor series**: the table of derivatives, the terms, the polynomial, and
+  the general term of the series you are expected to know.
+
 ## What it checks
 
 - **Expression chains** — algebra, derivatives (`d/dx`), indefinite integrals
