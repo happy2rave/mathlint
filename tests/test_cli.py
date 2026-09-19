@@ -64,4 +64,4 @@ def test_version(capsys):
     with pytest.raises(SystemExit) as excinfo:
         main(["--version"])
     assert excinfo.value.code == 0
-    assert "0.6.0" in capsys.readouterr().out
+    assert "0.7.0" in capsys.readouterr().out

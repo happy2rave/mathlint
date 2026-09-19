@@ -6,6 +6,10 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-09-19
+
+Calculator: anything without an equals sign, worked out step by step.
+
 ### Added
 
 - `mathlint.compute(text)` — arithmetic worked out one operation at a time, in
@@ -200,7 +204,8 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.7.0
 [0.6.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.6.0
 [0.5.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.5.0
 [0.4.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.4.0

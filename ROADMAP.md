@@ -24,7 +24,7 @@ real problems with known answers — runs on every commit.
 | v0.1–v0.4 | Done | Mistake finder, linear algebra and calculus steps, math editor and keypad |
 | v0.5 | Done: Solve it | Type an equation, get the answer and the steps |
 | v0.6 | Done: Many unknowns | Systems of equations, and "solve this formula for y" |
-| v0.7 | Calculator | Arithmetic and simplifying with steps, a live answer as you type |
+| v0.7 | Done: Calculator | Arithmetic and simplifying with steps, a live answer as you type |
 | v0.8 | Inequalities and graphs | Sign charts, interval answers, interactive graphs, function analysis |
 | v0.9 | Calculus, complete | Limits, implicit derivatives, harder integrals, differential equations |
 | v0.10 | Premium, free | "Why?" on every step, step-by-step reveal, animated steps, tutor mode, practice |
@@ -64,10 +64,15 @@ real problems with known answers — runs on every commit.
 
 ### v0.7 — Calculator
 
-Arithmetic with steps (order of operations, fractions, decimals and fractions,
-percentages, powers and roots); expanding and factoring; simplifying rational,
-radical, exponential, logarithmic and trigonometric expressions; a live answer
-under the editor; an exact/decimal switch.
+- Arithmetic one operation at a time, in the order of operations: fractions,
+  decimals, percentages, powers, roots, factorials and exact values.
+- Expanding: special products by name, bracket by bracket, the binomial theorem.
+- Factoring: common factors, special products, two numbers that multiply to c
+  and add to b, splitting the middle term, grouping, the factor theorem.
+- Simplifying: algebraic fractions with the values they must not take, and the
+  logarithm, exponent, trigonometric and root rules.
+- One input for everything on the Solve tab, a live answer while you type, and
+  exact answers with a decimal alongside.
 
 ### v0.8 — Inequalities and graphs
 
