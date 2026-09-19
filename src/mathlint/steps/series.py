@@ -124,6 +124,20 @@ def series_solution(problem: SeriesProblem) -> Solution:
 
     terms = [values[k] / sp.factorial(k) * shift**k for k in range(n + 1)]
     polynomial = sp.Add(*terms)
+    expected = sp.series(f, x, a, n + 1).removeO()
+    if sp.expand(polynomial - expected) != 0:
+        # never show steps that do not add up
+        solution.steps = solution.steps[:1]
+        solution.steps.append(
+            SolutionStep(
+                text="Series (computer algebra)",
+                display=read_as(expected),
+                display_latex=latex_of(expected),
+            )
+        )
+        solution.result = expected
+        solution.summary = f"{read_as(expected)} + O({_power(shift, n + 1)})"
+        return solution
     plain, latex = [], []
     for k in range(n + 1):
         if values[k] == 0:
