@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 import mathlint
 from mathlint.web_api import handle
 
@@ -100,6 +102,41 @@ def test_an_integral_on_the_solve_tab():
     reply = call("solve", text=r"\int_0^1 x^2\,dx")
     assert reply["result"]["answers"] == ["1/3"]
     assert reply["result"]["decimal"] == "0.3333333333"
+
+
+def test_the_live_answer_for_a_calculation():
+    reply = call("preview", text=r"\frac{1}{2}+\frac{1}{3}")
+    assert reply["result"] == {
+        "latex": r"= \frac{5}{6}",
+        "decimal_latex": r"\approx 0.8333333333",
+    }
+
+
+def test_the_live_answer_for_an_equation():
+    reply = call("preview", text="x^2-5x+6=0")
+    assert reply["result"]["latex"] == r"x = 2 \quad\text{or}\quad x = 3"
+    assert reply["result"]["decimal_latex"] is None
+
+
+def test_the_live_answer_for_an_expression():
+    assert call("preview", text="(x+2)^2")["result"]["latex"] == "= x^{2} + 4 x + 4"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "",  # nothing typed yet
+        "2+",  # half typed
+        r"\frac{\placeholder{}}{2}",  # an empty box in the editor
+        "x^2 + 1",  # nothing to do
+        "7",  # already an answer
+        r"\int x^2\,dx",  # integrals wait for the Solve button
+        "v = u + a t",  # needs a letter to be chosen
+    ],
+)
+def test_no_live_answer_and_no_error(text):
+    reply = call("preview", text=text)
+    assert reply == {"ok": True, "result": {"latex": None}}
 
 
 def test_unknown_request():

@@ -36,6 +36,7 @@ const solveKeypadSlot = $("keypad-slot-solve");
 const solveButton = $("solve-button");
 const solveStatus = $("solve-status");
 const solved = $("solved");
+const liveAnswer = $("live-answer");
 const solveExamplesSelect = $("solve-examples");
 
 const MARKS = { OK: "✓", WRONG: "✗", WARNING: "!", UNSURE: "?" };
@@ -51,6 +52,8 @@ let examples = [];
 let sheet = null;
 let solveSheet = null;
 let solveVariable = null;
+let previewTimer = null;
+let previewRound = 0;
 let textMode = false;
 let lastField = null;
 let checkedAsMath = true;
@@ -354,6 +357,45 @@ async function solve(method = null) {
   else renderFailure(solved, outcome.error);
 }
 
+// ---------------------------------------------------------------- the live answer
+
+const PREVIEW_PAUSE_MS = 450;
+const PREVIEW_LIMIT_MS = 4000;
+
+// A short pause in typing asks the engine for the answer alone.
+function schedulePreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(preview, PREVIEW_PAUSE_MS);
+}
+
+async function preview() {
+  const round = ++previewRound;
+  const text = solveSheet.getText();
+  if (!text || !engineReady) return showPreview(null);
+  // a Solve that is running comes first; ask again once it is done
+  if (engine.busy) return schedulePreview();
+  const outcome = await engine.call(
+    "preview",
+    { text },
+    { timeLimit: PREVIEW_LIMIT_MS, quiet: true }
+  );
+  if (round !== previewRound) return; // typing went on in the meantime
+  showPreview(outcome.ok ? outcome.result : null);
+}
+
+function showPreview(result) {
+  if (!result || !result.latex) {
+    liveAnswer.replaceChildren();
+    liveAnswer.hidden = true;
+    return;
+  }
+  const latex = result.decimal_latex
+    ? `${result.latex} \\qquad ${result.decimal_latex}`
+    : result.latex;
+  renderMath(liveAnswer, latex);
+  liveAnswer.hidden = false;
+}
+
 // Chips for the letter to solve for; the chosen one is pressed.
 function letterChips(letters, current, label) {
   const chips = document.createElement("div");
@@ -564,7 +606,10 @@ async function boot() {
   solveSheet = new MathSheet(equationLines, {
     onEnter: () => solve(),
     // a new equation means the letter has to be chosen again
-    onChange: () => (solveVariable = null),
+    onChange: () => {
+      solveVariable = null;
+      schedulePreview();
+    },
     lineLabel: "An equation or expression",
   });
   $("add-equation").addEventListener("click", () => solveSheet.addLine());

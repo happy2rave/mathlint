@@ -36,7 +36,9 @@ export class Engine {
   }
 
   // Resolves to {ok: true, result} or {ok: false, error}; it never rejects.
-  async call(kind, payload = {}) {
+  // A quiet call (the live answer) that runs over its limit is simply dropped:
+  // restarting the engine for it would cost more than it is worth.
+  async call(kind, payload = {}, { timeLimit = TIME_LIMIT_MS, quiet = false } = {}) {
     try {
       await this.ready;
     } catch (error) {
@@ -45,10 +47,15 @@ export class Engine {
     return new Promise((resolve) => {
       const id = this.nextId++;
       const timer = setTimeout(() => {
+        if (quiet) {
+          this.pending.delete(id);
+          resolve({ ok: false, error: "too slow for a live answer" });
+          return;
+        }
         this.stop(
           "This took longer than 20 seconds, so it was stopped. Try writing it more simply."
         );
-      }, TIME_LIMIT_MS);
+      }, timeLimit);
       this.pending.set(id, { resolve, timer });
       this.worker.postMessage({ id, kind, payload });
     });

@@ -8,6 +8,7 @@ or ``{"ok": false, "error": "..."}`` — the page never has to guess.
 from __future__ import annotations
 
 import json
+import re
 
 import sympy as sp
 
@@ -80,6 +81,37 @@ def _solve(data: dict) -> dict:
     return solve(text, method=data.get("method") or None, variable=variable).to_dict()
 
 
+_SLOW = re.compile(r"\\int|\bint\b")
+_COMPUTED = {"arithmetic", "expression", "derivative", "integral"}
+PREVIEW_LIMIT = 300
+
+
+def _preview(data: dict) -> dict:
+    """The answer alone, shown under the input while it is typed.
+
+    Half-typed input is normal here, so this never reports an error: it answers
+    with ``{"latex": None}`` instead. Integrals are left for the Solve button,
+    because a hard one can take seconds.
+    """
+    text = data.get("text", "")
+    if not text.strip() or len(text) > PREVIEW_LIMIT or _SLOW.search(text):
+        return {"latex": None}
+    try:
+        result = _solve({"text": text})
+    except Exception:
+        return {"latex": None}
+    if result.get("needs_letter"):
+        return {"latex": None}
+    steps = result.get("steps", [])
+    worked = [step for step in steps[1:] if step["text"] != "This is already as simple as it gets"]
+    if not worked:
+        return {"latex": None}  # nothing happened, so there is nothing to show
+    latex = result["answer_latex"]
+    if result.get("kind") in _COMPUTED:
+        latex = "= " + latex
+    return {"latex": latex, "decimal_latex": result.get("decimal_latex")}
+
+
 def _only_variable(expression: sp.Expr) -> sp.Symbol:
     symbols = sorted(expression.free_symbols, key=lambda symbol: symbol.name)
     return symbols[0] if len(symbols) == 1 else sp.Symbol("x")
@@ -90,4 +122,5 @@ _HANDLERS = {
     "check": _check,
     "steps": _steps,
     "solve": _solve,
+    "preview": _preview,
 }

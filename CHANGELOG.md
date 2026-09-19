@@ -46,6 +46,9 @@ All notable changes are recorded here. This project follows
   1.618033989, and `1/2 + 1/3 = 5/6` about 0.8333333333. Whole numbers are left
   alone. The Solve tab shows the decimal under the answer, and the JSON output
   has `decimal`, `decimal_latex` and, for equations, `answers_decimal`.
+- A live answer on the Solve tab: a moment after you stop typing, the answer
+  (and its decimal) appears under the input, before you press Solve. Half-typed
+  input shows nothing rather than an error, and integrals wait for the button.
 
 ## [0.6.0] — 2026-09-18
 

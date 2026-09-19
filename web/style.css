@@ -553,6 +553,15 @@ math-field.bound {
   font-size: 1.15rem;
 }
 
+/* the answer while you type, before pressing Solve */
+.live-answer {
+  margin: 0.4rem 0 0;
+  padding-left: 1rem;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  overflow-x: auto;
+}
+
 .answer-note {
   margin: 0.35rem 0 0;
   color: var(--ink-soft);
