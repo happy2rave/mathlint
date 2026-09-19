@@ -55,6 +55,8 @@ class Computation(Solution):
     marks: list[dict] = field(default_factory=list)
     #: curves to draw, when the answer itself is not the function to draw
     plot: list = field(default_factory=list)
+    #: a definite integral's bounds, to shade the area under the first curve
+    area: tuple[float, float] | None = None
 
     def finish(self, value: sp.Expr, shown: str | None = None, shown_latex: str | None = None):
         self.answer = value

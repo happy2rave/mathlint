@@ -54,6 +54,17 @@ def test_an_expression_is_a_function():
     assert spec["marks"][0]["label"] == "(-2, 0)"
 
 
+def test_a_definite_integral_shades_its_area():
+    reply = json.loads(handle("solve", json.dumps({"text": r"\int_{-1}^{2} x^2 - 1\,dx"})))
+    spec = reply["result"]["graph"]
+    assert [curve["expr"] for curve in spec["curves"]] == ["x^2 - 1"]
+    assert spec["area"] == {"from": -1.0, "to": 2.0}
+    assert [mark["label"] for mark in spec["marks"]] == ["(-1, 0)", "(2, 0)"]
+    # an indefinite integral has no area to shade
+    reply = json.loads(handle("solve", json.dumps({"text": "int x^2 dx"})))
+    assert reply["result"]["graph"] is None
+
+
 @pytest.mark.parametrize("text", ["2 + 3", "v = u + a t", "x + 1 = x + 1"])
 def test_no_graph_when_there_is_nothing_to_draw(text):
     result = mathlint.solve(text, variable="t") if "u" in text else mathlint.solve(text)

@@ -600,6 +600,9 @@ math-field.bound {
 .graph .curve-2 { stroke: var(--mark-ok); color: var(--mark-ok); }
 .graph .curve-3 { stroke: var(--mark-wrong); color: var(--mark-wrong); }
 .graph .vertical { stroke: var(--mark-ok); color: var(--mark-ok); stroke-dasharray: 6 4; }
+.graph .area { stroke: none; }
+.graph .area-above { fill: color-mix(in srgb, var(--mark-ok) 28%, transparent); }
+.graph .area-below { fill: color-mix(in srgb, var(--mark-wrong) 24%, transparent); }
 .graph .mark { stroke: var(--ink); stroke-width: 2; }
 .graph .mark.closed { fill: var(--ink); }
 .graph .mark.open { fill: var(--paper); }

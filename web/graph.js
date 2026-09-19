@@ -85,6 +85,12 @@ export class Graph {
       item.append(swatch, math);
       legend.append(item);
     });
+    if (this.spec.area) {
+      const item = document.createElement("span");
+      item.className = "legend-item area-note";
+      item.textContent = "Shaded: the area, counted positive above the x-axis and negative below";
+      legend.append(item);
+    }
     for (const line of this.spec.vertical) {
       const item = document.createElement("span");
       item.className = "legend-item vertical";
@@ -133,6 +139,13 @@ export class Graph {
       if (value !== 0) layers.push(this.#label(format(value), Math.min(Math.max(this.sx(0) - 6, 34), WIDTH - 4), at + 4, "end"));
     }
 
+    // a definite integral: the area between the curve and the x-axis
+    if (this.spec.area && this.samples.curves.length) {
+      for (const [side, clamp] of [["above", Math.max], ["below", Math.min]]) {
+        layers.push(svg("path", { d: this.#area(this.spec.area, clamp), class: `area area-${side}` }));
+      }
+    }
+
     this.samples.curves.forEach((ys, index) => {
       layers.push(svg("path", { d: this.#path(this.samples.xs, ys), class: `curve curve-${index % 4}` }));
     });
@@ -149,6 +162,23 @@ export class Graph {
       layers.push(this.#label(mark.label, x + 8, y - 8, "start", "mark-label"));
     }
     this.picture.replaceChildren(...layers);
+  }
+
+  // The region between the first curve and the axis from `from` to `to`, on one
+  // side of the axis only (clamp is Math.max for above, Math.min for below).
+  #area({ from, to }, clamp) {
+    const { xs } = this.samples;
+    const ys = this.samples.curves[0];
+    const points = [];
+    for (let index = 0; index < xs.length; index++) {
+      if (xs[index] < from || xs[index] > to || ys[index] === null) continue;
+      points.push([xs[index], clamp(ys[index], 0)]);
+    }
+    if (points.length < 2) return "M0 0";
+    let d = `M${this.sx(points[0][0]).toFixed(1)} ${this.sy(0).toFixed(1)} `;
+    for (const [x, y] of points) d += `L${this.sx(x).toFixed(1)} ${this.sy(y).toFixed(1)} `;
+    d += `L${this.sx(points.at(-1)[0]).toFixed(1)} ${this.sy(0).toFixed(1)} Z`;
+    return d;
   }
 
   #label(text, x, y, anchor, className = "tick-label") {

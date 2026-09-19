@@ -115,6 +115,12 @@ def _calculus(text: str) -> Computation | None:
     )
     computation.steps = list(solution.steps)
     result = solution.result
+    if kind == "integral" and lower is not None and _finite(lower) and _finite(upper):
+        # the area on a graph: the curve, and its bounds marked on the x-axis
+        computation.plot = [expression.function]
+        computation.area = (float(lower), float(upper))
+        for bound in (lower, upper):
+            computation.marks.append({"x": float(bound), "y": 0.0, "what": "bound"})
     if kind == "integral" and lower is None:
         computation.finish(result, f"{read_as(result)} + C", f"{latex_of(result)} + C")
     else:
@@ -143,6 +149,10 @@ def _limit(text: str) -> Computation:
     else:
         computation.finish(value)
     return computation
+
+
+def _finite(value: sp.Expr) -> bool:
+    return value.is_number and value.is_finite and value.is_real
 
 
 def _tangent(text: str) -> Computation:

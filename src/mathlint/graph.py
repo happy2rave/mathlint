@@ -139,7 +139,11 @@ def _drawn(computation) -> dict | None:
         {"x": p["x"], "y": p["y"], "label": _pair(p["x"], p["y"]), "closed": True}
         for p in computation.marks
     ]
-    return _spec(x, computation.plot, marks=marks)
+    spec = _spec(x, computation.plot, marks=marks)
+    if spec is not None and computation.area is not None:
+        low, high = sorted(computation.area)
+        spec["area"] = {"from": low, "to": high}
+    return spec
 
 
 def _expression(computation) -> dict | None:

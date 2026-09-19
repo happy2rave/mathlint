@@ -31,6 +31,10 @@ All notable changes are recorded here. This project follows
   and the way back to x through the right triangle. Every answer from either
   method is differentiated back before it is shown.
 
+- A definite integral's graph shades the area between the curve and the
+  x-axis, above the axis and below it in different colours, with the bounds
+  marked.
+
 ### Fixed
 
 - Integration steps showed SymPy's internal `_u` for the substituted variable.
