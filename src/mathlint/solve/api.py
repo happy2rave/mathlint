@@ -16,6 +16,7 @@ from ..parse.unicode_math import normalize_unicode
 from ..steps.derivatives import looks_like_implicit, looks_like_tangent
 from ..steps.limits import looks_like_limit
 from ..steps.odes import looks_like_ode
+from ..steps.series import looks_like_series
 from . import dispatch
 from .classify import classify
 from .core import Equation, Work, show
@@ -51,6 +52,7 @@ def solve(
         or looks_like_tangent(text)
         or looks_like_implicit(text)
         or looks_like_ode(text)
+        or looks_like_series(text)
     ):
         # an arrow is not an inequality, and a tangent or dy/dx is worked out, not solved
         from ..calc import compute

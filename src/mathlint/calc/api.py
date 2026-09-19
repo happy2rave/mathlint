@@ -16,6 +16,7 @@ from ..steps.derivatives import (
 )
 from ..steps.limits import DOES_NOT_EXIST, limit_solution, looks_like_limit, parse_limit
 from ..steps.odes import looks_like_ode, ode_solution, parse_ode
+from ..steps.series import looks_like_series, parse_series, series_solution
 from ..steps.solution import SolutionStep
 from .arithmetic import value_of, work_out
 from .computation import Computation
@@ -38,6 +39,8 @@ def compute(text: str, method: str | None = None) -> Computation:
     """
     if looks_like_limit(text):
         return _limit(text)
+    if looks_like_series(text):
+        return _series(text)
     if looks_like_tangent(text):
         return _tangent(text)
     if looks_like_implicit(text):
@@ -178,6 +181,36 @@ def _tangent(text: str) -> Computation:
         solution.result,
         f"{read_as(left)} = {read_as(right)}",
         f"{latex_of(left)} = {latex_of(right)}",
+    )
+    return computation
+
+
+def _series(text: str) -> Computation:
+    problem = parse_series(text)
+    solution = series_solution(problem)
+    computation = Computation(
+        operation="series",
+        title=solution.title,
+        kind="series",
+        method="series",
+        methods=["series"],
+        letters=[str(problem.x)],
+    )
+    computation.steps = list(solution.steps)
+    # the function and its polynomial side by side, touching at the point
+    computation.plot = [problem.function, solution.result]
+    if _finite(problem.point):
+        height = problem.function.subs(problem.x, problem.point)
+        if _finite(height):
+            computation.marks.append(
+                {"x": float(problem.point), "y": float(height), "what": "around"}
+            )
+    x, point = problem.x, problem.point
+    remainder = sp.Order((x - point) ** (problem.order + 1), (x, point))
+    computation.finish(
+        solution.result,
+        solution.summary,
+        f"{latex_of(solution.result)} + {latex_of(remainder)}",
     )
     return computation
 

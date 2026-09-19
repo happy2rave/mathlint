@@ -20,6 +20,7 @@ KIND_LABELS = {
     "tangent": "Tangent line",
     "normal": "Normal line",
     "ode": "Differential equation",
+    "series": "Taylor series",
 }
 
 METHOD_LABELS = {
@@ -35,6 +36,7 @@ METHOD_LABELS = {
     "tangent": "Tangent line",
     "normal": "Normal line",
     "ode": "Differential equation",
+    "series": "Taylor series",
 }
 
 SIGNIFICANT_DIGITS = 10

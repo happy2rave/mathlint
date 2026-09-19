@@ -40,6 +40,11 @@ All notable changes are recorded here. This project follows
   solution is drawn on the graph. Every answer is put back into the equation.
   Implicit differentiation now needs `dy/dx:` with a colon, since
   `dy/dx = ...` is a differential equation.
+- Taylor and Maclaurin series: `taylor ln(x) at 1 order 4`, `maclaurin e^x`.
+  The table of derivatives and their values at the point, each term with its
+  k!, the polynomial in powers of (x - a) with its O(...) remainder, and the
+  general term of the series every course asks you to know. The graph draws
+  the function and its polynomial together.
 - A definite integral's graph shades the area between the curve and the
   x-axis, above the axis and below it in different colours, with the bounds
   marked.

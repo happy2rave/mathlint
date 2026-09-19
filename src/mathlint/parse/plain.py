@@ -151,6 +151,11 @@ class _PlainPrinter(sp.printing.str.StrPrinter):
             return f"1/{self.parenthesize(sp.Pow(expr.base, -exponent), 50)}"
         return super()._print_Pow(expr, rational=rational)
 
+    def _print_factorial(self, expr: sp.factorial) -> str:
+        argument = expr.args[0]
+        text = self._print(argument)
+        return f"{text}!" if argument.is_Atom else f"({text})!"
+
     # e is Euler's number when read, so it is written that way too, not as E
     def _print_Exp1(self, expr: sp.Expr) -> str:
         return "e"

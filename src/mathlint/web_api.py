@@ -70,6 +70,7 @@ def _solve(data: dict) -> dict:
     from .steps.derivatives import looks_like_implicit, looks_like_tangent
     from .steps.limits import looks_like_limit
     from .steps.odes import looks_like_ode
+    from .steps.series import looks_like_series
 
     text = data["text"]
     variable = data.get("variable") or None
@@ -78,6 +79,7 @@ def _solve(data: dict) -> dict:
         or looks_like_tangent(text)
         or looks_like_implicit(text)
         or looks_like_ode(text)
+        or looks_like_series(text)
     )
     if variable is None and "=" in text and not looks_like_inequality(text) and not worked_out:
         parts = split_equations(text)
