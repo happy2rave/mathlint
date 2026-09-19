@@ -148,6 +148,58 @@ Pick what to do with `--method simplify`, `--method expand` or
 `--method factor`. From Python it is `mathlint.compute(text)`; answers are exact,
 with a decimal alongside (`result.decimal`) when they differ.
 
+## Inequalities
+
+```console
+$ mathlint solve "x^2 - x - 6 >= 0"
+Solve x^2 - x - 6 >= 0
+======================
+
+1. Start from
+      x^2 - x - 6 >= 0
+
+2. Factor
+      (x - 3)*(x + 2) >= 0
+
+3. The left side can only change sign where a factor is zero: x = -2, x = 3
+
+4. Make a sign chart: one test number in each interval gives the sign of every factor
+          x     | (-inf, -2) | (-2, 3) | (3, inf)
+      ----------+------------+---------+---------
+        x + 2   |     -      |    +    |    +
+        x - 3   |     -      |    -    |    +
+      left side |     +      |    -    |    +
+
+5. Keep the intervals where the left side is positive or zero
+      x <= -2 or x >= 3
+
+x <= -2 or x >= 3, that is (-inf, -2] U [3, inf)
+```
+
+Linear inequalities are solved by balancing both sides, and every time the sign
+turns around (dividing by a negative number, swapping the sides) the step says
+so. Polynomial and rational inequalities get a sign chart — a denominator is
+never multiplied across, because its sign is not known. Absolute values split
+into two inequalities, and `1 < 2x + 3 <= 7` into two that must both hold. The
+web page draws the answer on a number line.
+
+## Graphs and function analysis
+
+On the web page every answer that can be drawn comes with a graph: both sides of
+an equation and where they meet, an inequality's answer shaded, each equation of
+a system, an expression as a function. Drag, scroll or pinch it; it redraws
+itself for the new range.
+
+```bash
+mathlint solve "(x^2 - 1)/(x - 2)" --method analyze
+```
+
+`mathlint.analyze(f)` and "Analyze the function" go through a function the way a
+curve-sketching question does: the domain and what restricts it, intercepts,
+vertical asymptotes and holes, horizontal and oblique asymptotes, where it rises
+and falls with its maxima and minima, where it bends with its inflection points —
+each with its reason, each point marked on the graph.
+
 ## What it checks
 
 - **Expression chains** — algebra, derivatives (`d/dx`), indefinite integrals
