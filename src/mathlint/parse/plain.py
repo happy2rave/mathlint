@@ -141,6 +141,13 @@ class _PlainPrinter(sp.printing.str.StrPrinter):
         simple = (power.is_Symbol or power.is_Integer) and not power.could_extract_minus_sign()
         return f"e^{text}" if simple else f"e^({text})"
 
+    def _print_Pow(self, expr: sp.Pow, rational: bool = False) -> str:
+        # x^(-2) is written as a student writes it: 1/x^2
+        exponent = expr.exp
+        if exponent.is_Rational and exponent.is_negative and exponent != -1:
+            return f"1/{self.parenthesize(sp.Pow(expr.base, -exponent), 50)}"
+        return super()._print_Pow(expr, rational=rational)
+
     # e is Euler's number when read, so it is written that way too, not as E
     def _print_Exp1(self, expr: sp.Expr) -> str:
         return "e"

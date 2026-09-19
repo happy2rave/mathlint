@@ -121,5 +121,11 @@
     "lines": [
       "\\left|2x-1\\right|<5"
     ]
+  },
+  {
+    "name": "Limit",
+    "lines": [
+      "\\lim_{x\\to2}\\frac{x^2-4}{x-2}"
+    ]
   }
 ]

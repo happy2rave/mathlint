@@ -15,6 +15,7 @@ KIND_LABELS = {
     "derivative": "Derivative",
     "integral": "Integral",
     "analysis": "Function analysis",
+    "limit": "Limit",
 }
 
 METHOD_LABELS = {
@@ -25,6 +26,7 @@ METHOD_LABELS = {
     "derivative": "Differentiate",
     "integral": "Integrate",
     "analyze": "Analyze the function",
+    "limit": "Limit",
 }
 
 SIGNIFICANT_DIGITS = 10
@@ -96,7 +98,7 @@ class Computation(Solution):
 
 def approximate(value: sp.Expr, shown: str) -> tuple[str | None, str | None]:
     """A decimal for ``value`` when it says something the exact answer does not."""
-    if value is None or value.free_symbols:
+    if value is None or value.free_symbols or value.has(sp.nan, sp.zoo, sp.oo, -sp.oo):
         return None, None
     try:
         number = sp.N(value, SIGNIFICANT_DIGITS + 5)

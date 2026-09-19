@@ -6,6 +6,19 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+### Added
+
+- Limits with steps: `lim x->2 (x^2 - 4)/(x - 2)`, `lim x->0+ 1/x`,
+  `lim x->oo ...`, or `\lim_{x\to 2}` from the editor. Putting the number in
+  comes first; 0/0 is rewritten by factoring and cancelling, by the conjugate of
+  a square root, or by L'Hopital's rule; at infinity the top and bottom are
+  divided by the highest power of the bottom; a number over 0 is looked at from
+  each side, and a limit whose sides disagree is said not to exist.
+
+### Changed
+
+- Plain-text output writes negative powers as fractions: `1/x^2`, not `x^(-2)`.
+
 ## [0.8.0] — 2026-09-19
 
 Inequalities and graphs.

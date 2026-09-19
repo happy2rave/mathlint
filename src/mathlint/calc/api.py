@@ -7,6 +7,7 @@ import sympy as sp
 from ..errors import MathlintError, ParseError, UnsupportedError
 from ..parse.plain import latex_of, parse_expression, read_as
 from ..steps.calculus import differentiate_solution, integrate_solution
+from ..steps.limits import DOES_NOT_EXIST, limit_solution, looks_like_limit, parse_limit
 from ..steps.solution import SolutionStep
 from .arithmetic import value_of, work_out
 from .computation import Computation
@@ -27,6 +28,8 @@ def compute(text: str, method: str | None = None) -> Computation:
     multiplied out, a polynomial without brackets is factored, and anything
     else is simplified.
     """
+    if looks_like_limit(text):
+        return _limit(text)
     if "=" in text:
         raise ParseError("this is an equation — use solve for it")
     try:
@@ -102,6 +105,29 @@ def _calculus(text: str) -> Computation | None:
         computation.finish(result, f"{read_as(result)} + C", f"{latex_of(result)} + C")
     else:
         computation.finish(result)
+    return computation
+
+
+def _limit(text: str) -> Computation:
+    problem = parse_limit(text)
+    assert problem is not None
+    solution = limit_solution(problem)
+    computation = Computation(
+        operation="limit",
+        title=solution.title,
+        kind="limit",
+        method="limit",
+        methods=["limit"],
+        letters=sorted(symbol.name for symbol in problem.expression.free_symbols),
+    )
+    computation.steps = list(solution.steps)
+    value = solution.result
+    if value is DOES_NOT_EXIST:
+        computation.finish(value, "does not exist", r"\text{does not exist}")
+    elif value.is_infinite:
+        computation.finish(value, "inf" if value == sp.oo else "-inf", latex_of(value))
+    else:
+        computation.finish(value)
     return computation
 
 

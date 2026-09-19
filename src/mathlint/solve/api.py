@@ -13,6 +13,7 @@ from ..errors import ParseError, UnsupportedError
 from ..parse.latex import latex_to_plain
 from ..parse.plain import parse_expression
 from ..parse.unicode_math import normalize_unicode
+from ..steps.limits import looks_like_limit
 from . import dispatch
 from .classify import classify
 from .core import Equation, Work, show
@@ -43,6 +44,11 @@ def solve(
     Other text without an ``=`` has nothing to solve; it is worked out by
     :func:`mathlint.compute` instead, so one input takes everything.
     """
+    if looks_like_limit(text):
+        # lim x->2 has an arrow, not an inequality: it is worked out, not solved
+        from ..calc import compute
+
+        return compute(text, method)
     if looks_like_inequality(text):
         return solve_inequality(text, method=method, variable=variable)
     if "=" not in text:

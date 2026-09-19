@@ -70,7 +70,9 @@ def _solve(data: dict) -> dict:
 
     text = data["text"]
     variable = data.get("variable") or None
-    if variable is None and "=" in text and not looks_like_inequality(text):
+    if variable is None and "=" in text and not looks_like_inequality(text) and not (
+        text.lstrip().startswith(("lim", "\\lim"))
+    ):
         parts = split_equations(text)
         if len(parts) == 1:
             # a formula with no x: the page asks which letter, rather than guessing

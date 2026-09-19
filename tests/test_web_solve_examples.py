@@ -34,6 +34,7 @@ EXPECTED = {
     "Inequality": "x > -2, that is (-2, inf)",
     "Inequality with a sign chart": "x <= -2 or x >= 3, that is (-inf, -2] U [3, inf)",
     "Absolute-value inequality": "-2 < x < 3, that is (-2, 3)",
+    "Limit": ["4"],
 }
 
 
