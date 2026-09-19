@@ -67,6 +67,12 @@ def test_logarithms_are_combined():
     assert result.steps[1].text.startswith("Combine the logarithms")
 
 
+def test_fractions_that_are_numbers_are_added():
+    steps = mathlint.compute("3/4 + 1/6 + x").steps
+    assert steps[1].text == "Add the numbers"
+    assert steps[1].rendered() == "x + 11/12"
+
+
 def test_nothing_to_do():
     assert texts("x^2 + 1")[-1] == "This is already as simple as it gets"
 

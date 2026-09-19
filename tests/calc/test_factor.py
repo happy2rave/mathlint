@@ -52,6 +52,12 @@ def test_an_expanded_polynomial_is_factored_by_default():
     assert mathlint.compute("(x+1)^2 - 4").methods == ["expand", "factor", "simplify"]
 
 
+def test_only_a_whole_number_coming_out_counts_as_factoring():
+    assert mathlint.compute("6x + 9").method == "factor"
+    assert "factor" not in mathlint.compute("2x + 1/2").methods
+    assert "factor" not in mathlint.compute("-x - 1").methods
+
+
 def test_common_factor_first():
     assert texts("3x^3 - 12x")[1] == "Take out the common factor 3*x"
 

@@ -39,6 +39,11 @@ def can_factor(expression: sp.Expr) -> bool:
     symbols = expression.free_symbols
     if not symbols or not expression.is_polynomial(*symbols):
         return False
+    constant, factors = sp.factor_list(expression)
+    # only a number comes out: 3(2x + 3) is factoring, (4x + 1)/2 and -(x + 1) are not
+    only_a_number = sum(count for _, count in factors) == 1
+    if only_a_number and (not constant.is_Integer or abs(constant) == 1):
+        return False
     return _differs(sp.factor(expression), expression)
 
 
