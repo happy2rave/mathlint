@@ -16,6 +16,9 @@ KIND_LABELS = {
     "integral": "Integral",
     "analysis": "Function analysis",
     "limit": "Limit",
+    "implicit": "Implicit differentiation",
+    "tangent": "Tangent line",
+    "normal": "Normal line",
 }
 
 METHOD_LABELS = {
@@ -27,6 +30,9 @@ METHOD_LABELS = {
     "integral": "Integrate",
     "analyze": "Analyze the function",
     "limit": "Limit",
+    "implicit": "Implicit differentiation",
+    "tangent": "Tangent line",
+    "normal": "Normal line",
 }
 
 SIGNIFICANT_DIGITS = 10
@@ -47,6 +53,8 @@ class Computation(Solution):
     conditions: list[str] = field(default_factory=list)
     #: points worth marking on a graph: {"x", "y", "what"}
     marks: list[dict] = field(default_factory=list)
+    #: curves to draw, when the answer itself is not the function to draw
+    plot: list = field(default_factory=list)
 
     def finish(self, value: sp.Expr, shown: str | None = None, shown_latex: str | None = None):
         self.answer = value

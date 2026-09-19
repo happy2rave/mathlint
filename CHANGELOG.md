@@ -17,6 +17,11 @@ All notable changes are recorded here. This project follows
 
 - Keys for limits, infinity and the inequality signs on the keypad's calculus
   tab.
+- Higher derivatives (`d^2/dx^2 x^3 sin x`) one derivative after the other,
+  each with its rules; implicit differentiation (`dy/dx: x^2 + y^2 = 25`) with
+  the chain rule's y' named; tangent and normal lines
+  (`tangent to y = x^2 at x = 1`) through the point and the slope, in
+  point-slope form and solved for y, drawn with the curve on the graph.
 
 ### Changed
 

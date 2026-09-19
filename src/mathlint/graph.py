@@ -38,6 +38,8 @@ def _graph_for(text: str, result) -> dict | None:
         return _inequality(text, result)
     if isinstance(result, SystemSolution):
         return _system(text, result)
+    if isinstance(result, Computation) and result.plot:
+        return _drawn(result)
     if isinstance(result, Computation) and result.kind in ("expression", "analysis"):
         return _expression(result)
     return None
@@ -128,6 +130,16 @@ def _system(text: str, solution) -> dict | None:
                 {"x": float(a), "y": float(b), "label": _pair(float(a), float(b)), "closed": True}
             )
     return _spec(x, curves, marks=marks, vertical=vertical, y_name=str(y))
+
+
+def _drawn(computation) -> dict | None:
+    """Curves the computation chose, such as a curve and its tangent line."""
+    x = sp.Symbol(computation.letters[0])
+    marks = [
+        {"x": p["x"], "y": p["y"], "label": _pair(p["x"], p["y"]), "closed": True}
+        for p in computation.marks
+    ]
+    return _spec(x, computation.plot, marks=marks)
 
 
 def _expression(computation) -> dict | None:

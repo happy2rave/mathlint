@@ -67,12 +67,13 @@ def _solve(data: dict) -> dict:
     from .solve import parse_equation, solve
     from .solve.inequality import looks_like_inequality
     from .solve.system import split_equations
+    from .steps.derivatives import looks_like_implicit, looks_like_tangent
+    from .steps.limits import looks_like_limit
 
     text = data["text"]
     variable = data.get("variable") or None
-    if variable is None and "=" in text and not looks_like_inequality(text) and not (
-        text.lstrip().startswith(("lim", "\\lim"))
-    ):
+    worked_out = looks_like_limit(text) or looks_like_tangent(text) or looks_like_implicit(text)
+    if variable is None and "=" in text and not looks_like_inequality(text) and not worked_out:
         parts = split_equations(text)
         if len(parts) == 1:
             # a formula with no x: the page asks which letter, rather than guessing
