@@ -69,8 +69,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="how to print the solution (default: text)",
     )
 
-    solve = subcommands.add_parser("solve", help="solve an equation, step by step")
-    solve.add_argument("equation", help='the equation, such as "x^2 - 5x + 6 = 0"')
+    solve = subcommands.add_parser(
+        "solve",
+        help="solve an equation, or work out anything else, step by step",
+    )
+    solve.add_argument(
+        "equation",
+        help='an equation such as "x^2 - 5x + 6 = 0", or something to work out: '
+        '"1/2 + 1/3", "(x + 2)^2", "x^2 - 9", "d/dx x^2 sin x"',
+    )
     solve.add_argument(
         "--for",
         dest="variable",
@@ -79,7 +86,8 @@ def build_parser() -> argparse.ArgumentParser:
     solve.add_argument(
         "--method",
         help="how to solve it, when there is a choice (for a quadratic: factoring, "
-        "formula, completing-square, square-root)",
+        "formula, completing-square, square-root; for an expression: simplify, expand, "
+        "factor)",
     )
     solve.add_argument(
         "--format",

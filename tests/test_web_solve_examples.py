@@ -25,6 +25,11 @@ EXPECTED = {
     "System of two equations": [{"x": "2", "y": "5"}],
     "System of three equations": [{"x": "1", "y": "2", "z": "3"}],
     "Formula (solve for a letter)": None,
+    "Arithmetic with fractions": ["10"],
+    "Expand brackets": ["6*x^2 + 5*x - 4"],
+    "Factor": ["(x + 1)*(2*x + 3)"],
+    "Simplify a fraction": ["(x - 2)/(x - 1)"],
+    "Derivative": ["x*(x*cos(x) + 2*sin(x))"],
 }
 
 

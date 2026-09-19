@@ -7,6 +7,7 @@ import re
 import sympy as sp
 from sympy.core.parameters import distribute
 
+from ..calc.computation import Computation
 from ..document import _PLAIN_EQUALS
 from ..errors import ParseError, UnsupportedError
 from ..parse.latex import latex_to_plain
@@ -25,7 +26,7 @@ _FOR_SUFFIX = re.compile(r"\s+for\s+([A-Za-z][A-Za-z0-9_]*)\s*$", re.IGNORECASE)
 
 def solve(
     text: str, method: str | None = None, variable: str | None = None
-) -> EquationSolution | SystemSolution:
+) -> EquationSolution | SystemSolution | Computation:
     """Solve an equation, or a system of equations, showing every step.
 
     One equation gives an :class:`EquationSolution`; several (one per line,
@@ -36,7 +37,14 @@ def solve(
     With several letters in one equation, ``variable`` (or ``"... for t"`` at the
     end of the text) says which one to solve for; the others are treated as known.
     ``x`` is chosen when it is there and nothing else is asked for.
+
+    Text without an ``=`` has nothing to solve; it is worked out by
+    :func:`mathlint.compute` instead, so one input takes everything.
     """
+    if "=" not in text:
+        from ..calc import compute
+
+        return compute(text, method)
     suffix = _FOR_SUFFIX.search(text)
     if suffix:
         variable = variable or suffix.group(1)

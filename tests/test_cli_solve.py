@@ -32,9 +32,23 @@ def test_a_method_that_does_not_apply_exits_with_two(capsys):
     assert "does not apply" in capsys.readouterr().err
 
 
-def test_no_equals_sign_exits_with_two(capsys):
-    assert main(["solve", "2x + 3"]) == 2
-    assert "'=' sign" in capsys.readouterr().err
+def test_no_equals_sign_works_it_out(capsys):
+    assert main(["solve", "1/2 + 1/3"]) == 0
+    output = capsys.readouterr().out
+    assert "common denominator 6" in output
+    assert "Answer: 5/6 (about 0.8333333333)" in output
+
+
+def test_expand_from_the_command_line(capsys):
+    assert main(["solve", "(x + 2)^2", "--method", "expand"]) == 0
+    output = capsys.readouterr().out
+    assert "Answer: x^2 + 4*x + 4" in output
+    assert "--method simplify" in output
+
+
+def test_nothing_to_read_exits_with_two(capsys):
+    assert main(["solve", "2 +"]) == 2
+    assert "mathlint:" in capsys.readouterr().err
 
 
 def test_solve_a_formula_for_a_letter(capsys):

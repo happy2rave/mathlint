@@ -553,6 +553,12 @@ math-field.bound {
   font-size: 1.15rem;
 }
 
+.answer-note {
+  margin: 0.35rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
 .answer.none {
   border-left-color: var(--mark-unsure);
   background: color-mix(in srgb, var(--mark-unsure) 7%, transparent);

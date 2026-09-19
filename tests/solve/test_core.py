@@ -47,9 +47,15 @@ def test_verify_rejects_division_by_zero():
     assert any("denominator" in step.text for step in solution.steps)
 
 
-def test_equation_needs_an_equals_sign():
-    with pytest.raises(mathlint.ParseError):
-        mathlint.solve("x + 1")
+def test_without_an_equals_sign_it_is_worked_out_instead():
+    assert mathlint.solve("x + 1 + x").answer_plain == "2*x + 1"
+
+
+def test_parse_equation_needs_an_equals_sign():
+    from mathlint.solve import parse_equation
+
+    with pytest.raises(mathlint.ParseError, match="'=' sign"):
+        parse_equation("x + 1")
 
 
 def test_several_letters_without_x_need_a_chosen_letter():

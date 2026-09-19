@@ -59,10 +59,47 @@ def test_a_formula_solved_for_the_chosen_letter():
     assert reply["result"]["kind_label"] == "Formula, solved for t"
 
 
-def test_solve_without_an_equals_sign_explains_itself():
+def test_solve_without_an_equals_sign_works_it_out():
     reply = call("solve", text="x^2 - 5x + 6")
+    assert reply["ok"] is True
+    assert reply["result"]["kind_label"] == "Expression"
+    assert reply["result"]["method"] == "factor"
+    assert reply["result"]["variable"] is None
+
+
+def test_arithmetic_on_the_solve_tab():
+    reply = call("solve", text=r"\frac{1}{2}+\frac{1}{3}")
+    assert reply["result"]["answer_latex"] == r"\frac{5}{6}"
+    assert reply["result"]["decimal"] == "0.8333333333"
+
+
+def test_an_expression_with_several_letters_does_not_ask_for_one():
+    reply = call("solve", text="a^2 - b^2")
+    assert "needs_letter" not in reply["result"]
+    assert reply["result"]["answer_text"] == "Answer: (a - b)*(a + b)"
+
+
+def test_choosing_what_to_do_with_an_expression():
+    reply = call("solve", text="(x + 2)^2", method="factor")
     assert reply["ok"] is False
-    assert "'=' sign" in reply["error"]
+    assert "does not apply" in reply["error"]
+    reply = call("solve", text="x^2 - 9", method="simplify")
+    assert reply["result"]["method"] == "simplify"
+
+
+def test_a_derivative_on_the_solve_tab():
+    reply = call("solve", text=r"\frac{d}{dx}\left(x^2\sin x\right)")
+    assert reply["result"]["kind_label"] == "Derivative"
+    assert reply["result"]["answers"] == ["x*(x*cos(x) + 2*sin(x))"]
+
+
+def test_an_integral_on_the_solve_tab():
+    reply = call("solve", text=r"\int x e^{x}\,dx")
+    assert reply["result"]["kind_label"] == "Integral"
+    assert reply["result"]["answer_latex"].endswith("+ C")
+    reply = call("solve", text=r"\int_0^1 x^2\,dx")
+    assert reply["result"]["answers"] == ["1/3"]
+    assert reply["result"]["decimal"] == "0.3333333333"
 
 
 def test_unknown_request():

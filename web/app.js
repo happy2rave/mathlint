@@ -339,7 +339,10 @@ async function solve(method = null) {
   // one line is an equation; several lines are a system
   const text = solveSheet.getText();
   if (!text) {
-    renderFailure(solved, "Type an equation first — for example x^2 - 5x + 6 = 0.");
+    renderFailure(
+      solved,
+      "Type something first — an equation like x^2 - 5x + 6 = 0, or something to work out like 1/2 + 1/3."
+    );
     return;
   }
   const outcome = await run(
@@ -397,17 +400,27 @@ function renderSolved(solution) {
   renderMath(answer, solution.answer_latex, true);
   solved.append(answer);
 
-  if (solution.letters && solution.letters.length > 1) {
+  // what the answer is only true for, such as x != -2 after cancelling (x + 2)
+  if (solution.conditions && solution.conditions.length) {
+    const note = document.createElement("p");
+    note.className = "answer-note";
+    note.textContent = "for " + solution.conditions.join(", ").replaceAll("!=", "≠");
+    solved.append(note);
+  }
+
+  // a letter to solve for only makes sense for an equation
+  if (solution.variable && solution.letters && solution.letters.length > 1) {
     solved.append(letterChips(solution.letters, solution.variable, "Solve for"));
   }
 
   if (solution.methods.length > 1) {
+    const verb = solution.variable || solution.unknowns ? "Solve it by" : "Method";
     const chips = document.createElement("div");
     chips.className = "method-chips";
     chips.setAttribute("role", "group");
-    chips.setAttribute("aria-label", "Solve it by");
+    chips.setAttribute("aria-label", verb);
     const label = document.createElement("span");
-    label.textContent = "Solve it by";
+    label.textContent = verb;
     chips.append(label);
     for (const method of solution.methods) {
       const chip = document.createElement("button");
@@ -543,7 +556,7 @@ async function boot() {
     onEnter: () => solve(),
     // a new equation means the letter has to be chosen again
     onChange: () => (solveVariable = null),
-    lineLabel: "An equation",
+    lineLabel: "An equation or expression",
   });
   $("add-equation").addEventListener("click", () => solveSheet.addLine());
   expressionField.value = String.raw`x^2\sin x`;

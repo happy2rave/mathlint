@@ -12,6 +12,8 @@ from ..steps.solution import Solution
 KIND_LABELS = {
     "arithmetic": "Arithmetic",
     "expression": "Expression",
+    "derivative": "Derivative",
+    "integral": "Integral",
 }
 
 METHOD_LABELS = {
@@ -19,6 +21,8 @@ METHOD_LABELS = {
     "simplify": "Simplify",
     "expand": "Expand",
     "factor": "Factor",
+    "derivative": "Differentiate",
+    "integral": "Integrate",
 }
 
 SIGNIFICANT_DIGITS = 10

@@ -110,6 +110,44 @@ solution.answers      # [6] - x = 1 was rejected in the check
 solution.methods      # the methods that apply; pass method="..." to pick one
 ```
 
+## Work anything out
+
+Anything without an equals sign is worked out instead of solved, with the same
+command and on the same tab of the web page:
+
+```console
+$ mathlint solve "1/2 + 1/3"
+Calculate 1/2 + 1/3
+===================
+
+1. Start from
+      1/2 + 1/3
+
+2. Write the fractions over the common denominator 6
+      3/6 + 2/6
+
+3. The denominators are the same, so add the numerators
+      (3 + 2)/6
+
+4. Add
+      5/6
+
+Answer: 5/6 (about 0.8333333333)
+```
+
+| Input | What you get |
+|---|---|
+| Arithmetic | the order of operations one step at a time; fractions, decimals, percentages (`20% of 150`), powers, roots (`sqrt(72) = 6 sqrt(2)`), factorials, exact values like `sin(pi/6)` |
+| Brackets, `(2x - 1)(3x + 4)` | expanded: special products by name, bracket by bracket, then like terms |
+| A polynomial, `2x^2 + 5x + 3` | factored: common factor, difference of squares, cubes, perfect squares, two numbers that multiply to c and add to b, splitting the middle term, grouping, the factor theorem |
+| A fraction, `(x^2 - 4)/(x^2 + x - 2)` | simplified: common denominator, factor, cancel, and the values it must not take (`x != -2`) |
+| Logarithms, powers, trigonometry | simplified with the rule named at each step |
+| `d/dx ...`, `int ... dx` | the derivative or integral, step by step |
+
+Pick what to do with `--method simplify`, `--method expand` or
+`--method factor`. From Python it is `mathlint.compute(text)`; answers are exact,
+with a decimal alongside (`result.decimal`) when they differ.
+
 ## What it checks
 
 - **Expression chains** — algebra, derivatives (`d/dx`), indefinite integrals

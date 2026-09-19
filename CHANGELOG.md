@@ -37,6 +37,11 @@ All notable changes are recorded here. This project follows
   simple as they get say so.
 - High powers of a bracket, such as `(x + 1)^10`, are expanded with the
   binomial theorem in one step.
+- One input for everything: `mathlint solve`, `mathlint.solve` and the Solve
+  tab work out anything without an equals sign instead of refusing it, and
+  send `d/dx ...` and `int ... dx` to the derivative and integral steps. The
+  Solve tab has examples of each, offers Simplify, Expand and Factor as
+  methods, and shows the values an answer must not take.
 
 ## [0.6.0] — 2026-09-18
 
