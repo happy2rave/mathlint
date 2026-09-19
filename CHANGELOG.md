@@ -21,6 +21,13 @@ All notable changes are recorded here. This project follows
   bracket, two brackets term by term, like terms collected inside a bracket
   before it is multiplied out, and at the end. A product like `x^3 x^5` or
   `2x + 3x` is first shown as written, with the rule that tidies it.
+- Factoring with steps, in the order a teacher checks: a common factor (or a
+  minus sign), a difference of squares, a sum or difference of cubes, a perfect
+  square, two numbers that multiply to c and add to b, splitting the middle
+  term when x^2 has a number in front, a quadratic in disguise
+  (`x^4 - 5x^2 + 4`), grouping in pairs, and the factor theorem for higher
+  powers. Every new factor is factored again. A polynomial without brackets is
+  factored by default.
 
 ## [0.6.0] — 2026-09-18
 
