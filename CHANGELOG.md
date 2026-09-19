@@ -15,6 +15,14 @@ All notable changes are recorded here. This project follows
   is checked. Double inequalities like `1 < 2x + 3 <= 7` are split in two and
   intersected. The answer comes in inequality form (`x > -2`), in interval
   notation (`(-2, inf)`), and as the pieces of a number line.
+- Sign charts for polynomial and rational inequalities: everything moved to
+  one side (never multiplying by a denominator, whose sign is unknown), a
+  negative leading number turned positive by flipping the sign, the side
+  factored, and a table with one test number per interval and one row per
+  factor. Zeros of a denominator are never part of the answer.
+- Absolute-value inequalities: the absolute value on its own, then
+  `|A| < b` as `-b < A < b` and `|A| > b` as `A < -b or A > b`; a negative or
+  zero bound is explained without any algebra.
 
 ## [0.7.0] — 2026-09-19
 

@@ -251,7 +251,12 @@ def classify(inequality: Inequality, variable: sp.Symbol) -> str:
 
 
 def methods_for(kind: str) -> list[str]:
-    return {"linear": ["balance"]}.get(kind, ["sympy"])
+    return {
+        "linear": ["balance", "sign-chart"],
+        "polynomial": ["sign-chart"],
+        "rational": ["sign-chart"],
+        "absolute": ["cases"],
+    }.get(kind, ["sympy"])
 
 
 # --- linear: the balance method --------------------------------------------------------------
@@ -435,8 +440,22 @@ def _expected(inequalities: list[Inequality], variable: sp.Symbol) -> sp.Set | N
         return None
 
 
+def _sign_chart(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.Set:
+    from .signchart import sign_chart
+
+    return sign_chart(inequality, variable, steps)
+
+
+def _cases(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.Set:
+    from .signchart import absolute_cases
+
+    return absolute_cases(inequality, variable, steps)
+
+
 SOLVERS = {
     "balance": _balance,
+    "sign-chart": _sign_chart,
+    "cases": _cases,
     "sympy": _computer,
 }
 
