@@ -45,6 +45,7 @@ _LOCAL_FILES = (
     "app.js",
     "editor.js",
     "keypad.js",
+    "numberline.js",
     "engine.js",
     "worker.js",
     "examples.json",

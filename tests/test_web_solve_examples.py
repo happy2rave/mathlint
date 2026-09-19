@@ -30,6 +30,10 @@ EXPECTED = {
     "Factor": ["(x + 1)*(2*x + 3)"],
     "Simplify a fraction": ["(x - 2)/(x - 1)"],
     "Derivative": ["x*(x*cos(x) + 2*sin(x))"],
+    # inequalities have no list of answers: their answer is a set
+    "Inequality": "x > -2, that is (-2, inf)",
+    "Inequality with a sign chart": "x <= -2 or x >= 3, that is (-inf, -2] U [3, inf)",
+    "Absolute-value inequality": "-2 < x < 3, that is (-2, 3)",
 }
 
 
@@ -46,5 +50,8 @@ def test_solve_example(example):
         # no x: the page asks which letter, and every letter must then solve
         for letter in "atuv":
             assert mathlint.solve(text, variable=letter).answers
+        return
+    if isinstance(expected, str):
+        assert mathlint.solve(text).to_dict()["answer_text"] == expected
         return
     assert mathlint.solve(text).to_dict()["answers"] == expected

@@ -103,5 +103,23 @@
     "lines": [
       "\\frac{d}{dx}\\left(x^2\\sin x\\right)"
     ]
+  },
+  {
+    "name": "Inequality",
+    "lines": [
+      "3-2x<7"
+    ]
+  },
+  {
+    "name": "Inequality with a sign chart",
+    "lines": [
+      "x^2-x-6\\ge0"
+    ]
+  },
+  {
+    "name": "Absolute-value inequality",
+    "lines": [
+      "\\left|2x-1\\right|<5"
+    ]
   }
 ]

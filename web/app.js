@@ -1,6 +1,7 @@
 import { MathSheet, configureField, displayLatex } from "./editor.js";
 import { Engine } from "./engine.js";
 import { Keypad } from "./keypad.js";
+import { numberLine } from "./numberline.js";
 
 const STORAGE_KEY = "mathlint:last-solution";
 
@@ -441,6 +442,18 @@ function renderSolved(solution) {
   answer.dataset.plain = solution.answer_text;
   renderMath(answer, solution.answer_latex, true);
   solved.append(answer);
+
+  // an inequality: the same answer in interval notation, and on a number line
+  if (solution.interval_latex && solution.number_line && !solution.everything) {
+    const intervals = document.createElement("p");
+    intervals.className = "answer-note";
+    intervals.dataset.plain = solution.interval_text;
+    renderMath(intervals, String.raw`\text{that is } ` + solution.interval_latex);
+    solved.append(intervals);
+    if (solution.number_line.intervals.length || solution.number_line.points.length) {
+      solved.append(numberLine(solution.number_line, renderMath));
+    }
+  }
 
   // the exact answer stays first; the decimal is what a calculator would say
   if (solution.decimal_latex) {

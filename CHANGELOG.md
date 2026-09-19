@@ -23,6 +23,11 @@ All notable changes are recorded here. This project follows
 - Absolute-value inequalities: the absolute value on its own, then
   `|A| < b` as `-b < A < b` and `|A| > b` as `A < -b or A > b`; a negative or
   zero bound is explained without any algebra.
+- The Solve tab draws the answer of an inequality on a number line — shaded
+  intervals, filled circles for ends that belong to the answer, open circles
+  for ends that do not, arrows for intervals that go on forever — under the
+  answer and its interval notation. Sign charts show as tables. There are
+  examples of each kind of inequality.
 
 ## [0.7.0] — 2026-09-19
 

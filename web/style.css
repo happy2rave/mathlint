@@ -553,6 +553,30 @@ math-field.bound {
   font-size: 1.15rem;
 }
 
+/* the answer of an inequality on a number line */
+.number-line {
+  position: relative;
+  margin: 0.6rem 0 0;
+  max-width: 36rem;
+}
+.number-line svg { display: block; width: 100%; height: auto; overflow: visible; }
+.number-line .axis { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; }
+.number-line .tick { stroke: var(--ink-soft); stroke-width: 1; }
+.number-line .tick-label { fill: var(--ink-soft); font-size: 12px; text-anchor: middle; }
+.number-line .answer-band { stroke: var(--pen); stroke-width: 5; stroke-linecap: butt; }
+.number-line .answer-arrow { stroke: var(--pen); stroke-width: 3; fill: none; }
+.number-line .end { stroke: var(--pen); stroke-width: 2.5; }
+.number-line .end.closed { fill: var(--pen); }
+.number-line .end.open { fill: var(--paper); }
+.number-line-labels { position: relative; height: 1.4rem; margin-top: -1.2rem; }
+.number-line-labels > span {
+  position: absolute;
+  transform: translateX(-50%);
+  color: var(--ink);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
 /* the answer while you type, before pressing Solve */
 .live-answer {
   margin: 0.4rem 0 0;
