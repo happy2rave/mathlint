@@ -349,7 +349,8 @@ a { color: var(--pen); }
   color: var(--pen);
 }
 
-.worked-math { overflow-x: auto; padding: 0.15rem 0; }
+/* sideways scrolling for long math, but never a scrollbar for a tall fraction */
+.worked-math { overflow-x: auto; overflow-y: hidden; padding: 0.3rem 0; }
 
 input[type="text"] {
   font-family: "Spline Sans Mono", ui-monospace, monospace;
