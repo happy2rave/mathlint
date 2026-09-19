@@ -26,7 +26,7 @@ real problems with known answers — runs on every commit.
 | v0.6 | Done: Many unknowns | Systems of equations, and "solve this formula for y" |
 | v0.7 | Done: Calculator | Arithmetic and simplifying with steps, a live answer as you type |
 | v0.8 | Done: Inequalities and graphs | Sign charts, interval answers, interactive graphs, function analysis |
-| v0.9 | Calculus, complete | Limits, implicit derivatives, harder integrals, differential equations |
+| v0.9 | Done: Calculus, complete | Limits, implicit derivatives, harder integrals, differential equations |
 | v0.10 | Premium, free | "Why?" on every step, step-by-step reveal, animated steps, tutor mode, practice |
 | v0.11 | App quality | Installable, offline, history, speed, accessibility, translations |
 | v1.0 | App stores | Android and iOS apps from the same code |
@@ -87,11 +87,14 @@ real problems with known answers — runs on every commit.
 
 ### v0.9 — Calculus, complete
 
-Limits with steps (substitution, factoring, conjugates, L'Hôpital, limits at
-infinity); implicit and higher-order derivatives, tangent lines; partial
-fractions and trigonometric substitution in full; area pictures; separable,
-first-order linear and constant-coefficient second-order differential
-equations; Taylor series.
+- Limits: substitution, factoring, conjugates, L'Hôpital, limits at infinity,
+  one-sided limits and limits that do not exist.
+- Higher-order and implicit derivatives; tangent and normal lines.
+- Partial fractions and trigonometric substitution in full; the area of a
+  definite integral on the graph.
+- Separable, first-order linear and constant-coefficient second-order
+  differential equations, with initial conditions.
+- Taylor and Maclaurin series with their general terms.
 
 ### v0.10 — Premium, free
 

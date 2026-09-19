@@ -6,6 +6,10 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-09-19
+
+Calculus, complete.
+
 ### Added
 
 - Limits with steps: `lim x->2 (x^2 - 4)/(x - 2)`, `lim x->0+ 1/x`,
@@ -302,7 +306,8 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.9.0
 [0.8.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.8.0
 [0.7.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.7.0
 [0.6.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.6.0
