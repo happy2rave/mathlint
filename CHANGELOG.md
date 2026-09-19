@@ -22,6 +22,18 @@ All notable changes are recorded here. This project follows
   the chain rule's y' named; tangent and normal lines
   (`tangent to y = x^2 at x = 1`) through the point and the slope, in
   point-slope form and solved for y, drawn with the curve on the graph.
+- Partial fractions in full: polynomial division when the top is not smaller,
+  the bottom factored, the fraction written with unknown numbers on top, the
+  numbers found by putting in the roots or by comparing coefficients, and each
+  piece integrated, with `ln|x - 1|` rather than `ln(x - 1)`.
+- Trigonometric substitution in full for `sqrt(a^2 - x^2)`, `sqrt(a^2 + x^2)`
+  and `sqrt(x^2 - a^2)`: the substitution and its `dx`, the integral in theta,
+  and the way back to x through the right triangle. Every answer from either
+  method is differentiated back before it is shown.
+
+### Fixed
+
+- Integration steps showed SymPy's internal `_u` for the substituted variable.
 
 ### Changed
 

@@ -132,7 +132,10 @@ class _PlainPrinter(sp.printing.str.StrPrinter):
 
     # mathlint reads log as the natural logarithm, so it writes it as ln too
     def _print_log(self, expr: sp.log) -> str:
-        return f"ln({self._print(expr.args[0])})"
+        argument = expr.args[0]
+        if isinstance(argument, sp.Abs):
+            return f"ln|{self._print(argument.args[0])}|"
+        return f"ln({self._print(argument)})"
 
     def _print_exp(self, expr: sp.exp) -> str:
         power = expr.args[0]

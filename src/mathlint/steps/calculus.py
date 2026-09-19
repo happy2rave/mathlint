@@ -189,10 +189,11 @@ def integrate_solution(
     )
     solution.add("Start from", expression=integral)
 
-    rule = mi.integral_steps(expression, variable)
-    _explain(rule, solution)
-
-    antiderivative = sp.simplify(mi.manualintegrate(expression, variable))
+    antiderivative = _written_out(expression, variable, solution)
+    if antiderivative is None:
+        rule = mi.integral_steps(expression, variable)
+        _explain(rule, solution)
+        antiderivative = sp.simplify(mi.manualintegrate(expression, variable))
     if antiderivative.has(sp.Integral):
         antiderivative = sp.simplify(sp.integrate(expression, variable))
         solution.add(
@@ -226,6 +227,28 @@ def integrate_solution(
     return solution
 
 
+def _written_out(expression: sp.Expr, variable: sp.Symbol, solution: Solution):
+    """Partial fractions or a trigonometric substitution, in full, when one fits."""
+    from .integration_methods import differentiates_back, partial_fractions, trig_substitution
+
+    for method in (partial_fractions, trig_substitution):
+        mark = len(solution.steps)
+        try:
+            antiderivative = method(expression, variable, solution)
+        except (NotImplementedError, ValueError, TypeError, ZeroDivisionError):
+            antiderivative = None
+        if antiderivative is not None and differentiates_back(
+            antiderivative, expression, variable
+        ):
+            return antiderivative
+        del solution.steps[mark:]
+    return None
+
+
+def _add(solution: Solution, text: str, expression: sp.Expr | None = None) -> None:
+    solution.add(text, expression=_undummy(expression))
+
+
 def _explain(rule, solution: Solution, depth: int = 0) -> None:
     """Turn one of SymPy's integration rules into a sentence, and recurse."""
     if depth > 8 or len(solution.steps) > MAX_STEPS:
@@ -237,13 +260,13 @@ def _explain(rule, solution: Solution, depth: int = 0) -> None:
         return
 
     if isinstance(rule, mi.AddRule):
-        solution.add("Integrate term by term", expression=rule.integrand)
+        _add(solution, "Integrate term by term", expression=rule.integrand)
         for substep in rule.substeps:
             _explain(substep, solution, depth + 1)
         return
 
     if isinstance(rule, mi.ConstantTimesRule):
-        solution.add(
+        _add(solution, 
             f"Pull the constant {_show(rule.constant)} out in front",
             expression=rule.constant * sp.Integral(rule.other, rule.variable),
         )
@@ -252,7 +275,7 @@ def _explain(rule, solution: Solution, depth: int = 0) -> None:
 
     if isinstance(rule, mi.URule):
         derivative = sp.diff(rule.u_func, rule.variable)
-        solution.add(
+        _add(solution, 
             f"Substitute u = {_show(rule.u_func)}, so du = {_show(derivative)} d{rule.variable}",
             expression=rule.integrand,
         )
@@ -260,7 +283,7 @@ def _explain(rule, solution: Solution, depth: int = 0) -> None:
         return
 
     if isinstance(rule, mi.PartsRule):
-        solution.add(
+        _add(solution, 
             f"Integration by parts: int u dv = u v - int v du, with u = {_show(rule.u)} "
             f"and dv = {_show(rule.dv)} d{rule.variable}",
             expression=rule.integrand,
@@ -270,7 +293,7 @@ def _explain(rule, solution: Solution, depth: int = 0) -> None:
         return
 
     if isinstance(rule, mi.CyclicPartsRule):
-        solution.add(
+        _add(solution, 
             "Integration by parts twice brings the original integral back, so move it "
             "to the left-hand side and solve for it",
             expression=rule.integrand,
@@ -278,25 +301,25 @@ def _explain(rule, solution: Solution, depth: int = 0) -> None:
         return
 
     if isinstance(rule, mi.RewriteRule):
-        solution.add(f"Rewrite it as {_show(rule.rewritten)}", expression=rule.rewritten)
+        _add(solution, f"Rewrite it as {_show(rule.rewritten)}", expression=rule.rewritten)
         _explain(rule.substep, solution, depth + 1)
         return
 
     if isinstance(rule, mi.PiecewiseRule):
-        solution.add("This splits into cases; here is the main one", expression=rule.integrand)
+        _add(solution, "This splits into cases; here is the main one", expression=rule.integrand)
         if rule.subfunctions:
             _explain(rule.subfunctions[0][0], solution, depth + 1)
         return
 
     if isinstance(rule, mi.DontKnowRule):
-        solution.add(
+        _add(solution, 
             "There is no standard by-hand method for this integrand",
             expression=rule.integrand,
         )
         return
 
     if name in _SPECIAL_FUNCTIONS:
-        solution.add(
+        _add(solution, 
             "This integrand has no elementary antiderivative — the answer needs the "
             f"{_SPECIAL_FUNCTIONS[name]}, which is not something you work out by hand",
             expression=_evaluate(rule),
@@ -306,7 +329,7 @@ def _explain(rule, solution: Solution, depth: int = 0) -> None:
     text = _SIMPLE_RULES.get(name)
     if text is None:
         text = f"Apply the standard {_spaced(name)}"
-    solution.add(text, expression=_evaluate(rule))
+    _add(solution, text, expression=_evaluate(rule))
 
 
 #: Rules whose answers are written with special functions, not elementary ones.
@@ -353,6 +376,14 @@ def _evaluate(rule) -> sp.Expr | None:
         return sp.simplify(rule.eval())
     except Exception:  # pragma: no cover - a rule that cannot evaluate on its own
         return None
+
+
+def _undummy(expression: sp.Expr | None) -> sp.Expr | None:
+    """SymPy's substitution variable is a Dummy printed as _u; write it as u."""
+    if expression is None:
+        return None
+    dummies = expression.atoms(sp.Dummy)
+    return expression.xreplace({dummy: sp.Symbol(dummy.name.lstrip("_")) for dummy in dummies})
 
 
 def _spaced(name: str) -> str:
