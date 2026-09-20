@@ -504,7 +504,7 @@ function renderSolved(solution) {
   const heading = document.createElement("h2");
   heading.textContent = "Steps";
   solved.append(heading);
-  solution.steps.forEach((step, index) => solved.append(workedStep(step, index)));
+  renderLearningSteps(solved, solution);
 }
 
 function graphSection(spec) {
@@ -573,8 +573,188 @@ function workedStep(step, index) {
     body.append(math);
   }
 
+  if (step.why) body.append(whyDetails(step.why));
+
   row.append(body);
   return row;
+}
+
+function whyDetails(why) {
+  const details = document.createElement("details");
+  details.className = "step-why";
+  const summary = document.createElement("summary");
+  summary.textContent = "Why?";
+  details.append(summary);
+
+  const entries = [
+    ["Rule", why.rule],
+    ["Example", why.example],
+    ["Common mistake", why.mistake],
+  ];
+  for (const [label, value] of entries) {
+    const paragraph = document.createElement("p");
+    const heading = document.createElement("strong");
+    heading.textContent = label + ": ";
+    paragraph.append(heading, value);
+    details.append(paragraph);
+  }
+  return details;
+}
+
+function tutorText(value) {
+  // MathLive turns a typed "or" into logical-or. The document parser uses the
+  // words "or" to separate several solutions, so keep that intent explicit.
+  return value.replaceAll(String.raw`\lor`, String.raw`\text{ or }`).replaceAll("∨", " or ");
+}
+
+function renderLearningSteps(target, solution) {
+  const steps = solution.steps || [];
+  if (!steps.length) return;
+
+  const learning = document.createElement("section");
+  learning.className = "learning-steps";
+  const toolbar = document.createElement("div");
+  toolbar.className = "learning-toolbar";
+  const progress = document.createElement("p");
+  progress.className = "step-progress";
+  progress.setAttribute("aria-live", "polite");
+
+  const reveal = document.createElement("button");
+  reveal.type = "button";
+  reveal.className = "primary learning-button";
+  reveal.textContent = "Reveal next step";
+  const tryNext = document.createElement("button");
+  tryNext.type = "button";
+  tryNext.className = "text-button learning-button";
+  tryNext.textContent = "Try the next step";
+  const showAll = document.createElement("button");
+  showAll.type = "button";
+  showAll.className = "text-button learning-button";
+  showAll.textContent = "Show all steps";
+  toolbar.append(progress, reveal, tryNext, showAll);
+
+  const rows = document.createElement("div");
+  rows.className = "worked-steps";
+  const elements = steps.map((step, index) => workedStep(step, index));
+  elements.forEach((element) => rows.append(element));
+
+  const tutor = document.createElement("form");
+  tutor.className = "tutor-card";
+  tutor.hidden = true;
+  tutor.setAttribute("aria-label", "Try the next step yourself");
+  const tutorLabel = document.createElement("label");
+  tutorLabel.textContent = "Write a valid next line";
+  const tutorField = document.createElement("math-field");
+  tutorField.setAttribute("aria-label", "Your next line");
+  tutorLabel.append(tutorField);
+  const tutorActions = document.createElement("div");
+  tutorActions.className = "tutor-actions";
+  const checkStep = document.createElement("button");
+  checkStep.type = "submit";
+  checkStep.className = "primary learning-button";
+  checkStep.textContent = "Check my step";
+  const cancelTutor = document.createElement("button");
+  cancelTutor.type = "button";
+  cancelTutor.className = "text-button learning-button";
+  cancelTutor.textContent = "Cancel";
+  tutorActions.append(checkStep, cancelTutor);
+  const feedback = document.createElement("p");
+  feedback.className = "tutor-feedback";
+  feedback.setAttribute("role", "status");
+  feedback.setAttribute("aria-live", "polite");
+  tutor.append(tutorLabel, tutorActions, feedback);
+
+  learning.append(toolbar, tutor, rows);
+  target.append(learning);
+  configureField(tutorField);
+
+  let shown = 1;
+  let tutorTarget = -1;
+
+  function nextMathIndex() {
+    return steps.findIndex((step, index) => index >= shown && (step.math_latex || step.math));
+  }
+
+  function previousMathIndex(index) {
+    for (let previous = index - 1; previous >= 0; previous -= 1) {
+      if (steps[previous].math_latex || steps[previous].math) return previous;
+    }
+    return -1;
+  }
+
+  function update() {
+    elements.forEach((element, index) => (element.hidden = index >= shown));
+    progress.textContent = `Step ${Math.min(shown, steps.length)} of ${steps.length}`;
+    reveal.hidden = shown >= steps.length;
+    showAll.hidden = shown >= steps.length;
+    const next = nextMathIndex();
+    tryNext.hidden = shown >= steps.length || next < 0 || previousMathIndex(next) < 0;
+    if (shown >= steps.length) tutor.hidden = true;
+  }
+
+  function revealThrough(index) {
+    const oldShown = shown;
+    shown = Math.min(steps.length, index + 1);
+    update();
+    for (let current = oldShown; current < shown; current += 1) {
+      const element = elements[current];
+      element.classList.add("step-enter");
+      element.addEventListener("animationend", () => element.classList.remove("step-enter"), {
+        once: true,
+      });
+    }
+  }
+
+  reveal.addEventListener("click", () => revealThrough(shown));
+  showAll.addEventListener("click", () => revealThrough(steps.length - 1));
+  tryNext.addEventListener("click", () => {
+    tutorTarget = nextMathIndex();
+    if (tutorTarget < 0) return;
+    tutor.hidden = false;
+    feedback.textContent = `Aim for step ${tutorTarget + 1}. Any mathematically valid next line counts.`;
+    tutorField.value = "";
+    tutorField.focus();
+  });
+  cancelTutor.addEventListener("click", () => {
+    tutor.hidden = true;
+    tryNext.focus();
+  });
+  tutor.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const attempt = tutorText(tutorField.value.trim());
+    const previous = previousMathIndex(tutorTarget);
+    if (!attempt || tutorTarget < 0 || previous < 0) {
+      feedback.textContent = "Write a complete next line first.";
+      return;
+    }
+
+    checkStep.disabled = true;
+    feedback.textContent = "Checking your step…";
+    const outcome = await engine.call("tutor", {
+      previous: steps[previous].math,
+      expected: steps[tutorTarget].math,
+      attempt,
+    });
+    checkStep.disabled = false;
+    if (!outcome.ok) {
+      feedback.textContent = outcome.error;
+      return;
+    }
+    const checked = outcome.result;
+    if (checked.accepted) {
+      const note = checked.verdict === "WARNING" ? ` ${checked.message}` : "";
+      feedback.textContent = `Yes — that step works.${note}`;
+      revealThrough(tutorTarget);
+      tutor.hidden = true;
+      elements[tutorTarget].tabIndex = -1;
+      elements[tutorTarget].focus();
+      return;
+    }
+    const hint = checked.hints && checked.hints.length ? ` Hint: ${checked.hints[0]}` : "";
+    feedback.textContent = `${checked.message || "That line does not follow yet."}${hint}`;
+  });
+
+  update();
 }
 
 function renderSolution(solution) {
@@ -582,7 +762,7 @@ function renderSolution(solution) {
   const heading = document.createElement("h2");
   heading.textContent = solution.title;
   worked.append(heading);
-  solution.steps.forEach((step, index) => worked.append(workedStep(step, index)));
+  renderLearningSteps(worked, solution);
   if (solution.summary) {
     const summary = document.createElement("p");
     summary.className = "summary";

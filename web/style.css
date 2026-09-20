@@ -352,6 +352,99 @@ a { color: var(--pen); }
 /* sideways scrolling for long math, but never a scrollbar for a tall fraction */
 .worked-math { overflow-x: auto; overflow-y: hidden; padding: 0.3rem 0; }
 
+.learning-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.step-progress {
+  flex: 1 0 100%;
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-size: 0.875rem;
+}
+
+button.learning-button {
+  min-height: 2.75rem;
+  padding-inline: 0.8rem;
+}
+
+.step-why {
+  margin-top: 0.45rem;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.step-why summary {
+  width: fit-content;
+  min-height: 2.75rem;
+  padding: 0.5rem 0;
+  color: var(--pen);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.step-why summary:focus-visible {
+  outline: 2px solid var(--pen);
+  outline-offset: 2px;
+}
+
+.step-why p { margin: 0.25rem 0; }
+.step-why strong { color: var(--ink); font-weight: 600; }
+
+.tutor-card {
+  margin: 0.75rem 0 1rem calc(var(--gutter-width) + 0.9rem);
+  padding: 0.9rem;
+  border-left: 3px solid var(--pen);
+  background: color-mix(in srgb, var(--pen) 6%, transparent);
+}
+
+.tutor-card label { display: grid; gap: 0.5rem; color: var(--ink-soft); }
+
+.tutor-card math-field {
+  display: block;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.35rem 0.55rem;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  font-size: 1.2rem;
+}
+
+.tutor-actions { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-top: 0.75rem; }
+.tutor-feedback { margin: 0.6rem 0 0; color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .worked-step.step-enter {
+    animation: step-reveal 520ms ease-out both;
+  }
+
+  .worked-step.step-enter .worked-math {
+    animation: changed-math 900ms ease-out both;
+  }
+
+  @keyframes step-reveal {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes changed-math {
+    from { background: color-mix(in srgb, var(--mark-warning) 24%, transparent); }
+    to { background: transparent; }
+  }
+}
+
+@media (max-width: 30rem) {
+  .tutor-card { margin-left: 0; }
+  .learning-toolbar button { flex: 1 1 11rem; }
+}
+
 input[type="text"] {
   font-family: "Spline Sans Mono", ui-monospace, monospace;
   font-size: 1rem;

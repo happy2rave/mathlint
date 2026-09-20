@@ -43,6 +43,42 @@ def _check(data: dict) -> dict:
     return check_document(parse_document(data["text"])).to_dict()
 
 
+def _tutor(data: dict) -> dict:
+    """Check a student's next line, including intermediate solver-only forms."""
+    previous = data["previous"]
+    attempt = data["attempt"]
+    report = check_document(parse_document(f"{previous}\n{attempt}"))
+    checked = report.steps[-1]
+    if checked.verdict is not None and checked.verdict.value in {"OK", "WARNING"}:
+        return {
+            "accepted": True,
+            "verdict": checked.verdict.value,
+            "message": checked.message,
+            "hints": list(checked.hints),
+        }
+
+    # A solver may show a useful intermediate form which is not itself a final
+    # answer, such as "x - 3 = 0 or x - 2 = 0". The equation checker correctly
+    # rejects that as a final solution line, so compare its parsed reading with
+    # the solver's expected next line as a second, narrow proof.
+    expected_line = parse_document(f"{previous}\n{data['expected']}").lines[-1]
+    attempt_line = parse_document(f"{previous}\n{attempt}").lines[-1]
+    if expected_line.read_as == attempt_line.read_as:
+        return {
+            "accepted": True,
+            "verdict": "OK",
+            "message": "matches the next worked step",
+            "hints": [],
+        }
+
+    return {
+        "accepted": False,
+        "verdict": checked.verdict.value if checked.verdict else "UNSURE",
+        "message": checked.message or "That line does not follow yet.",
+        "hints": list(checked.hints),
+    }
+
+
 def _steps(data: dict) -> dict:
     operation = data["operation"]
     target = data["target"]
@@ -142,6 +178,7 @@ def _only_variable(expression: sp.Expr) -> sp.Symbol:
 _HANDLERS = {
     "version": _version,
     "check": _check,
+    "tutor": _tutor,
     "steps": _steps,
     "solve": _solve,
     "preview": _preview,

@@ -26,6 +26,36 @@ def test_check_reports_unreadable_input_as_an_error():
     assert "cannot read" in reply["error"]
 
 
+def test_tutor_accepts_a_valid_alternative_next_step():
+    reply = call("tutor", previous="2*x + 3 = 7", expected="2*x = 4", attempt="x = 2")
+
+    assert reply["ok"] is True
+    assert reply["result"]["accepted"] is True
+
+
+def test_tutor_accepts_the_expected_intermediate_or_form():
+    reply = call(
+        "tutor",
+        previous="(x - 3)*(x - 2) = 0",
+        expected="x - 3 = 0 or x - 2 = 0",
+        attempt=r"x - 3 = 0\lor x - 2 = 0",
+    )
+
+    assert reply["result"] == {
+        "accepted": True,
+        "verdict": "OK",
+        "message": "matches the next worked step",
+        "hints": [],
+    }
+
+
+def test_tutor_returns_the_checker_hint_for_a_wrong_step():
+    reply = call("tutor", previous="2*x + 3 = 7", expected="2*x = 4", attempt="2*x = 5")
+
+    assert reply["result"]["accepted"] is False
+    assert reply["result"]["message"]
+
+
 def test_steps_for_a_matrix():
     reply = call("steps", operation="det", target="[[3, 8], [4, 6]]", lower="", upper="")
     assert reply["ok"] is True
