@@ -16,6 +16,15 @@ install, and nothing you type leaves the page. You write on a math editor with a
 calculator-style keypad, so fractions, powers, roots and integrals look like they
 do on paper while you type.
 
+## Learn one step at a time
+
+The web page shows the first step and lets you reveal the rest at your pace.
+Open **Why?** for the rule, a small example and the usual mistake, or choose
+**Try the next step** and write your own line in the math editor: mathlint checks
+it before moving on. Afterward, it generates three more problems for the same
+skill. An attributed OpenStax exercise library provides free textbook practice
+with worked solutions instead of a paywall.
+
 ```console
 $ mathlint check solution.txt
 
@@ -365,9 +374,10 @@ being guessed at.
 
 ## What it does not do yet
 
-Inequalities, several unknowns at once, multivariable calculus, and checking a
-derivative or integral you worked out step by step (today it checks the result of
-each line, not the rule you named).
+Multivariable calculus, geometry and statistics are not covered yet, and it does
+not translate word problems into equations. When checking calculus working it
+proves the result of each line, but does not yet verify a rule name you wrote
+beside the line.
 
 ## Contributing
 

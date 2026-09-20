@@ -6,6 +6,38 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-09-20
+
+Premium learning features, free and local.
+
+### Added
+
+- A **Why?** control on every worked step: the rule that permits it, a small
+  example, and the mistake students most often make. Known classroom rules get
+  a specific explanation; other solver transformations explain how they were
+  verified instead of inventing a rule.
+- Progressive worked solutions in the browser. The first step is visible,
+  **Reveal next step** advances with a clear progress count, and **Show all
+  steps** remains available.
+- **Try the next step** tutor mode. A student can enter any mathematically valid
+  next line in the math editor; mathlint checks it and either advances the
+  solution or gives the same proof-backed feedback and hint as the checker.
+- Newly revealed mathematics is briefly highlighted so the change is easy to
+  locate. Animation is disabled when the operating system requests reduced
+  motion.
+- Three deterministic practice problems matched to the equation, system,
+  inequality, calculation, expression method, or calculus skill just solved.
+  A practice card loads directly into the solver.
+- An attributed open-textbook library with worked solutions for exercises from
+  OpenStax's *College Algebra with Corequisite Support 2e* (CC BY 4.0). The
+  original exercise and book remain linked, while mathlint generates and
+  verifies the working locally.
+
+### Changed
+
+- The README's limitations now reflect the systems, inequalities, graphs, and
+  calculus capabilities already shipped.
+
 ## [0.9.0] — 2026-09-19
 
 Calculus, complete.

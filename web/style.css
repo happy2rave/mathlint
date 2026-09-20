@@ -198,8 +198,14 @@ button:disabled { opacity: 0.45; cursor: progress; }
 
 .textbook-library > summary:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; }
 .textbook-body { padding: 0.4rem 0 1rem; }
-.textbook-body label { display: grid; gap: 0.35rem; color: var(--ink-soft); font-size: 0.9375rem; }
-.textbook-body select { max-width: 100%; }
+.textbook-body label {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+.textbook-body select { width: 100%; min-width: 0; max-width: 100%; }
 .textbook-problem { margin: 0.8rem 0; font-family: "Spline Sans Mono", ui-monospace, monospace; }
 .textbook-actions { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: center; }
 .textbook-actions a { font-size: 0.9375rem; }

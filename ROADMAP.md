@@ -27,7 +27,7 @@ real problems with known answers — runs on every commit.
 | v0.7 | Done: Calculator | Arithmetic and simplifying with steps, a live answer as you type |
 | v0.8 | Done: Inequalities and graphs | Sign charts, interval answers, interactive graphs, function analysis |
 | v0.9 | Done: Calculus, complete | Limits, implicit derivatives, harder integrals, differential equations |
-| v0.10 | Premium, free | "Why?" on every step, step-by-step reveal, animated steps, tutor mode, practice |
+| v0.10 | Done: Premium, free | "Why?" on every step, step-by-step reveal, animated steps, tutor mode, practice |
 | v0.11 | App quality | Installable, offline, history, speed, accessibility, translations |
 | v1.0 | App stores | Android and iOS apps from the same code |
 | v1.x | Camera | Photo to editable math, printed first, then handwriting — on the device |
