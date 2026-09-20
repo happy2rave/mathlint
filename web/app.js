@@ -505,6 +505,44 @@ function renderSolved(solution) {
   heading.textContent = "Steps";
   solved.append(heading);
   renderLearningSteps(solved, solution);
+  if (solution.practice && solution.practice.length) {
+    solved.append(practiceSection(solution.practice));
+  }
+}
+
+function practiceSection(problems) {
+  const section = document.createElement("section");
+  section.className = "practice-section";
+  const heading = document.createElement("h2");
+  heading.textContent = "Practice this skill";
+  const intro = document.createElement("p");
+  intro.className = "practice-intro";
+  intro.textContent = "Three more problems of the same kind, generated on your device.";
+  const list = document.createElement("div");
+  list.className = "practice-list";
+
+  for (const problem of problems) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "practice-problem";
+    const label = document.createElement("span");
+    label.className = "practice-label";
+    label.textContent = problem.label;
+    const text = document.createElement("span");
+    text.className = "practice-math";
+    text.textContent = problem.text.replaceAll(";", "  ·  ");
+    button.append(label, text);
+    button.addEventListener("click", () => {
+      const lines = problem.text.split(/\s*;\s*|\n/).filter(Boolean);
+      solveSheet.setLines(lines);
+      solveVariable = null;
+      solve(problem.method || null);
+      equationLines.scrollIntoView({ block: "start" });
+    });
+    list.append(button);
+  }
+  section.append(heading, intro, list);
+  return section;
 }
 
 function graphSection(spec) {

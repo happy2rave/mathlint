@@ -18,6 +18,7 @@ from .document import parse_document
 from .errors import MathlintError
 from .graph import graph_for, sample
 from .parse.plain import parse_expression
+from .practice import practice_for
 from .steps import differentiate_solution, integrate_solution, parse_matrix, solve_linalg
 
 
@@ -130,6 +131,7 @@ def _solve(data: dict) -> dict:
     result = solve(text, method=data.get("method") or None, variable=variable)
     reply = result.to_dict()
     reply["graph"] = graph_for(text, result)
+    reply["practice"] = practice_for(text, reply)
     return reply
 
 

@@ -23,3 +23,9 @@ def test_every_step_can_show_why():
 def test_step_animation_respects_reduced_motion():
     assert "@media (prefers-reduced-motion: no-preference)" in STYLE
     assert ".worked-step.step-enter" in STYLE
+
+
+def test_practice_problems_can_be_loaded_into_the_solver():
+    assert "Practice this skill" in APP
+    assert "solveSheet.setLines(lines)" in APP
+    assert "solve(problem.method || null)" in APP
