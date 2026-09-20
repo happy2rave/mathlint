@@ -43,6 +43,7 @@ def test_solve():
     assert reply["result"]["answers"] == ["2", "3"]
     assert reply["result"]["kind_label"] == "Quadratic equation"
     assert [method["id"] for method in reply["result"]["methods"]][0] == "factoring"
+    assert reply["result"]["steps"][0]["why"]["rule"].startswith("This is the problem")
 
 
 def test_solve_with_a_chosen_method():

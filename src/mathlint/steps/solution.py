@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 import sympy as sp
 
+from ..explain import why_for
 from ..parse.plain import latex_of, read_as
 from .matrix import format_matrix
 
@@ -40,11 +41,13 @@ class SolutionStep:
         return self.display_latex
 
     def to_dict(self) -> dict:
+        why = why_for(self.text)
         return {
             "text": self.text,
             "operation": self.operation,
             "math": self.rendered(),
             "math_latex": self.latex(),
+            "why": why.to_dict(),
         }
 
 
