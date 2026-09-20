@@ -3,6 +3,18 @@
 Thanks for taking a look. The most useful contribution is small and concrete:
 **a line of math that mathlint read wrong.**
 
+## Licensing contributions
+
+By submitting a contribution, you confirm that you have the right to submit it
+and agree that it may be distributed under mathlint's public license. You also
+grant happy2rave a perpetual, worldwide, non-exclusive, royalty-free right to
+use, reproduce, modify, distribute and sublicense the contribution, including
+as part of mathlint under separate commercial terms. You retain ownership of
+your contribution.
+
+If you cannot agree to those contribution terms, please open an issue to discuss
+the idea without submitting code.
+
 ## The bug that matters most
 
 mathlint's promise is that it never calls a correct step wrong. So if it:

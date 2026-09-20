@@ -10,3 +10,4 @@
 - [ ] Parser changes never guess: unreadable input raises `ParseError` with a
       message naming what was not understood
 - [ ] `CHANGELOG.md` has an entry under "Unreleased"
+- [ ] I have read and agree to the contribution terms in `CONTRIBUTING.md`

@@ -37,6 +37,11 @@ Premium learning features, free and local.
 
 - The README's limitations now reflect the systems, inequalities, graphs, and
   calculus capabilities already shipped.
+- Version 0.10.0 and later is source-available under PolyForm Noncommercial
+  1.0.0, with separate commercial licensing available from happy2rave. Earlier
+  releases retain the license shipped with them.
+- The official browser app includes a direct, accessible way to support ongoing
+  development through Buy Me a Coffee.
 
 ## [0.9.0] — 2026-09-19
 

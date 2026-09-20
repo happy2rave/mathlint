@@ -307,6 +307,24 @@ footer {
   font-size: 0.9375rem;
 }
 
+.support-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--pen);
+  border-radius: 0.35rem;
+  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-weight: 600;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+.support-link:hover { background: color-mix(in srgb, var(--pen) 8%, transparent); }
+.support-link:active { background: color-mix(in srgb, var(--pen) 15%, transparent); }
+.support-link:focus-visible { outline: 2px solid var(--pen); outline-offset: 3px; }
+
 a { color: var(--pen); }
 
 @media (prefers-reduced-motion: no-preference) {

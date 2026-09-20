@@ -168,8 +168,9 @@ MATLAB style `[1 2; 3 4]`, LaTeX `pmatrix/bmatrix`. Exact rationals.
 TDD with pytest; ruff. CI on Linux/Windows/macOS, Python 3.10–3.14. Release
 workflow builds sdist + wheel and attaches them to the GitHub Release; optional
 PyPI trusted-publishing job (enabled once the maintainer registers the project
-on PyPI). Community files: README, LICENSE (MIT), CHANGELOG, CONTRIBUTING,
-SECURITY, issue templates (including "mathlint misread my input").
+on PyPI). Community files: README, LICENSE, CHANGELOG, CONTRIBUTING, SECURITY,
+and issue templates (including "mathlint misread my input"). The initial
+releases used MIT; current licensing is documented in the repository README.
 
 ## 11. Out of scope (for now)
 

@@ -2,14 +2,15 @@
 
 [![CI](https://github.com/happy2rave/mathlint/actions/workflows/ci.yml/badge.svg)](https://github.com/happy2rave/mathlint/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/happy2rave/mathlint)](https://github.com/happy2rave/mathlint/releases)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-7653c6.svg)](LICENSE)
 
 **A linter for your math.** Type an equation and get it solved, step by step —
 or write out a solution yourself, and mathlint tells you which step is wrong and
 proves it with a counterexample.
 
-Other tools show you *their* solution. mathlint also checks *yours*. It is free,
-open source, and runs on your own device. The plan is in [ROADMAP.md](ROADMAP.md).
+Other tools show you *their* solution. mathlint also checks *yours*. It is free
+for personal, educational and other noncommercial use, source-available, and
+runs on your own device. The plan is in [ROADMAP.md](ROADMAP.md).
 
 **[Try it in your browser](https://happy2rave.github.io/mathlint/)** — nothing to
 install, and nothing you type leaves the page. You write on a math editor with a
@@ -397,4 +398,19 @@ The open-textbook problem library adapts exercises from OpenStax's
 
 ## License
 
-MIT
+mathlint 0.10.0 and later is source-available under the
+[PolyForm Noncommercial License 1.0.0](LICENSE). Personal use, education,
+charities, public research and the other noncommercial purposes named in the
+license are permitted. Commercial use, paid redistribution, hosted commercial
+services and commercial reskins require a
+[separate written license](COMMERCIAL_LICENSE.md).
+
+The required copyright and support notice must accompany copies. The official
+app also links to [Buy Me a Coffee](https://buymeacoffee.com/happy2rave), but a
+contribution is voluntary and does not purchase a commercial license.
+
+Releases through version 0.9.0 remain under the license shipped with those
+releases. The mathlint name and branding are covered separately by the
+[name and branding policy](TRADEMARKS.md). OpenStax exercises and any other
+third-party material remain under the terms in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

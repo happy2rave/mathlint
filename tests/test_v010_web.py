@@ -37,3 +37,12 @@ def test_open_textbook_exercises_are_loaded_with_visible_attribution():
     assert "Open textbook problems" in html
     assert "CC BY 4.0" in html
     assert 'fetch("textbook-problems.json")' in APP
+
+
+def test_support_link_is_visible_and_keyboard_accessible():
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+
+    assert "https://buymeacoffee.com/happy2rave" in html
+    assert "Buy me a coffee" in html
+    assert 'aria-label="Buy me a coffee (opens in a new tab)"' in html
+    assert ".support-link:focus-visible" in STYLE

@@ -11,3 +11,5 @@ Access the original book free at
 https://openstax.org/books/college-algebra-corequisite-support-2e/pages/1-introduction-to-prerequisites.
 
 The OpenStax name and logos are not covered by the Creative Commons license.
+The project's PolyForm license does not replace or restrict the CC BY 4.0
+permissions that apply to this OpenStax material.
