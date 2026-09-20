@@ -40,6 +40,9 @@ const solveStatus = $("solve-status");
 const solved = $("solved");
 const liveAnswer = $("live-answer");
 const solveExamplesSelect = $("solve-examples");
+const textbookSelect = $("textbook-problems");
+const textbookProblem = $("textbook-problem");
+const textbookSource = $("textbook-source");
 
 const MARKS = { OK: "✓", WRONG: "✗", WARNING: "!", UNSURE: "?" };
 const EXPRESSION_HELP =
@@ -510,6 +513,35 @@ function renderSolved(solution) {
   }
 }
 
+function fillTextbookProblems(problems) {
+  for (const [index, problem] of problems.entries()) {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = `${problem.section} · exercise ${problem.exercise}`;
+    textbookSelect.append(option);
+  }
+
+  function selected() {
+    return problems[Number(textbookSelect.value)];
+  }
+
+  function showSelection() {
+    const problem = selected();
+    textbookProblem.textContent = problem.text.replaceAll(";", "  ·  ");
+    textbookSource.href = problem.source;
+  }
+
+  textbookSelect.addEventListener("change", showSelection);
+  $("solve-textbook").addEventListener("click", () => {
+    const problem = selected();
+    solveSheet.setLines(problem.text.split(/\s*;\s*|\n/).filter(Boolean));
+    solveVariable = null;
+    solve(problem.method || null);
+    equationLines.scrollIntoView({ block: "start" });
+  });
+  showSelection();
+}
+
 function practiceSection(problems) {
   const section = document.createElement("section");
   section.className = "practice-section";
@@ -895,6 +927,9 @@ async function boot() {
   const solveExamples = await fetch("solve-examples.json").then((response) => response.json());
   fillSolveExamples(solveExamples);
   solveSheet.setLines(solveExamples[0].lines);
+
+  const textbookProblems = await fetch("textbook-problems.json").then((response) => response.json());
+  fillTextbookProblems(textbookProblems);
 
   examples = await fetch("examples.json").then((response) => response.json());
   fillExamples();

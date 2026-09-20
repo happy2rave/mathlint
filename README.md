@@ -381,6 +381,10 @@ reads your line differently than you meant it, that's a bug. See
 [Pyodide](https://pyodide.org), [MathLive](https://mathlive.io) for the editor and
 [KaTeX](https://katex.org) for the results.
 
+The open-textbook problem library adapts exercises from OpenStax's
+*College Algebra with Corequisite Support 2e* under CC BY 4.0; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ## License
 
 MIT

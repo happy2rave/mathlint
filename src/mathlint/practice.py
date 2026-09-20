@@ -63,10 +63,11 @@ def practice_for(text: str, result: dict) -> list[dict[str, str]]:
 
     if kind == "linear":
         root = seed % 9 - 4
+        shift = abs(root) + 2
         problems = [
             _linear(variable, 3, 5, root),
             _linear(variable, -2, 7, root + 2),
-            f"4({variable} - {root - 1}) = {4 * (root + 3)}",
+            f"4({variable} + {shift}) = {4 * (root + shift)}",
         ]
     elif kind == "quadratic":
         first = seed % 7 - 3

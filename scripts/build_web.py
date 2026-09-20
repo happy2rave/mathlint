@@ -51,6 +51,7 @@ _LOCAL_FILES = (
     "worker.js",
     "examples.json",
     "solve-examples.json",
+    "textbook-problems.json",
     "wheel.json",
 )
 
