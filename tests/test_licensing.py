@@ -9,6 +9,8 @@ def test_public_license_and_required_notice_are_present():
     assert "PolyForm Noncommercial License 1.0.0" in license_text
     assert "Required Notice: mathlint Copyright (c) 2026 happy2rave." in license_text
     assert "https://buymeacoffee.com/happy2rave" in license_text
+    assert "For example:\n\n> Required Notice: Copyright Yoyodyne" in license_text
+    assert "(http://example.com)\n\n## Changes and New Works License" in license_text
 
 
 def test_package_metadata_does_not_claim_osi_approval():
