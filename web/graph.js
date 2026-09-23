@@ -53,6 +53,13 @@ export class Graph {
     stage.className = "graph-stage";
     stage.append(this.picture, this.#controls());
     this.element.append(stage, this.#legend(renderMath));
+    if (spec.marks.length) {
+      // the points drawn on the graph, for those who cannot see it
+      const points = document.createElement("p");
+      points.className = "sr-only";
+      points.textContent = t("graph.points", { points: spec.marks.map((mark) => mark.label).join("; ") });
+      this.element.append(points);
+    }
     this.#listen();
     this.draw();
   }

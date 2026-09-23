@@ -149,7 +149,7 @@
       </div>
 
       <div class="results-pane">
-        <section id="solved" class="results" aria-live="polite"></section>
+        <section id="solved" class="results" aria-label="Answer" data-i18n-aria-label="answer.live"></section>
       </div>
     </section>
 
@@ -205,7 +205,7 @@
       </div>
 
       <div class="results-pane">
-        <section id="results" class="results" aria-live="polite"></section>
+        <section id="results" class="results" aria-label="Your working, marked" data-i18n-aria-label="report.marked"></section>
       </div>
     </section>
 
@@ -268,12 +268,15 @@
       </div>
 
       <div class="results-pane">
-        <section id="worked" class="results" aria-live="polite"></section>
+        <section id="worked" class="results" aria-label="Steps" data-i18n-aria-label="card.steps"></section>
       </div>
     </section>
   </main>
 
   <div id="keypad"></div>
+
+  <!-- what a screen reader says when a result arrives -->
+  <p id="announcer" class="sr-only" aria-live="polite" aria-atomic="true"></p>
 
   <div class="update-toast" id="update-toast" role="status" hidden>
     <span data-i18n="offline.updateReady">A new version of mathlint is ready.</span>
@@ -284,12 +287,12 @@
 <!-- Examples: a bottom sheet on a phone, a dialog on a wide screen. -->
 <dialog class="sheet" id="examples-sheet" aria-labelledby="examples-title">
   <div class="sheet-grip" aria-hidden="true"></div>
-  <header class="sheet-head">
+  <div class="sheet-head">
     <h2 id="examples-title" data-i18n="examples.solve">Examples</h2>
     <button type="button" class="icon-button" data-close aria-label="Close" data-i18n-aria-label="common.close">
       <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
     </button>
-  </header>
+  </div>
   <div class="sheet-body">
     <div id="example-list" class="example-list"></div>
 
@@ -316,12 +319,12 @@
 
 <dialog class="sheet" id="history-sheet" aria-labelledby="history-title">
   <div class="sheet-grip" aria-hidden="true"></div>
-  <header class="sheet-head">
+  <div class="sheet-head">
     <h2 id="history-title" data-i18n="history.title">History</h2>
     <button type="button" class="icon-button" data-close aria-label="Close" data-i18n-aria-label="common.close">
       <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
     </button>
-  </header>
+  </div>
   <div class="sheet-body">
     <div class="segmented history-filter" role="radiogroup" aria-label="Show" data-i18n-aria-label="history.show">
       <label><input type="radio" name="history-filter" value="all" checked><span data-i18n="history.all">All</span></label>
@@ -336,12 +339,12 @@
 
 <dialog class="sheet" id="about-sheet" aria-labelledby="about-title">
   <div class="sheet-grip" aria-hidden="true"></div>
-  <header class="sheet-head">
+  <div class="sheet-head">
     <h2 id="about-title" data-i18n="about.title">About mathlint</h2>
     <button type="button" class="icon-button" data-close aria-label="Close" data-i18n-aria-label="common.close">
       <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
     </button>
-  </header>
+  </div>
   <div class="sheet-body">
     <p class="about-lead" data-i18n="about.lead">
       Type an equation and see it solved step by step — or write out your own working and

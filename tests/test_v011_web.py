@@ -33,7 +33,13 @@ def _used_keys() -> set[str]:
         keys |= set(re.findall(r'\bt\("([a-zA-Z][\w.]*\w)"', text))
         for line in re.findall(r"dataset\.i18n = [^;]*;", text):
             keys |= set(re.findall(r'"([a-z]+\.[\w.]+)"', line))
-        keys |= set(re.findall(r'"((?:keypad|engine|history|offline)\.[\w.]+)"', text))
+        keys |= set(re.findall(r'"((?:keypad|engine|history|offline|speech)\.[\w.]+)"', text))
+    # speech.js names its words ("plus", "squared", greek "pi", function "sin")
+    spoken = set(re.findall(r'"([\w.]+)"', SCRIPTS["speech.js"]))
+    spoken |= set(re.findall(r"^\s+(\w+): \"\w+\"", SCRIPTS["speech.js"], re.M))
+    for key in ENGLISH:
+        if key.startswith("speech.") and key.split(".")[-1] in spoken:
+            keys.add(key)
     for verdict in ("OK", "WRONG", "WARNING", "UNSURE"):
         keys.add(f"verdict.{verdict}")
     for part in ("rule", "example", "mistake"):
@@ -205,3 +211,19 @@ def test_the_budgets_count_what_blocks_the_first_paint():
     page = '<head><link rel="stylesheet" href="a.css"><link rel="icon" href="x"></head>'
     assert budget.blocking_stylesheets(page + '<body><link rel="stylesheet" href="b"></body>') == 1
     assert budget.Measure("x", 2, 1, " s").line().startswith("OVER")
+
+
+def test_screen_readers_hear_the_math_in_words():
+    app = SCRIPTS["app.js"]
+    # drawn math is hidden from screen readers, its words are not
+    assert 'setAttribute("aria-hidden", "true")' in app
+    assert 'el("span", "sr-only", spoken(latex))' in app
+    assert ".sr-only {" in (WEB / "style.css").read_text(encoding="utf-8")
+    # a result is announced once, briefly, instead of the whole card being read
+    assert 'id="announcer"' in HTML and 'aria-live="polite"' in HTML
+    assert 'class="results" aria-live' not in HTML
+    # keys without a name say their symbol; margin marks and graph points have words
+    assert "speak(key.label" in SCRIPTS["keypad.js"]
+    assert 'word.textContent = t("verdict." + verdict)' in SCRIPTS["editor.js"]
+    assert 't("graph.points"' in SCRIPTS["graph.js"]
+    assert '"speech.js"' in (ROOT / "scripts" / "build_web.py").read_text(encoding="utf-8")

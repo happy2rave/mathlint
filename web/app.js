@@ -1,9 +1,10 @@
-import { MathSheet, configureField, displayLatex, toLatex } from "./editor.js";
+import { MathSheet, configureField, displayLatex, nameField, toLatex } from "./editor.js";
 import { Engine } from "./engine.js";
 import { Keypad } from "./keypad.js";
 import { numberLine } from "./numberline.js";
 import { Graph } from "./graph.js";
 import { History } from "./history.js";
+import { speak } from "./speech.js";
 import { LANGUAGE_KEY, language, onLanguageChange, pickLanguage, setLanguage, t } from "./i18n.js";
 
 const STORAGE_KEY = "mathlint:last-solution";
@@ -271,6 +272,13 @@ function watchKeypadFocus() {
 
 // ---------------------------------------------------------------- math on the page
 
+// Math in words, in the reader's language, for screen readers.
+function spoken(latex) {
+  return speak(latex, (key, args) => t("speech." + key, args));
+}
+
+// Drawn with KaTeX for the eye; a screen reader hears the same math in words
+// instead (MathML support differs too much between readers, above all on phones).
 function renderMath(target, latex, displayMode = false) {
   if (!latex || !window.katex) {
     target.textContent = target.dataset.plain || "";
@@ -278,9 +286,19 @@ function renderMath(target, latex, displayMode = false) {
   }
   try {
     window.katex.render(latex, target, { throwOnError: false, displayMode });
+    target.querySelector(".katex")?.setAttribute("aria-hidden", "true");
+    target.append(el("span", "sr-only", spoken(latex)));
   } catch {
     target.textContent = target.dataset.plain || "";
   }
+}
+
+// A short sentence for screen readers when a result arrives.
+function announce(text) {
+  const announcer = $("announcer");
+  announcer.textContent = "";
+  // a change the reader's screen reader will notice, even for the same words
+  setTimeout(() => (announcer.textContent = text), 50);
 }
 
 // Plain-text math (a practice problem) drawn as math.
@@ -297,6 +315,20 @@ function renderFailure(target, message) {
   body.append(icon("about"), el("p", "", message));
   box.append(body);
   target.append(box);
+}
+
+// Math wider than its card scrolls sideways; a keyboard has to be able to reach
+// it to scroll it, so such math takes the focus.
+function reachableWhenWide(root) {
+  requestAnimationFrame(() => {
+    for (const math of root.querySelectorAll(".answer, .worked-math, .step-raw, .step-read")) {
+      if (math.scrollWidth > math.clientWidth + 1) {
+        math.tabIndex = 0;
+        math.setAttribute("role", "group");
+        math.setAttribute("aria-label", math.querySelector(".sr-only")?.textContent || "");
+      }
+    }
+  });
 }
 
 // ---------------------------------------------------------------- running a request
@@ -321,11 +353,16 @@ async function run(kind, payload, { statusLine, button, stopButton, label, pane 
   }
 }
 
-// After a tap on Solve, bring the answer into view on a phone.
+// After a tap on Solve, bring the answer into view on a phone, and take the
+// keyboard there when the tap was on a button (not while typing in a line).
 function revealResults(target) {
-  if (!COMPACT.matches) return;
   const first = target.firstElementChild;
-  if (first) first.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (!first) return;
+  if (document.activeElement?.tagName === "BUTTON") {
+    first.tabIndex = -1;
+    first.focus({ preventScroll: true });
+  }
+  if (COMPACT.matches) first.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // ---------------------------------------------------------------- checking
@@ -442,8 +479,14 @@ async function check({ reveal = false, record = true } = {}) {
     { text },
     { statusLine: status, button: checkButton, stopButton: $("stop-check"), label: t("check.busy"), pane: results }
   );
-  if (outcome.ok) renderReport(outcome.result);
-  else renderFailure(results, outcome.error);
+  if (outcome.ok) {
+    renderReport(outcome.result);
+    reachableWhenWide(results);
+    announce(results.querySelector(".summary")?.textContent || "");
+  } else {
+    renderFailure(results, outcome.error);
+    announce(outcome.error);
+  }
   if (outcome.ok && record && text) {
     const error = outcome.result.steps.find((step) => step.verdict === "WRONG");
     historyStore.add({ tab: "check", input: text, extra: { mistake: error ? error.line : null, asMath: checkedAsMath } });
@@ -562,8 +605,15 @@ async function solve(options = null) {
     { text, method, variable },
     { statusLine: solveStatus, button: solveButton, stopButton: $("stop-solve"), label: t("solve.busy"), pane: solved }
   );
-  if (outcome.ok) renderSolved(outcome.result);
-  else renderFailure(solved, outcome.error);
+  if (outcome.ok) {
+    renderSolved(outcome.result);
+    reachableWhenWide(solved);
+    const answer = outcome.result.answer_latex;
+    announce(answer ? t("answer.announce", { answer: spoken(answer) }) : t("answer.whichLetter"));
+  } else {
+    renderFailure(solved, outcome.error);
+    announce(outcome.error);
+  }
   if (outcome.ok && record && !outcome.result.needs_letter) {
     const solution = outcome.result;
     historyStore.add({
@@ -983,6 +1033,7 @@ function renderLearningSteps(target, solution) {
         once: true,
       });
     }
+    reachableWhenWide(learning);
   }
 
   reveal.addEventListener("click", () => revealThrough(shown));
@@ -1070,8 +1121,14 @@ async function showSteps({ reveal = false, record = true } = {}) {
     { operation, target, lower, upper },
     { statusLine: stepsStatus, button: stepsButton, stopButton: $("stop-steps"), label: t("workout.busy"), pane: worked }
   );
-  if (outcome.ok) renderSolution(outcome.result);
-  else renderFailure(worked, outcome.error);
+  if (outcome.ok) {
+    renderSolution(outcome.result);
+    reachableWhenWide(worked);
+    announce(outcome.result.summary || outcome.result.title);
+  } else {
+    renderFailure(worked, outcome.error);
+    announce(outcome.error);
+  }
   if (outcome.ok && record && target.trim()) {
     historyStore.add({
       tab: "linalg",
@@ -1301,6 +1358,8 @@ function setUpLanguage() {
     keypad?.render();
     solveSheet?.relabel(t("solve.line"));
     sheet?.relabel(t("check.line"));
+    // the other fields' names were just said again on the host: move them in
+    for (const field of document.querySelectorAll("math-field")) nameField(field);
     // what is on the screen is said again in the new language
     if (!engineReady) return;
     if (solved.childElementCount) solve({ record: false });

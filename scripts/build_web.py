@@ -61,6 +61,7 @@ _LOCAL_FILES = (
     "worker.js",
     "i18n.js",
     "history.js",
+    "speech.js",
     "examples.json",
     "solve-examples.json",
     "textbook-problems.json",

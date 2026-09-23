@@ -1353,7 +1353,7 @@ math-field.bound {
 .step-raw { font-family: var(--font-mono); font-size: 1rem; overflow-x: auto; overflow-y: hidden; }
 .step-raw.as-math { font-family: inherit; font-size: 1.1rem; }
 
-.step-read { margin: 0.2rem 0 0; color: var(--ink-soft); font-size: 0.875rem; overflow-x: auto; }
+.step-read { margin: 0.2rem 0 0; padding-block: 0.25rem; color: var(--ink-soft); font-size: 0.875rem; overflow-x: auto; overflow-y: hidden; }
 .step-read .katex { font-size: 1em; }
 
 .step-note { margin: 0.35rem 0 0; font-size: 0.9375rem; font-weight: 600; }
@@ -1654,3 +1654,16 @@ select {
 }
 
 .startup-time { color: var(--ink-soft); font-size: 0.875rem; }
+
+/* read by screen readers, not drawn */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

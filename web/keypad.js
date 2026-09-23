@@ -2,6 +2,7 @@
 // structures (a fraction with two boxes, a power, a root, an integral) rather
 // than characters, and the cursor lands in the first empty box.
 import { t } from "./i18n.js";
+import { speak } from "./speech.js";
 
 const r = String.raw;
 
@@ -210,7 +211,11 @@ export class Keypad {
       // fractions shrink to unreadable in inline style
       const tall = /\\frac/.test(key.label);
       window.katex.render((tall ? r`\displaystyle ` : "") + key.label, button, { throwOnError: false });
-      if (!key.title) button.setAttribute("aria-label", key.label.replace(/\\/g, ""));
+      // a key without a name of its own says its symbol in words: "the square root of"...
+      if (!key.title) {
+        const words = speak(key.label, (name, args) => t("speech." + name, args));
+        button.setAttribute("aria-label", words || key.label);
+      }
     } else {
       button.textContent = key.label;
     }
