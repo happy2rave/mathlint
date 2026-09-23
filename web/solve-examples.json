@@ -1,60 +1,70 @@
 [
   {
     "name": "Quadratic",
+    "group": "Equations",
     "lines": [
       "x^2-5x+6=0"
     ]
   },
   {
     "name": "Brackets",
+    "group": "Equations",
     "lines": [
       "3\\left(x-1\\right)=2x+5"
     ]
   },
   {
     "name": "Fractions",
+    "group": "Equations",
     "lines": [
       "\\frac{x}{2}+\\frac{1}{3}=\\frac{5}{6}"
     ]
   },
   {
     "name": "Cubic",
+    "group": "Equations",
     "lines": [
       "x^3-6x^2+11x-6=0"
     ]
   },
   {
     "name": "Unknown in a denominator",
+    "group": "Equations",
     "lines": [
       "\\frac{2}{x+1}=\\frac{1}{x-1}"
     ]
   },
   {
     "name": "Square root",
+    "group": "Equations",
     "lines": [
       "\\sqrt{2x-1}+2=x"
     ]
   },
   {
     "name": "Absolute value",
+    "group": "Equations",
     "lines": [
       "\\left|x-1\\right|+2=6"
     ]
   },
   {
     "name": "Exponential",
+    "group": "Equations",
     "lines": [
       "9^{x}=3^{x+1}"
     ]
   },
   {
     "name": "Logarithms",
+    "group": "Equations",
     "lines": [
       "\\ln\\left(x\\right)+\\ln\\left(x-2\\right)=\\ln\\left(3\\right)"
     ]
   },
   {
     "name": "System of two equations",
+    "group": "Systems and formulas",
     "lines": [
       "3x+2y=16",
       "4x-5y=-17"
@@ -62,6 +72,7 @@
   },
   {
     "name": "System of three equations",
+    "group": "Systems and formulas",
     "lines": [
       "x+y+z=6",
       "2x-y+z=3",
@@ -70,78 +81,91 @@
   },
   {
     "name": "Formula (solve for a letter)",
+    "group": "Systems and formulas",
     "lines": [
       "v=u+at"
     ]
   },
   {
     "name": "Arithmetic with fractions",
+    "group": "Calculator",
     "lines": [
       "2^{3}+\\frac{1}{2}\\div\\frac{1}{4}"
     ]
   },
   {
     "name": "Expand brackets",
+    "group": "Calculator",
     "lines": [
       "\\left(2x-1\\right)\\left(3x+4\\right)"
     ]
   },
   {
     "name": "Factor",
+    "group": "Calculator",
     "lines": [
       "2x^2+5x+3"
     ]
   },
   {
     "name": "Simplify a fraction",
+    "group": "Calculator",
     "lines": [
       "\\frac{x^2-4}{x^2+x-2}"
     ]
   },
   {
     "name": "Derivative",
+    "group": "Calculus",
     "lines": [
       "\\frac{d}{dx}\\left(x^2\\sin x\\right)"
     ]
   },
   {
     "name": "Inequality",
+    "group": "Inequalities",
     "lines": [
       "3-2x<7"
     ]
   },
   {
     "name": "Inequality with a sign chart",
+    "group": "Inequalities",
     "lines": [
       "x^2-x-6\\ge0"
     ]
   },
   {
     "name": "Absolute-value inequality",
+    "group": "Inequalities",
     "lines": [
       "\\left|2x-1\\right|<5"
     ]
   },
   {
     "name": "Limit",
+    "group": "Calculus",
     "lines": [
       "\\lim_{x\\to2}\\frac{x^2-4}{x-2}"
     ]
   },
   {
     "name": "Second derivative",
+    "group": "Calculus",
     "lines": [
       "\\frac{d^2}{dx^2}\\left(x^3\\sin x\\right)"
     ]
   },
   {
     "name": "Integral by partial fractions",
+    "group": "Calculus",
     "lines": [
       "\\int\\frac{3x+5}{\\left(x+1\\right)\\left(x+2\\right)}\\,dx"
     ]
   },
   {
     "name": "Differential equation",
+    "group": "Calculus",
     "lines": [
       "y^{\\prime\\prime}+4y=0;y(0)=1,y^{\\prime}(0)=0"
     ]

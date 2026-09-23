@@ -1,131 +1,608 @@
-/* mathlint — the page is a sheet of ruled paper with a marking margin. */
+/* mathlint — an app around a notebook.
+   The notebook (ruled lines, a red margin, numbered lines) is where you write;
+   everything around it is app chrome: a bar on top, tabs at the bottom of a
+   phone or down the side of a wide screen, a keypad that docks like a
+   keyboard, and cards for what comes back. */
+
+/* ------------------------------------------------------------------ tokens */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
-  --paper: #faf9f5;
-  --ink: #191b1f;
-  --ink-soft: #5c6270;
-  --rule: #dde3ec;
-  --margin-rule: #e2b3ad;
-  --pen: #243b8f;
+  --bg: #f4f3ef;
+  --surface: #ffffff;
+  --surface-2: #f5f4f0;
+  --paper: #fffdf8;
+  --ink: #17191e;
+  --ink-soft: #5d6472;
+  --line: #e4e2db;
+  --rule: #dbe4f0;
+  --margin-rule: #eba69d;
+  --pen: #2d46c8;
+  --on-pen: #ffffff;
 
-  --mark-ok: #1c7c4a;
-  --mark-wrong: #c0332b;
-  --mark-warning: #8f6408;
-  --mark-unsure: #5c6270;
+  --mark-ok: #177a47;
+  --mark-wrong: #c93a2f;
+  --mark-warning: #8f6000;
+  --mark-unsure: #5d6472;
 
-  --line-height: 2rem;
-  --gutter-width: 2.75rem;
+  --coffee: #ffdd00;
+  --on-coffee: #1b1b1b;
+
+  --shadow: 0 1px 2px rgb(20 22 30 / 5%), 0 6px 20px rgb(20 22 30 / 5%);
+  --shadow-raised: 0 -2px 24px rgb(20 22 30 / 12%);
+  --backdrop: rgb(12 14 20 / 45%);
+
+  /* derived: tints of the colours above */
+  --pen-soft: color-mix(in srgb, var(--pen) 11%, var(--surface));
+  --ok-soft: color-mix(in srgb, var(--mark-ok) 10%, var(--surface));
+  --wrong-soft: color-mix(in srgb, var(--mark-wrong) 9%, var(--surface));
+  --warning-soft: color-mix(in srgb, var(--mark-warning) 10%, var(--surface));
+
+  /* sizes */
+  --gutter-width: 3rem;
+  --line-height: 3.25rem;
+  --text-line: 2rem;
+  --appbar-height: 3.5rem;
+  --nav-height: 4.25rem;
+  --rail-width: 5.75rem;
+  --radius: 20px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --font-ui: Figtree, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Spline Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #15171b;
-    --ink: #e8e9e3;
-    --ink-soft: #9aa2b0;
-    --rule: #272c35;
-    --margin-rule: #6a3b37;
-    --pen: #9db0ff;
-
-    --mark-ok: #5bbd84;
-    --mark-wrong: #f0756a;
-    --mark-warning: #d9a83c;
-    --mark-unsure: #9aa2b0;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e1014;
+    --surface: #171a20;
+    --surface-2: #1e222a;
+    --paper: #1a1d23;
+    --ink: #eceae4;
+    --ink-soft: #9ca3b0;
+    --line: #2a2f39;
+    --rule: #272e3b;
+    --margin-rule: #7c4039;
+    --pen: #93a6ff;
+    --on-pen: #0e1014;
+    --mark-ok: #5cc58a;
+    --mark-wrong: #ff7b6f;
+    --mark-warning: #e2b24c;
+    --mark-unsure: #9ca3b0;
+    --shadow: 0 1px 0 rgb(0 0 0 / 30%);
+    --shadow-raised: 0 -2px 24px rgb(0 0 0 / 50%);
+    --backdrop: rgb(0 0 0 / 60%);
   }
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1014;
+  --surface: #171a20;
+  --surface-2: #1e222a;
+  --paper: #1a1d23;
+  --ink: #eceae4;
+  --ink-soft: #9ca3b0;
+  --line: #2a2f39;
+  --rule: #272e3b;
+  --margin-rule: #7c4039;
+  --pen: #93a6ff;
+  --on-pen: #0e1014;
+  --mark-ok: #5cc58a;
+  --mark-wrong: #ff7b6f;
+  --mark-warning: #e2b24c;
+  --mark-unsure: #9ca3b0;
+  --shadow: 0 1px 0 rgb(0 0 0 / 30%);
+  --shadow-raised: 0 -2px 24px rgb(0 0 0 / 50%);
+  --backdrop: rgb(0 0 0 / 60%);
+}
+
+/* ------------------------------------------------------------------ base */
+
 * { box-sizing: border-box; }
 
-/* layout rules such as .sheet { display: flex } must not un-hide a panel */
+/* layout rules such as .text-sheet { display: flex } must not un-hide a panel */
 [hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  padding: 0 16px 4rem;
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
-  font-family: Spectral, Georgia, serif;
-  font-size: 1.0625rem;
-  line-height: 1.6;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
-main, .masthead, footer { max-width: 47rem; margin-inline: auto; }
+h1, h2, h3 { margin: 0; line-height: 1.2; }
+
+a { color: var(--pen); text-underline-offset: 3px; }
+
+code { font-family: var(--font-mono); font-size: 0.875em; }
+
+/* KaTeX's hidden copy for screen readers is absolutely positioned; inside a
+   sideways scroller it must not escape and widen the page on a phone */
+.katex { position: relative; }
+
+:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; }
 
 .skip {
   position: absolute;
   left: -9999px;
+  z-index: 100;
 }
 .skip:focus {
-  position: static;
-  display: inline-block;
-  padding: 0.5rem;
+  left: 1rem;
+  top: 1rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--surface);
+  border-radius: 999px;
 }
 
-.masthead { padding: 3rem 0 2rem; }
+.icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 
-h1 {
-  margin: 0;
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: clamp(2rem, 7vw, 2.75rem);
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ------------------------------------------------------------------ buttons */
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled { opacity: 0.5; cursor: progress; }
+
+.primary, .tonal, .ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding: 0 1.15rem;
+  border-radius: 999px;
   font-weight: 600;
-  letter-spacing: -0.03em;
+  font-size: 0.9375rem;
+  white-space: nowrap;
 }
 
-.masthead p {
-  margin: 0.4rem 0 0;
-  max-width: 34rem;
+.primary { background: var(--pen); color: var(--on-pen); }
+.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--pen) 88%, var(--ink)); }
+.tonal { background: var(--pen-soft); color: var(--pen); }
+.tonal:hover { background: color-mix(in srgb, var(--pen) 18%, var(--surface)); }
+.ghost-button { padding: 0 0.8rem; color: var(--pen); }
+.ghost-button:hover { background: var(--pen-soft); }
+
+.pill-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.pill-button .icon { width: 1rem; height: 1rem; color: var(--pen); }
+.pill-button:hover { border-color: color-mix(in srgb, var(--pen) 45%, var(--line)); }
+.pill-button[aria-pressed="true"] { background: var(--pen-soft); border-color: var(--pen); color: var(--pen); }
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .primary, .tonal, .pill-button, .chip, .key, .example, .practice-problem {
+    transition: transform 120ms ease, background-color 160ms ease, border-color 160ms ease;
+  }
+  .primary:active:not(:disabled), .tonal:active, .key:active, .example:active,
+  .practice-problem:active, .chip:active { transform: scale(0.97); }
+}
+
+/* segmented choices: radio buttons drawn as pills */
+.segmented {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+}
+.segmented::-webkit-scrollbar { display: none; }
+.segmented label { position: relative; flex: none; }
+.segmented input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.segmented span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.segmented input:checked + span { background: var(--pen); border-color: var(--pen); color: var(--on-pen); }
+.segmented input:focus-visible + span { outline: 2px solid var(--pen); outline-offset: 2px; }
+
+/* ------------------------------------------------------------------ the app shell */
+
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: calc(var(--appbar-height) + var(--safe-top));
+  padding: var(--safe-top) calc(1rem + var(--safe-right)) 0 calc(1rem + var(--safe-left));
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+}
+
+.brand { display: flex; align-items: center; gap: 0.55rem; }
+.brand-mark { width: 1.9rem; height: 1.9rem; }
+.brand-mark rect { fill: var(--paper); stroke: var(--pen); stroke-width: 2; }
+.brand-mark .brand-margin { stroke: var(--margin-rule); stroke-width: 2; }
+.brand-mark .brand-tick { fill: none; stroke: var(--pen); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.brand-name { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
+
+.engine-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  min-height: 1.9rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
   color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
-.sheet-head {
+.engine-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--mark-warning);
+}
+.engine-pill[data-state="ready"] .engine-dot { background: var(--mark-ok); }
+.engine-pill[data-state="busy"] .engine-dot { background: var(--pen); }
+.engine-pill[data-state="error"] .engine-dot { background: var(--mark-wrong); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .engine-pill[data-state="loading"] .engine-dot,
+  .engine-pill[data-state="busy"] .engine-dot { animation: pulse 1s ease-in-out infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.25; } }
+}
+
+/* the tabs: a bar at the bottom of a phone */
+.navbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  padding: 0.35rem calc(0.5rem + var(--safe-right)) calc(0.35rem + var(--safe-bottom)) calc(0.5rem + var(--safe-left));
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+
+.nav-tabs { display: flex; flex: 3; }
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 3.5rem;
+  padding: 0.25rem 0;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.nav-item .icon {
+  width: 3.5rem;
+  height: 2rem;
+  padding: 0.3rem 0;
+  border-radius: 999px;
+}
+
+.nav-item[aria-selected="true"] { color: var(--ink); }
+.nav-item[aria-selected="true"] .icon { background: var(--pen-soft); color: var(--pen); }
+.nav-item:focus-visible { outline-offset: -2px; border-radius: 12px; }
+
+.screens {
+  padding: 0 calc(1rem + var(--safe-right)) calc(var(--nav-height) + var(--safe-bottom) + 2rem) calc(1rem + var(--safe-left));
+}
+
+.screen { max-width: 40rem; margin-inline: auto; }
+
+.screen-head { padding: 0.75rem 0 1rem; }
+.screen-head h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.025em; }
+.screen-head p { margin: 0.3rem 0 0; color: var(--ink-soft); }
+
+/* a wide screen: tabs down the side, the notebook beside its results */
+@media (min-width: 900px) {
+  .app {
+    display: grid;
+    grid-template-columns: var(--rail-width) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "bar bar" "nav main";
+    min-height: 100vh;
+  }
+
+  .appbar { grid-area: bar; padding-inline: 1.5rem; }
+
+  .navbar {
+    grid-area: nav;
+    position: sticky;
+    top: var(--appbar-height);
+    bottom: auto;
+    height: calc(100vh - var(--appbar-height));
+    flex-direction: column;
+    padding: 0.75rem 0 1.25rem;
+    background: transparent;
+    border-top: 0;
+  }
+
+  .nav-tabs { flex: none; flex-direction: column; gap: 0.5rem; }
+  .nav-item { flex: none; }
+  .nav-about { margin-top: auto; }
+
+  .screens { grid-area: main; padding: 0 2rem 3rem 1rem; }
+
+  .screen {
+    display: grid;
+    grid-template-columns: minmax(0, 29rem) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: start;
+    max-width: 76rem;
+    margin-inline: 0;
+  }
+
+  .workspace {
+    position: sticky;
+    top: var(--appbar-height);
+    max-height: calc(100vh - var(--appbar-height));
+    overflow-y: auto;
+    padding: 0 0.25rem 1.5rem;
+    scrollbar-width: thin;
+  }
+
+  .results-pane { padding-top: 5.75rem; }
+
+  .operation-picker { flex-wrap: wrap; overflow: visible; }
+}
+
+/* ------------------------------------------------------------------ the notebook */
+
+.notebook {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  /* the red margin runs the full height of the page */
+  background:
+    linear-gradient(to right,
+      transparent calc(var(--gutter-width) - 1px),
+      var(--margin-rule) calc(var(--gutter-width) - 1px),
+      var(--margin-rule) var(--gutter-width),
+      transparent var(--gutter-width)),
+    var(--paper);
+}
+
+.notebook-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
-  color: var(--ink-soft);
-  font-size: 0.9375rem;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  padding: 0.55rem 0.75rem 0.55rem calc(var(--gutter-width) + 0.75rem);
+  border-bottom: 1.5px solid var(--rule);
 }
 
-.examples { display: flex; gap: 0.5rem; align-items: baseline; }
+.notebook-title {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
 
-select {
-  font: inherit;
-  font-size: 0.9375rem;
+.notebook-tools { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.math-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: line;
+}
+
+/* one blank ruled line under the last one: there is more page */
+.math-lines::after {
+  content: "";
+  display: block;
+  height: 0.75rem;
+}
+
+.math-line {
+  counter-increment: line;
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--gutter-width) minmax(0, 1fr) auto;
+  column-gap: 0.75rem;
+  min-height: var(--line-height);
+  align-items: center;
+  border-bottom: 1px solid var(--rule);
+}
+
+.math-line::before {
+  content: counter(line);
+  padding-right: 0.7rem;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.math-line.active::before { color: var(--pen); font-weight: 600; }
+.math-line:focus-within { background: color-mix(in srgb, var(--pen) 5%, transparent); }
+
+/* the teacher's marks, sitting on the margin line after a check */
+.math-line[data-mark]::after {
+  position: absolute;
+  left: var(--gutter-width);
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  transform: translate(-50%, -50%);
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.math-line[data-mark="ok"]::after { content: "✓"; color: var(--mark-ok); }
+.math-line[data-mark="wrong"]::after { content: "✗"; color: var(--mark-wrong); }
+.math-line[data-mark="warning"]::after { content: "!"; color: var(--mark-warning); }
+.math-line[data-mark="unsure"]::after { content: "?"; color: var(--mark-unsure); }
+.math-line[data-mark="wrong"] { background: color-mix(in srgb, var(--mark-wrong) 7%, transparent); }
+.math-line[data-mark]::before { visibility: hidden; }
+.math-line[data-mark]:focus-within::before { visibility: visible; }
+
+.line-remove {
+  display: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-right: 0.4rem;
+  border-radius: 999px;
+  color: var(--ink-soft);
+}
+.line-remove .icon { width: 1rem; height: 1rem; }
+.line-remove:hover { background: var(--surface-2); color: var(--mark-wrong); }
+.math-lines:has(> li + li) .math-line.active .line-remove,
+.math-lines:has(> li + li) .math-line:hover .line-remove { display: grid; }
+
+math-field {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0.45rem 0;
+  font-size: 1.35rem;
   color: var(--ink);
   background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: 0.2rem 0.3rem;
-  max-width: 15rem;
+  border: 0;
+  outline: none;
+  --caret-color: var(--pen);
+  --primary-color: var(--pen);
+  --selection-background-color: color-mix(in srgb, var(--pen) 22%, transparent);
+  --contains-highlight-background-color: transparent;
+  --smart-fence-color: var(--ink-soft);
+  --placeholder-color: var(--ink-soft);
 }
 
-/* The sheet: horizontal rules, a red margin line, numbers in the margin. */
-.sheet {
+math-field::part(menu-toggle),
+math-field::part(virtual-keyboard-toggle) { display: none; }
+
+.equation-lines math-field { font-size: 1.55rem; }
+
+/* the answer while you type, pencilled under the lines */
+.live-answer {
   display: flex;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
+  align-items: baseline;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0.5rem 1rem 0.2rem calc(var(--gutter-width) + 0.75rem);
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  overflow-x: auto;
+}
+
+.live-tag {
+  flex: none;
+  color: var(--pen);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.notebook-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.6rem;
+  padding: 0.35rem 0.75rem 0.6rem calc(var(--gutter-width) + 0.3rem);
+}
+
+.notebook-foot .ghost-button { font-size: 0.875rem; min-height: 2.5rem; }
+
+/* typed as text: a ruled textarea with its own numbers */
+.text-sheet {
+  display: flex;
   background-image: repeating-linear-gradient(
     to bottom,
-    transparent,
-    transparent calc(var(--line-height) - 1px),
-    var(--rule) calc(var(--line-height) - 1px),
-    var(--rule) var(--line-height)
+    transparent 0,
+    transparent calc(var(--text-line) - 1px),
+    var(--rule) calc(var(--text-line) - 1px),
+    var(--rule) var(--text-line)
   );
   background-position: 0 0.5rem;
 }
 
 .gutter {
   flex: 0 0 var(--gutter-width);
-  padding: 0.5rem 0.6rem 0.5rem 0;
-  border-right: 1px solid var(--margin-rule);
+  padding: 0.5rem 0.7rem 0.5rem 0;
   text-align: right;
   color: var(--ink-soft);
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 0.9375rem;
-  line-height: var(--line-height);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: var(--text-line);
   white-space: pre;
   overflow: hidden;
   user-select: none;
@@ -133,337 +610,592 @@ select {
 
 textarea {
   flex: 1 1 auto;
-  min-height: calc(var(--line-height) * 6 + 1rem);
-  padding: 0.5rem 0 0.5rem 0.9rem;
+  min-width: 0;
+  min-height: calc(var(--text-line) * 7 + 1rem);
+  padding: 0.5rem 0.75rem 0.5rem 0.75rem;
   border: 0;
   background: transparent;
   color: var(--ink);
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 1rem;
-  line-height: var(--line-height);
+  line-height: var(--text-line);
   white-space: pre;
   overflow-x: auto;
   resize: vertical;
 }
 
-textarea:focus-visible, button:focus-visible, select:focus-visible, a:focus-visible {
-  outline: 2px solid var(--pen);
-  outline-offset: 2px;
+textarea:focus-visible { outline: none; background: color-mix(in srgb, var(--pen) 4%, transparent); }
+
+/* the matrix box: no numbers in the margin, free-form writing */
+.text-sheet.plain { background-image: none; }
+.text-sheet.plain textarea {
+  min-height: 7rem;
+  margin-left: var(--gutter-width);
+  padding-left: 0.75rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
 
-.controls {
+.bounds { border-top: 1px solid var(--rule); padding-top: 0.6rem; color: var(--ink-soft); font-size: 0.9375rem; }
+.bounds-note { flex-basis: 100%; font-size: 0.8125rem; }
+
+math-field.bound {
+  display: inline-block;
+  width: 6rem;
+  padding: 0.15rem 0.4rem;
+  font-size: 1.15rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.single-line .math-line::before { content: "f"; font-family: var(--font-ui); font-style: italic; font-size: 1rem; }
+
+/* ------------------------------------------------------------------ actions */
+
+.operation-picker { margin: 0 -2px 0.9rem; }
+
+.action-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
   align-items: center;
-  margin-top: 1.25rem;
+  gap: 0.6rem;
+  margin: 0.9rem 0 0;
 }
 
-button {
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 1rem;
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
-}
-
-button.primary {
-  font-weight: 600;
-  padding: 0.55rem 1.1rem;
-  color: var(--paper);
-  background: var(--pen);
-}
-
-button:disabled { opacity: 0.45; cursor: progress; }
-
-#status, #steps-status { margin: 0; color: var(--ink-soft); font-size: 0.9375rem; }
-
-.help {
-  margin: 1.5rem 0 0;
-  color: var(--ink-soft);
-  font-size: 0.9375rem;
-}
-
-.textbook-library {
-  margin-top: 1.25rem;
-  border-block: 1px solid var(--rule);
-}
-
-.textbook-library > summary {
-  min-height: 2.75rem;
-  padding: 0.55rem 0;
-  color: var(--pen);
-  cursor: pointer;
-}
-
-.textbook-library > summary:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; }
-.textbook-body { padding: 0.4rem 0 1rem; }
-.textbook-body label {
-  display: grid;
+.status {
+  flex: 1;
   min-width: 0;
-  gap: 0.35rem;
-  color: var(--ink-soft);
-  font-size: 0.9375rem;
-}
-.textbook-body select { width: 100%; min-width: 0; max-width: 100%; }
-.textbook-problem { margin: 0.8rem 0; font-family: "Spline Sans Mono", ui-monospace, monospace; }
-.textbook-actions { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: center; }
-.textbook-actions a { font-size: 0.9375rem; }
-.attribution { margin: 0.9rem 0 0; color: var(--ink-soft); font-size: 0.8125rem; }
-
-code {
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 0.875em;
-}
-
-/* Results: a mark in the margin, then the line and what was found. */
-.results { margin-top: 2.5rem; }
-
-.results h2 {
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 1.0625rem;
-  font-weight: 600;
-  margin: 0 0 1rem;
-}
-
-.verdict-line {
-  display: grid;
-  grid-template-columns: var(--gutter-width) 1fr;
-  column-gap: 0.9rem;
-  padding: 0.6rem 0;
-  border-top: 1px solid var(--rule);
-}
-
-.verdict-line:last-child { border-bottom: 1px solid var(--rule); }
-
-.mark {
-  text-align: right;
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 0.9375rem;
-  color: var(--ink-soft);
-  white-space: nowrap;
-}
-
-.mark b { font-weight: 600; }
-.mark-ok b { color: var(--mark-ok); }
-.mark-wrong b { color: var(--mark-wrong); }
-.mark-warning b { color: var(--mark-warning); }
-.mark-unsure b { color: var(--mark-unsure); }
-
-.step-raw {
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 1rem;
-  overflow-x: auto;
-}
-
-.step-read {
-  margin: 0.2rem 0 0;
-  color: var(--ink-soft);
-  font-size: 0.9375rem;
-}
-
-.step-read .katex { font-size: 1em; }
-
-.step-note { margin: 0.35rem 0 0; font-size: 0.9375rem; }
-.step-note.wrong { color: var(--mark-wrong); }
-.step-note.warning { color: var(--mark-warning); }
-.step-note.unsure { color: var(--mark-unsure); }
-
-.evidence {
-  margin: 0.35rem 0 0;
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid var(--mark-wrong);
-  background: color-mix(in srgb, var(--mark-wrong) 7%, transparent);
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 0.9375rem;
-}
-
-.hint, .warn { margin: 0.3rem 0 0; font-size: 0.9375rem; color: var(--ink-soft); }
-.hint::before { content: "hint — "; color: var(--ink-soft); }
-.warn::before { content: "careful — "; color: var(--mark-warning); }
-
-.summary {
-  margin: 1.25rem 0 0;
-  font-size: 1.0625rem;
-}
-.summary strong { font-weight: 600; }
-.summary.clean strong { color: var(--mark-ok); }
-.summary.broken strong { color: var(--mark-wrong); }
-
-.failure {
-  margin-top: 1.5rem;
-  padding: 0.85rem 1rem;
-  border-left: 3px solid var(--mark-wrong);
-  background: color-mix(in srgb, var(--mark-wrong) 7%, transparent);
-}
-
-.failure p { margin: 0; }
-
-footer {
-  margin-top: 3.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--rule);
-  color: var(--ink-soft);
-  font-size: 0.9375rem;
-}
-
-.support-link {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.55rem 0.9rem;
-  border: 1px solid var(--pen);
-  border-radius: 0.35rem;
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-weight: 600;
-  text-decoration: none;
-  touch-action: manipulation;
-}
-
-.support-link:hover { background: color-mix(in srgb, var(--pen) 8%, transparent); }
-.support-link:active { background: color-mix(in srgb, var(--pen) 15%, transparent); }
-.support-link:focus-visible { outline: 2px solid var(--pen); outline-offset: 3px; }
-
-a { color: var(--pen); }
-
-@media (prefers-reduced-motion: no-preference) {
-  .verdict-line { animation: settle 240ms ease-out both; }
-  @keyframes settle {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: none; }
-  }
-}
-
-@media (max-width: 30rem) {
-  :root { --gutter-width: 2rem; }
-  body { font-size: 1rem; }
-  .masthead { padding: 2rem 0 1.5rem; }
-}
-
-/* Tabs: two ways to use the same engine. */
-.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-bottom: 1.75rem;
-  border-bottom: 1px solid var(--rule);
-}
-
-.tabs button {
-  padding: 0 0 0.6rem;
-  background: none;
-  color: var(--ink-soft);
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  font-size: 0.9375rem;
-  margin-bottom: -1px;
-}
-
-.tabs button[aria-selected="true"] {
-  color: var(--ink);
-  border-bottom-color: var(--pen);
-}
-
-/* The matrix box is a plain sheet: no ruled lines behind free-form input. */
-.sheet.plain { background-image: none; }
-.sheet.plain textarea { padding-left: 0.9rem; }
-
-.worked-step {
-  display: grid;
-  grid-template-columns: var(--gutter-width) 1fr;
-  column-gap: 0.9rem;
-  padding: 0.7rem 0;
-  border-top: 1px solid var(--rule);
-}
-
-.worked-step:last-of-type { border-bottom: 1px solid var(--rule); }
-
-.worked-index {
-  text-align: right;
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 0.9375rem;
-  color: var(--ink-soft);
-}
-
-.worked-text { margin: 0 0 0.35rem; }
-
-.worked-operation {
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 0.9375rem;
-  color: var(--pen);
-}
-
-/* sideways scrolling for long math, but never a scrollbar for a tall fraction */
-.worked-math { overflow-x: auto; overflow-y: hidden; padding: 0.3rem 0; }
-
-.learning-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.step-progress {
-  flex: 1 0 100%;
   margin: 0;
   color: var(--ink-soft);
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
   font-size: 0.875rem;
 }
 
-button.learning-button {
-  min-height: 2.75rem;
-  padding-inline: 0.8rem;
+.status.is-busy { display: flex; align-items: center; gap: 0.5rem; }
+.status.is-busy::before {
+  content: "";
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--pen-soft);
+  border-top-color: var(--pen);
+  border-radius: 50%;
 }
 
-.step-why {
-  margin-top: 0.45rem;
-  color: var(--ink-soft);
+@media (prefers-reduced-motion: no-preference) {
+  .status.is-busy::before { animation: spin 700ms linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+}
+
+.action-button { min-height: 3rem; padding: 0 1.4rem; font-size: 1rem; }
+.stop-button { color: var(--mark-wrong); }
+.stop-button:hover { background: var(--wrong-soft); }
+
+.tips {
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
   font-size: 0.9375rem;
 }
 
-.step-why summary {
-  width: fit-content;
+.tips summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   min-height: 2.75rem;
-  padding: 0.5rem 0;
-  color: var(--pen);
+  padding: 0 1rem;
+  color: var(--ink);
+  font-weight: 600;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  list-style: none;
+}
+.tips summary::-webkit-details-marker { display: none; }
+.tips summary .icon { color: var(--mark-warning); }
+.tips summary::after { content: "+"; margin-left: auto; color: var(--ink-soft); font-size: 1.2rem; }
+.tips[open] summary::after { content: "−"; }
+.tips p { margin: 0; padding: 0 1rem 1rem; color: var(--ink-soft); }
+
+/* ------------------------------------------------------------------ the keypad */
+
+.keypad-slot { margin-top: 1rem; }
+
+.keypad {
+  user-select: none;
+  -webkit-user-select: none;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
 }
 
-.step-why summary:focus-visible {
-  outline: 2px solid var(--pen);
-  outline-offset: 2px;
+.keypad-bar { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; }
+
+.keypad-tabs {
+  display: flex;
+  flex: 1;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
 }
 
-.step-why p { margin: 0.25rem 0; }
-.step-why strong { color: var(--ink); font-weight: 600; }
-
-.tutor-card {
-  margin: 0.75rem 0 1rem calc(var(--gutter-width) + 0.9rem);
-  padding: 0.9rem;
-  border-left: 3px solid var(--pen);
-  background: color-mix(in srgb, var(--pen) 6%, transparent);
+.keypad-tabs button {
+  flex: 1;
+  min-height: 2.1rem;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
-.tutor-card label { display: grid; gap: 0.5rem; color: var(--ink-soft); }
+.keypad-tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
 
-.tutor-card math-field {
+.keypad-hide {
+  display: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  color: var(--ink-soft);
+}
+
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0.15rem;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1.05rem;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.key .katex { font-size: 1.05em; }
+.key:hover { background: color-mix(in srgb, var(--pen) 6%, var(--surface)); }
+.key:active { background: color-mix(in srgb, var(--pen) 16%, var(--surface)); }
+.key:focus-visible { outline: 2px solid var(--pen); outline-offset: -2px; }
+
+.key-digit { font-weight: 700; font-size: 1.15rem; }
+.key-op { background: var(--pen-soft); color: var(--pen); }
+.key-action { background: color-mix(in srgb, var(--ink) 8%, var(--surface-2)); color: var(--ink-soft); }
+.key-enter { background: var(--pen); color: var(--on-pen); font-weight: 700; }
+.key-enter:hover { background: color-mix(in srgb, var(--pen) 86%, var(--ink)); }
+.key-enter-word { font-family: var(--font-ui); font-size: 0.875rem; }
+
+/* ------------------------------------------------------------------ a phone */
+
+@media (max-width: 899px) {
+  :root { --gutter-width: 2.5rem; }
+
+  /* the keypad docks at the bottom, like the phone's own keyboard */
+  .keypad-slot {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    margin: 0;
+    visibility: hidden;
+    transform: translateY(105%);
+  }
+
+  .keypad {
+    padding: 0.5rem calc(0.4rem + var(--safe-right)) calc(0.5rem + var(--safe-bottom)) calc(0.4rem + var(--safe-left));
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 22px 22px 0 0;
+    box-shadow: var(--shadow-raised);
+  }
+
+  .keypad-hide { display: grid; }
+  .keypad-grid { gap: 0.3rem; }
+  .key { min-height: 2.85rem; font-size: 1rem; border-radius: 10px; }
+  .key-digit { font-size: 1.1rem; }
+  .key-enter-word { font-size: 0.75rem; }
+
+  .action-row { flex-wrap: wrap; }
+  .action-row .status { flex-basis: 100%; }
+  .action-row .status:empty { display: none; }
+  .action-button { flex: 1; }
+
+  body.keypad-open .keypad-slot { visibility: visible; transform: none; }
+  body.keypad-open .navbar { visibility: hidden; transform: translateY(100%); }
+  body.keypad-open .screens { padding-bottom: 24rem; }
+
+  .results { margin-top: 1.5rem; }
+}
+
+@media (max-width: 899px) and (prefers-reduced-motion: no-preference) {
+  .keypad-slot { transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 220ms; }
+  body.keypad-open .keypad-slot { transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .navbar { transition: transform 200ms ease; }
+}
+
+@media (max-width: 380px) {
+  .key { min-height: 2.6rem; font-size: 0.9375rem; }
+  .key-enter-word { font-size: 0.75rem; }
+  .screen-head h1 { font-size: 1.6rem; }
+}
+
+/* ------------------------------------------------------------------ result cards */
+
+.results { display: grid; gap: 0.9rem; }
+.results > * { scroll-margin-top: calc(var(--appbar-height) + var(--safe-top) + 0.75rem); }
+.results[aria-busy="true"] { opacity: 0.55; transition: opacity 200ms ease; }
+
+.card {
+  min-width: 0;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+.card-head h2 { font-size: 1.05rem; font-weight: 700; }
+.card-intro { margin: -0.4rem 0 0.8rem; color: var(--ink-soft); font-size: 0.875rem; }
+
+.eyebrow {
+  margin: 0;
+  color: var(--pen);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.failure { background: var(--wrong-soft); border-color: color-mix(in srgb, var(--mark-wrong) 30%, var(--line)); }
+.failure-body { display: flex; gap: 0.7rem; align-items: flex-start; }
+.failure-body .icon { color: var(--mark-wrong); margin-top: 0.1rem; }
+.failure-body p { margin: 0; }
+
+/* the answer */
+.answer-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+
+.answer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: var(--ok-soft);
+  color: var(--mark-ok);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.answer-badge .icon { width: 0.95rem; height: 0.95rem; }
+
+.answer {
+  margin-top: 0.7rem;
+  padding: 0.3rem 1rem;
+  border-radius: 14px;
+  background: var(--ok-soft);
+  font-size: 1.3rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.answer.none { background: var(--surface-2); color: var(--ink-soft); }
+
+/* left-aligned, like the notebook (KaTeX centres display math) */
+.answer .katex-display { margin: 0.6rem 0; text-align: left; }
+.answer .katex-display > .katex { text-align: left; }
+
+.answer-question { margin: 0.5rem 0 0; font-size: 1.05rem; }
+
+.answer-note { margin: 0.55rem 0 0; color: var(--ink-soft); font-size: 0.9375rem; overflow-x: auto; }
+
+.chip-group { margin-top: 1rem; }
+.chip-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.chip-row { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
+.chip {
+  min-height: 2.35rem;
+  padding: 0 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.chip:hover { border-color: color-mix(in srgb, var(--pen) 45%, var(--line)); }
+.chip[aria-pressed="true"] { background: var(--pen); border-color: var(--pen); color: var(--on-pen); }
+
+/* the answer of an inequality on a number line */
+.number-line { position: relative; margin: 0.8rem 0 0; max-width: 36rem; }
+.number-line > svg { display: block; width: 100%; height: auto; overflow: visible; }
+.number-line .axis { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; }
+.number-line .tick { stroke: var(--ink-soft); stroke-width: 1; }
+.number-line .tick-label { fill: var(--ink-soft); font-size: 12px; text-anchor: middle; }
+.number-line .answer-band { stroke: var(--pen); stroke-width: 5; stroke-linecap: butt; }
+.number-line .answer-arrow { stroke: var(--pen); stroke-width: 3; fill: none; }
+.number-line .end { stroke: var(--pen); stroke-width: 2.5; }
+.number-line .end.closed { fill: var(--pen); }
+.number-line .end.open { fill: var(--surface); }
+.number-line-labels { position: relative; height: 1.4rem; margin-top: -1.2rem; }
+.number-line-labels > span {
+  position: absolute;
+  transform: translateX(-50%);
+  color: var(--ink);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/* the graph */
+.graph { margin: 0; }
+.graph-stage { position: relative; }
+.graph-stage > svg {
   display: block;
   width: 100%;
-  min-height: 3rem;
-  padding: 0.35rem 0.55rem;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
   background: var(--paper);
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  font-size: 1.2rem;
+  touch-action: none;
+  cursor: grab;
+}
+.graph-stage > svg:active { cursor: grabbing; }
+.graph-stage > svg:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; }
+.graph .grid { stroke: var(--rule); stroke-width: 1; }
+.graph .axis { stroke: var(--ink-soft); stroke-width: 1.5; }
+.graph .shade { fill: color-mix(in srgb, var(--pen) 12%, transparent); }
+.graph .curve { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+.graph .curve-0 { stroke: var(--pen); color: var(--pen); }
+.graph .curve-1 { stroke: var(--mark-warning); color: var(--mark-warning); }
+.graph .curve-2 { stroke: var(--mark-ok); color: var(--mark-ok); }
+.graph .curve-3 { stroke: var(--mark-wrong); color: var(--mark-wrong); }
+.graph .vertical { stroke: var(--mark-ok); color: var(--mark-ok); stroke-dasharray: 6 4; }
+.graph .area { stroke: none; }
+.graph .area-above { fill: color-mix(in srgb, var(--mark-ok) 28%, transparent); }
+.graph .area-below { fill: color-mix(in srgb, var(--mark-wrong) 24%, transparent); }
+.graph .mark { stroke: var(--ink); stroke-width: 2; }
+.graph .mark.closed { fill: var(--ink); }
+.graph .mark.open { fill: var(--paper); }
+.graph .tick-label { fill: var(--ink-soft); font-size: 11px; font-family: var(--font-ui); }
+.graph .mark-label { fill: var(--ink); font-size: 12px; font-family: var(--font-ui); }
+
+.graph-controls {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.tutor-actions { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-top: 0.75rem; }
-.tutor-feedback { margin: 0.6rem 0 0; color: var(--ink-soft); }
+.graph-button {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1.1rem;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.graph-button:hover { color: var(--pen); }
+
+.graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.2rem;
+  margin-top: 0.6rem;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+.legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+.legend-item .swatch { display: inline-block; width: 1.1rem; height: 3px; border-radius: 2px; background: currentColor; }
+.legend-item.curve-0 { color: var(--pen); }
+.legend-item.curve-1 { color: var(--mark-warning); }
+.legend-item.curve-2 { color: var(--mark-ok); }
+.legend-item.curve-3 { color: var(--mark-wrong); }
+.legend-item.vertical { color: var(--mark-ok); }
+.legend-item > span:last-child { color: var(--ink); }
+.legend-item.area-note { color: var(--ink-soft); font-size: 0.8125rem; }
+
+/* ------------------------------------------------------------------ worked steps */
+
+.step-meter { display: flex; align-items: center; gap: 0.75rem; }
+
+.step-progress {
+  flex: none;
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.step-bar {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.step-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--pen); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .step-bar > span { transition: width 300ms ease; }
+}
+
+.worked-steps { list-style: none; margin: 1rem 0 0; padding: 0; }
+
+/* a timeline: numbered stops joined by a line */
+.worked-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  column-gap: 0.8rem;
+  padding-bottom: 1.1rem;
+}
+
+.worked-step::before {
+  content: "";
+  position: absolute;
+  left: calc(1rem - 1px);
+  top: 2.25rem;
+  bottom: 0.25rem;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.worked-step:not(:has(~ .worked-step:not([hidden])))::before { display: none; }
+.worked-step:focus-visible { outline: 2px solid var(--pen); outline-offset: 4px; border-radius: 12px; }
+
+.worked-index {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--pen-soft);
+  color: var(--pen);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.worked-body { min-width: 0; }
+
+.worked-text { margin: 0.25rem 0 0.45rem; font-weight: 600; }
+
+.worked-operation {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--pen);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  vertical-align: 0.1em;
+}
+
+/* sideways scrolling for long math, but never a scrollbar for a tall fraction */
+.worked-math {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper);
+  font-size: 1.05rem;
+}
+
+.step-why { margin-top: 0.5rem; font-size: 0.9375rem; }
+
+.step-why summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0 0.8rem 0 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--pen);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.step-why summary::-webkit-details-marker { display: none; }
+.step-why summary .icon { width: 1rem; height: 1rem; }
+.step-why[open] summary { background: var(--pen-soft); border-color: transparent; }
+.step-why summary:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; }
+
+.why-panel { display: grid; gap: 0.45rem; margin-top: 0.55rem; }
+.why-panel p { margin: 0; padding: 0.6rem 0.8rem; border-radius: 12px; background: var(--surface-2); }
+.why-panel strong {
+  display: block;
+  margin-bottom: 0.1rem;
+  color: var(--ink-soft);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.why-panel .why-mistake { background: var(--wrong-soft); }
+.why-panel .why-mistake strong { color: var(--mark-wrong); }
+
+.learning-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; padding-left: 2.8rem; }
+
+.tutor-card {
+  margin: 0 0 1rem 2.8rem;
+  padding: 0.9rem;
+  border: 1.5px dashed color-mix(in srgb, var(--pen) 45%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--pen) 5%, var(--surface));
+}
+
+.tutor-card label { display: grid; gap: 0.5rem; color: var(--ink-soft); font-size: 0.875rem; font-weight: 600; }
+
+/* the attempt is written on a line of the notebook */
+.tutor-card math-field {
+  min-height: 3rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper);
+  font-size: 1.25rem;
+}
+
+.tutor-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+.tutor-feedback { margin: 0.6rem 0 0; color: var(--ink-soft); font-size: 0.9375rem; }
+.tutor-card[data-result="wrong"] .tutor-feedback { color: var(--mark-wrong); }
+
+.worked-summary {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin: 0.25rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: var(--ok-soft);
+}
+.worked-summary .icon { color: var(--mark-ok); margin-top: 0.1rem; }
 
 @media (prefers-reduced-motion: no-preference) {
   .worked-step.step-enter {
@@ -480,364 +1212,358 @@ button.learning-button {
   }
 
   @keyframes changed-math {
-    from { background: color-mix(in srgb, var(--mark-warning) 24%, transparent); }
-    to { background: transparent; }
+    from { background: color-mix(in srgb, var(--mark-warning) 24%, var(--paper)); }
+    to { background: var(--paper); }
+  }
+
+  .card { animation: card-in 260ms ease-out both; }
+  .results > .card:nth-child(2) { animation-delay: 40ms; }
+  .results > .card:nth-child(3) { animation-delay: 80ms; }
+  .results > .card:nth-child(4) { animation-delay: 120ms; }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
   }
 }
 
 @media (max-width: 30rem) {
+  .learning-toolbar { padding-left: 0; }
+  .learning-toolbar .primary { flex: 1 1 100%; }
+  .learning-toolbar .tonal, .learning-toolbar .ghost-button { flex: 1 1 auto; }
   .tutor-card { margin-left: 0; }
-  .learning-toolbar button { flex: 1 1 11rem; }
 }
 
-input[type="text"] {
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 1rem;
-  color: var(--ink);
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--rule);
-  padding: 0.2rem 0.3rem;
-}
-
-#bounds { gap: 0.5rem; }
-#bounds .help { margin: 0; }
-
-/* Math mode: every line of the sheet is an editable formula on a ruled line. */
-.math-lines {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  counter-reset: line;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-
-.math-line {
-  counter-increment: line;
+/* practice: a row of cards to swipe through */
+.practice-list {
   display: grid;
-  grid-template-columns: var(--gutter-width) 1fr;
-  column-gap: 0.9rem;
-  min-height: 3.1rem;
-  align-items: center;
-  border-bottom: 1px solid var(--rule);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(12rem, 78%);
+  gap: 0.6rem;
+  margin: 0 -1.1rem;
+  padding: 0.1rem 1.1rem 0.3rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1.1rem;
+  scrollbar-width: none;
 }
+.practice-list::-webkit-scrollbar { display: none; }
 
-.math-line:last-child { border-bottom: 0; }
-
-.math-line::before {
-  content: counter(line);
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 0.6rem;
-  border-right: 1px solid var(--margin-rule);
-  font-family: "Spline Sans Mono", ui-monospace, monospace;
-  font-size: 0.9375rem;
-  color: var(--ink-soft);
-}
-
-.math-line.active::before { color: var(--pen); font-weight: 600; }
-.math-line:focus-within { background: color-mix(in srgb, var(--pen) 4%, transparent); }
-
-math-field {
-  display: block;
-  width: 100%;
-  padding: 0.4rem 0;
-  font-size: 1.3rem;
-  color: var(--ink);
-  background: transparent;
-  border: 0;
-  outline: none;
-  --caret-color: var(--pen);
-  --primary-color: var(--pen);
-  --selection-background-color: color-mix(in srgb, var(--pen) 22%, transparent);
-  --contains-highlight-background-color: transparent;
-  --smart-fence-color: var(--ink-soft);
-}
-
-math-field::part(menu-toggle),
-math-field::part(virtual-keyboard-toggle) { display: none; }
-
-.math-single {
-  padding-left: 0.9rem;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-
-.math-single:focus-within { background: color-mix(in srgb, var(--pen) 4%, transparent); }
-
-.bounds { gap: 0.5rem 0.75rem; }
-.bounds .help { margin: 0; }
-
-math-field.bound {
-  display: inline-block;
-  width: 6.5rem;
-  padding: 0.15rem 0.3rem;
-  font-size: 1.1rem;
-  border-bottom: 1px solid var(--rule);
-}
-
-.sheet-tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
-  align-items: baseline;
-}
-
-.text-button {
-  padding: 0;
-  background: none;
-  color: var(--pen);
-  font-family: Spectral, Georgia, serif;
-  font-size: 0.9375rem;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.step-raw.as-math { font-size: 1.05rem; }
-
-/* The keypad: a block of squared paper, one key per square. */
-.keypad-slot { margin-top: 1rem; }
-.keypad { user-select: none; -webkit-user-select: none; }
-
-.keypad-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--rule);
-}
-
-.keypad-tabs button {
-  flex: 1;
-  padding: 0.5rem 0;
-  margin-bottom: -1px;
-  background: none;
-  color: var(--ink-soft);
-  font-size: 0.875rem;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-}
-
-.keypad-tabs button[aria-selected="true"] {
-  color: var(--ink);
-  border-bottom-color: var(--pen);
-}
-
-.keypad-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
-  gap: 1px;
-  background: var(--rule);
-  border: 1px solid var(--rule);
-  border-top: 0;
-}
-
-.key {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.9rem;
-  padding: 0.2rem;
-  overflow: hidden;
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 1.05rem;
-  border-radius: 0;
-}
-
-.key .katex { font-size: 1.05em; }
-.key:hover { background: color-mix(in srgb, var(--pen) 8%, var(--paper)); }
-.key:active { background: color-mix(in srgb, var(--pen) 18%, var(--paper)); }
-.key:focus-visible { outline: 2px solid var(--pen); outline-offset: -2px; }
-
-.key-digit { font-weight: 600; }
-.key-op { color: var(--pen); }
-.key-action { color: var(--ink-soft); }
-
-.key-enter {
-  background: var(--pen);
-  color: var(--paper);
-  font-weight: 600;
-}
-
-.key-enter:hover { background: color-mix(in srgb, var(--pen) 82%, var(--ink)); }
-
-@media (max-width: 30rem) {
-  .keypad-slot {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-    padding-top: 0.5rem;
-    background: var(--paper);
+@media (min-width: 900px) {
+  .practice-list {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    margin: 0;
+    padding: 0;
   }
-
-  .key { min-height: 2.75rem; padding: 0.1rem; font-size: 0.9375rem; }
-  math-field { font-size: 1.2rem; }
 }
-
-/* Solve: the equation large, the answer first, then how to get there. */
-.equation-field math-field { font-size: 1.6rem; padding: 0.6rem 0; }
-
-.solved-kind {
-  margin: 0 0 0.4rem;
-  color: var(--ink-soft);
-  font-size: 0.9375rem;
-}
-
-.answer {
-  padding: 0.35rem 1rem;
-  border-left: 3px solid var(--mark-ok);
-  background: color-mix(in srgb, var(--mark-ok) 7%, transparent);
-  overflow-x: auto;
-  font-size: 1.15rem;
-}
-
-/* the answer of an inequality on a number line */
-.number-line {
-  position: relative;
-  margin: 0.6rem 0 0;
-  max-width: 36rem;
-}
-.number-line > svg { display: block; width: 100%; height: auto; overflow: visible; }
-.number-line .axis { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; }
-.number-line .tick { stroke: var(--ink-soft); stroke-width: 1; }
-.number-line .tick-label { fill: var(--ink-soft); font-size: 12px; text-anchor: middle; }
-.number-line .answer-band { stroke: var(--pen); stroke-width: 5; stroke-linecap: butt; }
-.number-line .answer-arrow { stroke: var(--pen); stroke-width: 3; fill: none; }
-.number-line .end { stroke: var(--pen); stroke-width: 2.5; }
-.number-line .end.closed { fill: var(--pen); }
-.number-line .end.open { fill: var(--paper); }
-.number-line-labels { position: relative; height: 1.4rem; margin-top: -1.2rem; }
-.number-line-labels > span {
-  position: absolute;
-  transform: translateX(-50%);
-  color: var(--ink);
-  font-size: 0.875rem;
-  white-space: nowrap;
-}
-
-/* a graph under the answer */
-.graph { margin: 0.4rem 0 0; max-width: 40rem; }
-.graph > svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--rule);
-  background: var(--paper);
-  touch-action: none;
-  cursor: grab;
-}
-.graph > svg:active { cursor: grabbing; }
-.graph > svg:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; }
-.graph .grid { stroke: var(--rule); stroke-width: 1; }
-.graph .axis { stroke: var(--ink-soft); stroke-width: 1.5; }
-.graph .shade { fill: color-mix(in srgb, var(--pen) 12%, transparent); }
-.graph .curve { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
-.graph .curve-0 { stroke: var(--pen); color: var(--pen); }
-.graph .curve-1 { stroke: var(--mark-warning); color: var(--mark-warning); }
-.graph .curve-2 { stroke: var(--mark-ok); color: var(--mark-ok); }
-.graph .curve-3 { stroke: var(--mark-wrong); color: var(--mark-wrong); }
-.graph .vertical { stroke: var(--mark-ok); color: var(--mark-ok); stroke-dasharray: 6 4; }
-.graph .area { stroke: none; }
-.graph .area-above { fill: color-mix(in srgb, var(--mark-ok) 28%, transparent); }
-.graph .area-below { fill: color-mix(in srgb, var(--mark-wrong) 24%, transparent); }
-.graph .mark { stroke: var(--ink); stroke-width: 2; }
-.graph .mark.closed { fill: var(--ink); }
-.graph .mark.open { fill: var(--paper); }
-.graph .tick-label { fill: var(--ink-soft); font-size: 11px; }
-.graph .mark-label { fill: var(--ink); font-size: 12px; }
-.graph-controls { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
-.graph-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 1.2rem;
-  margin-top: 0.4rem;
-  color: var(--ink-soft);
-  font-size: 0.9375rem;
-}
-.legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
-.legend-item .swatch { display: inline-block; width: 1.1rem; height: 3px; background: currentColor; }
-.legend-item.curve-0 { color: var(--pen); }
-.legend-item.curve-1 { color: var(--mark-warning); }
-.legend-item.curve-2 { color: var(--mark-ok); }
-.legend-item.curve-3 { color: var(--mark-wrong); }
-.legend-item.vertical { color: var(--mark-ok); }
-.legend-item > span:last-child { color: var(--ink); }
-
-/* the answer while you type, before pressing Solve */
-.live-answer {
-  margin: 0.4rem 0 0;
-  padding-left: 1rem;
-  color: var(--ink-soft);
-  font-size: 1.05rem;
-  overflow-x: auto;
-}
-
-.answer-note {
-  margin: 0.35rem 0 0;
-  color: var(--ink-soft);
-  font-size: 0.9375rem;
-}
-
-.answer.none {
-  border-left-color: var(--mark-unsure);
-  background: color-mix(in srgb, var(--mark-unsure) 7%, transparent);
-}
-
-/* left-aligned, like the rest of the sheet (KaTeX centres display math) */
-.answer .katex-display { margin: 0.6rem 0; text-align: left; }
-.answer .katex-display > .katex { text-align: left; }
-
-.method-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-  margin: 1.1rem 0 0;
-  color: var(--ink-soft);
-  font-size: 0.9375rem;
-}
-
-.chip {
-  padding: 0.3rem 0.75rem;
-  background: transparent;
-  color: var(--pen);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  font-size: 0.875rem;
-}
-
-.chip:hover { border-color: var(--pen); }
-
-.chip[aria-pressed="true"] {
-  background: var(--pen);
-  border-color: var(--pen);
-  color: var(--paper);
-}
-
-#solved h2 { margin-top: 1.75rem; }
-#solve-status { margin: 0; color: var(--ink-soft); font-size: 0.9375rem; }
-
-.practice-section { margin-top: 2rem; }
-.practice-section h2 { margin-bottom: 0.25rem; }
-.practice-intro { margin: 0 0 0.8rem; color: var(--ink-soft); font-size: 0.9375rem; }
-.practice-list { display: grid; gap: 0.6rem; }
 
 .practice-problem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 8rem;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  scroll-snap-align: start;
+}
+.practice-problem:hover { border-color: color-mix(in srgb, var(--pen) 45%, var(--line)); }
+.practice-label { color: var(--pen); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.practice-math { display: grid; gap: 0.2rem; font-size: 1.05rem; overflow-wrap: anywhere; }
+.practice-line { display: block; overflow-x: auto; overflow-y: hidden; }
+.practice-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: auto;
+  color: var(--pen);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+.practice-go .icon { width: 1rem; height: 1rem; }
+
+/* ------------------------------------------------------------------ checked working */
+
+.summary-card { display: flex; align-items: center; gap: 0.9rem; }
+.summary-card.clean { background: var(--ok-soft); border-color: color-mix(in srgb, var(--mark-ok) 30%, var(--line)); }
+.summary-card.broken { background: var(--wrong-soft); border-color: color-mix(in srgb, var(--mark-wrong) 30%, var(--line)); }
+
+.summary-badge {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  color: var(--surface);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.clean .summary-badge { background: var(--mark-ok); }
+.broken .summary-badge { background: var(--mark-wrong); }
+
+.summary { display: grid; gap: 0.1rem; }
+.summary strong { font-size: 1.05rem; font-weight: 700; }
+.summary span { color: var(--ink-soft); font-size: 0.9375rem; }
+
+.verdict-lines { list-style: none; margin: 0; padding: 0; }
+
+.verdict-line {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  column-gap: 0.75rem;
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--line);
+}
+.verdict-line:first-child { border-top: 0; padding-top: 0.2rem; }
+
+.verdict-line.mark-wrong {
+  margin: 0.25rem -0.6rem;
+  padding: 0.8rem 0.6rem;
+  border-top-color: transparent;
+  border-radius: 14px;
+  background: var(--wrong-soft);
+}
+.verdict-line.mark-wrong + .verdict-line { border-top-color: transparent; }
+
+.mark { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+.mark-number { color: var(--ink-soft); font-family: var(--font-mono); font-size: 0.8125rem; }
+
+.mark-symbol {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+.mark-symbol:empty { display: none; }
+.mark-ok .mark-symbol { background: var(--ok-soft); color: var(--mark-ok); }
+.mark-wrong .mark-symbol { background: var(--mark-wrong); color: var(--surface); }
+.mark-warning .mark-symbol { background: var(--warning-soft); color: var(--mark-warning); }
+.mark-unsure .mark-symbol { background: var(--surface-2); color: var(--mark-unsure); }
+
+.verdict-body { min-width: 0; }
+
+.step-raw { font-family: var(--font-mono); font-size: 1rem; overflow-x: auto; overflow-y: hidden; }
+.step-raw.as-math { font-family: inherit; font-size: 1.1rem; }
+
+.step-read { margin: 0.2rem 0 0; color: var(--ink-soft); font-size: 0.875rem; overflow-x: auto; }
+.step-read .katex { font-size: 1em; }
+
+.step-note { margin: 0.35rem 0 0; font-size: 0.9375rem; font-weight: 600; }
+.step-note.ok { color: var(--mark-ok); font-weight: 500; }
+.step-note.wrong { color: var(--mark-wrong); }
+.step-note.warning { color: var(--mark-warning); }
+.step-note.unsure { color: var(--mark-unsure); }
+
+.evidence {
   display: grid;
   gap: 0.15rem;
-  min-height: 3.5rem;
-  padding: 0.65rem 0.85rem;
-  background: transparent;
+  margin: 0.5rem 0 0;
+  padding: 0.55rem 0.75rem;
+  border-left: 3px solid var(--mark-wrong);
+  border-radius: 4px 10px 10px 4px;
+  background: var(--surface);
+  font-size: 0.875rem;
+}
+.evidence-label { color: var(--mark-wrong); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.evidence-values { display: flex; flex-wrap: wrap; gap: 0 1.25rem; font-family: var(--font-mono); }
+.evidence-values > span { white-space: nowrap; }
+
+.hint, .warn { margin: 0.4rem 0 0; font-size: 0.9375rem; color: var(--ink-soft); }
+.hint::before { content: "Hint · "; color: var(--pen); font-weight: 700; }
+.warn::before { content: "Careful · "; color: var(--mark-warning); font-weight: 700; }
+
+/* ------------------------------------------------------------------ sheets */
+
+dialog.sheet {
+  width: min(36rem, calc(100% - 2rem));
+  max-width: 100%;
+  max-height: min(85vh, 48rem);
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  background: var(--surface);
   color: var(--ink);
-  border: 1px solid var(--rule);
-  text-align: left;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 25%);
+  overflow: hidden;
 }
 
-.practice-problem:hover { border-color: var(--pen); background: color-mix(in srgb, var(--pen) 4%, transparent); }
-.practice-label { color: var(--pen); font-family: Spectral, Georgia, serif; font-size: 0.875rem; }
-.practice-math { overflow-wrap: anywhere; font-family: "Spline Sans Mono", ui-monospace, monospace; }
+dialog.sheet[open] { display: flex; flex-direction: column; }
+dialog.sheet::backdrop { background: var(--backdrop); }
 
-/* the Solve sheet: large equations, one per line */
-.equation-lines math-field { font-size: 1.5rem; }
-.add-equation { margin-top: 0.6rem; font-size: 0.875rem; }
+.sheet-grip {
+  display: none;
+  width: 2.5rem;
+  height: 0.3rem;
+  margin: 0.6rem auto 0;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 0.5rem 1.25rem;
+}
+.sheet-head h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.015em; }
+
+.sheet-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.25rem 1.25rem calc(1.5rem + var(--safe-bottom));
+}
+
+.sheet-note { margin: 0.25rem 0 0.9rem; color: var(--ink-soft); font-size: 0.875rem; }
+
+@media (max-width: 899px) {
+  dialog.sheet {
+    width: 100%;
+    margin: auto 0 0;
+    max-height: 88vh;
+    border-radius: 24px 24px 0 0;
+  }
+  .sheet-grip { display: block; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.sheet[open] { animation: sheet-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  dialog.sheet[open]::backdrop { animation: fade-in 200ms ease both; }
+  @keyframes sheet-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* the examples */
+.example-group {
+  margin: 1.1rem 0 0.5rem;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.example-group:first-child { margin-top: 0.4rem; }
+
+.example-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.5rem; }
+
+.example {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 4.75rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background:
+    linear-gradient(to right, transparent 0.55rem, var(--margin-rule) 0.55rem, var(--margin-rule) calc(0.55rem + 1px), transparent calc(0.55rem + 1px)),
+    var(--paper);
+  color: var(--ink);
+  text-align: left;
+}
+.example:hover { border-color: color-mix(in srgb, var(--pen) 45%, var(--line)); }
+.example-name { padding-left: 0.3rem; color: var(--ink-soft); font-size: 0.8125rem; font-weight: 600; }
+.example-math { display: grid; gap: 0.1rem; padding-left: 0.3rem; font-size: 0.95rem; min-width: 0; }
+/* a long equation fades out at the edge of its card instead of being cut */
+.example-line {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  -webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
+  mask-image: linear-gradient(to right, #000 85%, transparent);
+}
+
+/* the open textbook library */
+.textbook-library { margin-top: 1.5rem; padding-top: 1.1rem; border-top: 1px solid var(--line); }
+.textbook-library h3 { font-size: 1.05rem; font-weight: 700; }
+
+.field { display: grid; gap: 0.35rem; color: var(--ink-soft); font-size: 0.875rem; font-weight: 600; }
+
+select {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9375rem;
+}
+
+.textbook-problem {
+  margin: 0.8rem 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.textbook-actions { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: center; }
+.textbook-actions a { font-size: 0.875rem; font-weight: 600; }
+.attribution { margin: 0.9rem 0 0; color: var(--ink-soft); font-size: 0.8125rem; }
+
+/* about */
+.about-lead { margin: 0 0 0.5rem; font-size: 1.05rem; }
+
+.about-list { list-style: none; margin: 0; padding: 0; }
+.about-list li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.9375rem;
+}
+.about-list .icon { color: var(--pen); margin-top: 0.1rem; }
+
+.theme-picker { margin: 1.1rem 0 0; padding: 0; border: 0; }
+.theme-picker legend {
+  margin-bottom: 0.5rem;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.theme-picker label { flex: 1; }
+.theme-picker span { width: 100%; }
+
+.support {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--pen-soft);
+  font-size: 0.9375rem;
+}
+.support p { margin: 0 0 0.8rem; }
+
+.support-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  background: var(--coffee);
+  color: var(--on-coffee);
+  font-weight: 700;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+.support-link:hover { background: color-mix(in srgb, var(--coffee) 88%, #000); }
+.support-link:active { background: color-mix(in srgb, var(--coffee) 78%, #000); }
+.support-link:focus-visible { outline: 2px solid var(--pen); outline-offset: 3px; }

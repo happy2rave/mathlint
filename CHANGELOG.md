@@ -6,6 +6,41 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.10.1] — 2026-09-22
+
+A new look, built for phones first. The notebook stays; everything around it
+is new.
+
+### Changed
+
+- The web page is now an app shell: a top bar with the engine's state, and
+  **Solve**, **Check** and **Work out** as tabs at the bottom of a phone or down
+  the side of a wide screen. On a wide screen the notebook stays beside its
+  results instead of above them.
+- The notebook keeps its ruled lines, red margin and numbered lines, now drawn
+  as a page with the margin running its full height. Each line has a button to
+  remove it, and the keypad's delete key removes an empty line.
+- On a phone the keypad docks at the bottom like the phone's own keyboard: it
+  rises when you tap a line and steps aside when you are done, and its Enter
+  key says what it will do (**Solve**, **Check**, **Go**, or a new line).
+- Results are cards: the answer (with the method switcher), the graph with
+  zoom buttons on it, the steps as a timeline with a progress bar, and practice
+  problems drawn as math in a row you can swipe.
+- Checking your working marks every line in the notebook's own margin — ✓, ✗,
+  ! or ? — as well as in the report, which opens with the verdict.
+- Examples open in a sheet, grouped (equations, systems and formulas,
+  calculator, inequalities, calculus) and drawn as math; the open-textbook
+  library lives there too. About, the privacy note and support are in their own
+  sheet.
+- A light and a dark theme, following the system unless one is chosen.
+- A shared link to someone's working opens on the Check tab.
+
+### Fixed
+
+- Enter on the keypad inside **Try the next step** checks the attempt instead of
+  running the Work out tab.
+- A startup failure is shown on the Solve tab as well as on Check.
+
 ## [0.10.0] — 2026-09-20
 
 Premium learning features, free and local.

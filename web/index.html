@@ -2,181 +2,341 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mathlint — check your own working</title>
-<meta name="description" content="Write out your solution step by step. mathlint finds the first wrong line and proves it with a counterexample. Runs entirely in your browser.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>✓</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>mathlint — solve it, then check your own working</title>
+<meta name="description" content="Type an equation and see it solved step by step, or write out your own working and find the first wrong line. Runs entirely on your device.">
+<meta name="theme-color" content="#f4f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1014" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="mathlint">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='3' y='2' width='26' height='28' rx='6' fill='%23fffdf7' stroke='%232d46c8' stroke-width='2'/><path d='M10 2v28' stroke='%23eaa59c' stroke-width='2'/><path d='M14 16l3 3 7-7' fill='none' stroke='%232d46c8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<script>
+  // the saved theme, before the first paint, so the page never flashes
+  try {
+    const theme = localStorage.getItem("mathlint:theme");
+    if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+  } catch {}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Spline+Sans+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<a class="skip" href="#equation-lines">Skip to the equation</a>
+<a class="skip" href="#equation-lines">Skip to the notebook</a>
 
-<header class="masthead">
-  <h1>mathlint</h1>
-  <p>Type an equation and see it solved step by step — or write out your own working and find your first mistake.</p>
-</header>
+<!-- The shapes every icon on the page is drawn from. -->
+<svg class="icon-sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-solve" viewBox="0 0 24 24"><path d="M2.5 13.5h3l3.5 7 5-17h7.5"/><path d="M15 10l5 5m0-5l-5 5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-workout" viewBox="0 0 24 24"><path d="M15.5 3.5c-2.5 0-3 1.8-3.5 4.5l-1.8 9c-.5 2.6-1 3.5-3.7 3.5"/><path d="M18 14l3 3m0-3l-3 3"/></symbol>
+  <symbol id="i-about" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.1M10 10h.1M14 10h.1M17.5 10h.1M8 14h8"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5"/></symbol>
+  <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10.5h1.5a2.5 2.5 0 0 1 0 5H17M8 3.5v2.5M12 3.5v2.5"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
+</svg>
 
-<main>
-  <div class="tabs" role="tablist">
-    <button role="tab" id="tab-solve" aria-controls="panel-solve" aria-selected="true">Solve</button>
-    <button role="tab" id="tab-check" aria-controls="panel-check" aria-selected="false">Check my working</button>
-    <button role="tab" id="tab-linalg" aria-controls="panel-linalg" aria-selected="false">Work it out step by step</button>
-  </div>
-
-  <section class="sheet-block" id="panel-solve" role="tabpanel" aria-labelledby="tab-solve">
-    <div class="sheet-head">
-      <span id="equation-label">Your equation, or anything to work out</span>
-      <label class="examples">
-        <span>Example</span>
-        <select id="solve-examples"></select>
-      </label>
+<div class="app">
+  <header class="appbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="2" width="26" height="28" rx="7"/><path class="brand-margin" d="M10 2v28"/><path class="brand-tick" d="M14 16l3 3 7-7"/></svg>
+      <span class="brand-name">mathlint</span>
     </div>
-
-    <ol class="math-lines equation-lines" id="equation-lines" aria-labelledby="equation-label"
-      aria-describedby="solve-help"></ol>
-    <p id="live-answer" class="live-answer" aria-live="polite" hidden></p>
-    <button type="button" class="text-button add-equation" id="add-equation">Add an equation (for a system)</button>
-
-    <div class="keypad-slot" id="keypad-slot-solve"></div>
-
-    <div class="controls">
-      <button id="solve-button" class="primary" type="button" disabled>Solve</button>
-      <p id="solve-status" role="status" aria-live="polite">Starting the math engine…</p>
-      <button id="stop-solve" class="text-button" type="button" hidden>Stop</button>
-    </div>
-
-    <p id="solve-help" class="help">
-      An equation — linear, quadratic, higher powers, fractions, roots, absolute values,
-      exponentials, logarithms — or a system, one equation per line. Or anything without an
-      equals sign: arithmetic with fractions, powers and roots, an expression to simplify, expand
-      or factor, a derivative or an integral. Every answer is checked.
+    <p class="engine-pill" id="engine-pill" data-state="loading" role="status" aria-live="polite">
+      <span class="engine-dot" aria-hidden="true"></span>
+      <span id="engine-text">Starting</span>
     </p>
+  </header>
 
-    <details class="textbook-library">
-      <summary>Open textbook problems</summary>
-      <div class="textbook-body">
-        <label>
-          <span>Choose an exercise</span>
-          <select id="textbook-problems"></select>
-        </label>
-        <p id="textbook-problem" class="textbook-problem"></p>
-        <div class="textbook-actions">
-          <button id="solve-textbook" class="primary" type="button">Show the worked solution</button>
-          <a id="textbook-source" target="_blank" rel="noopener">View the exercise in OpenStax</a>
+  <nav class="navbar" aria-label="mathlint">
+    <div class="nav-tabs" role="tablist" aria-label="What to do">
+      <button role="tab" class="nav-item" id="tab-solve" aria-controls="panel-solve" aria-selected="true">
+        <svg class="icon" aria-hidden="true"><use href="#i-solve"/></svg><span>Solve</span>
+      </button>
+      <button role="tab" class="nav-item" id="tab-check" aria-controls="panel-check" aria-selected="false" tabindex="-1">
+        <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span>Check</span>
+      </button>
+      <button role="tab" class="nav-item" id="tab-linalg" aria-controls="panel-linalg" aria-selected="false" tabindex="-1">
+        <svg class="icon" aria-hidden="true"><use href="#i-workout"/></svg><span>Work out</span>
+      </button>
+    </div>
+    <button type="button" class="nav-item nav-about" id="open-about" aria-haspopup="dialog">
+      <svg class="icon" aria-hidden="true"><use href="#i-about"/></svg><span>About</span>
+    </button>
+  </nav>
+
+  <main class="screens">
+    <!-- Solve ------------------------------------------------------------ -->
+    <section class="screen" id="panel-solve" role="tabpanel" aria-labelledby="tab-solve">
+      <div class="workspace">
+        <header class="screen-head">
+          <h1>Solve</h1>
+          <p>Type an equation, a system, or anything to work out.</p>
+        </header>
+
+        <article class="notebook">
+          <header class="notebook-bar">
+            <span class="notebook-title" id="equation-label">Your problem</span>
+            <button type="button" class="pill-button" id="open-solve-examples" aria-haspopup="dialog">
+              <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Examples
+            </button>
+          </header>
+          <ol class="math-lines equation-lines" id="equation-lines" aria-labelledby="equation-label"
+            aria-describedby="solve-help"></ol>
+          <p id="live-answer" class="live-answer" aria-live="polite" hidden></p>
+          <footer class="notebook-foot">
+            <button type="button" class="ghost-button" id="add-equation">
+              <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Add an equation (for a system)
+            </button>
+          </footer>
+        </article>
+
+        <div class="action-row">
+          <p class="status" id="solve-status" role="status" aria-live="polite">Starting the math engine…</p>
+          <button id="stop-solve" class="ghost-button stop-button" type="button" hidden>
+            <svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg>Stop
+          </button>
+          <button id="solve-button" class="primary action-button" type="button" disabled>
+            Solve<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </button>
         </div>
-        <p class="attribution">
-          Adapted from <cite>College Algebra with Corequisite Support 2e</cite> by OpenStax,
-          licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="license noopener">CC BY 4.0</a>.
-          <a href="https://openstax.org/books/college-algebra-corequisite-support-2e/pages/1-introduction-to-prerequisites" target="_blank" rel="noopener">Access the book free at OpenStax</a>.
-        </p>
+
+        <div class="keypad-slot" id="keypad-slot-solve"></div>
+
+        <details class="tips">
+          <summary><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg>What can I type?</summary>
+          <p id="solve-help">
+            An equation — linear, quadratic, higher powers, fractions, roots, absolute values,
+            exponentials, logarithms — or a system, one equation per line. Or anything without an
+            equals sign: arithmetic with fractions, powers and roots, an expression to simplify, expand
+            or factor, a limit, a derivative or an integral. Every answer is checked.
+          </p>
+        </details>
       </div>
-    </details>
 
-    <section id="solved" class="results" aria-live="polite"></section>
-  </section>
-
-  <section class="sheet-block" id="panel-check" role="tabpanel" aria-labelledby="tab-check" hidden>
-    <div class="sheet-head">
-      <span id="sheet-label">Your working, one step per line</span>
-      <div class="sheet-tools">
-        <label class="examples">
-          <span>Example</span>
-          <select id="examples"></select>
-        </label>
-        <button type="button" class="text-button" id="mode-toggle" aria-pressed="false">Type as text</button>
+      <div class="results-pane">
+        <section id="solved" class="results" aria-live="polite"></section>
       </div>
-    </div>
+    </section>
 
-    <ol class="math-lines" id="math-lines" aria-labelledby="sheet-label" aria-describedby="syntax-help"></ol>
+    <!-- Check my working ------------------------------------------------- -->
+    <section class="screen" id="panel-check" role="tabpanel" aria-labelledby="tab-check" hidden>
+      <div class="workspace">
+        <header class="screen-head">
+          <h1>Check my working</h1>
+          <p>Write your solution one step per line. mathlint finds the first wrong step.</p>
+        </header>
 
-    <div class="sheet" id="text-sheet" hidden>
-      <div class="gutter" id="gutter" aria-hidden="true"></div>
-      <textarea id="solution" spellcheck="false" autocapitalize="off" autocorrect="off"
-        aria-labelledby="sheet-label" aria-describedby="syntax-help"></textarea>
-    </div>
+        <article class="notebook">
+          <header class="notebook-bar">
+            <span class="notebook-title" id="sheet-label">Your working</span>
+            <div class="notebook-tools">
+              <button type="button" class="pill-button" id="mode-toggle" aria-pressed="false">Type as text</button>
+              <button type="button" class="pill-button" id="open-check-examples" aria-haspopup="dialog">
+                <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Examples
+              </button>
+            </div>
+          </header>
 
-    <div class="keypad-slot" id="keypad-slot-check"></div>
+          <ol class="math-lines" id="math-lines" aria-labelledby="sheet-label" aria-describedby="syntax-help"></ol>
 
-    <div class="controls">
-      <button id="check" class="primary" type="button" disabled>Check my working</button>
-      <p id="status" role="status" aria-live="polite">Starting the math engine…</p>
-      <button id="stop-check" class="text-button" type="button" hidden>Stop</button>
-    </div>
+          <div class="text-sheet" id="text-sheet" hidden>
+            <div class="gutter" id="gutter" aria-hidden="true"></div>
+            <textarea id="solution" spellcheck="false" autocapitalize="off" autocorrect="off"
+              aria-labelledby="sheet-label" aria-describedby="syntax-help"></textarea>
+          </div>
+        </article>
 
-    <p id="syntax-help" class="help">
-      Tap the keys or type: <code>/</code> makes a fraction, <code>^</code> a power,
-      <code>sqrt</code>, <code>sin</code>, <code>pi</code> and <code>int</code> turn into symbols.
-      Enter starts the next line. Solving an equation? Put it on line 1 and end with
-      <code>x = 2 or x = 3</code>. Ctrl+Enter checks.
-    </p>
-  </section>
+        <div class="action-row">
+          <p class="status" id="status" role="status" aria-live="polite">Starting the math engine…</p>
+          <button id="stop-check" class="ghost-button stop-button" type="button" hidden>
+            <svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg>Stop
+          </button>
+          <button id="check" class="primary action-button" type="button" disabled>
+            Check<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </button>
+        </div>
 
-  <section id="results" class="results" aria-live="polite" hidden></section>
+        <div class="keypad-slot" id="keypad-slot-check"></div>
 
-  <section class="sheet-block" id="panel-linalg" role="tabpanel" aria-labelledby="tab-linalg" hidden>
-    <div class="sheet-head">
-      <span id="target-label">Your expression</span>
-      <label class="examples">
-        <span>Work out</span>
-        <select id="operation">
-          <option value="diff">Derivative</option>
-          <option value="integrate">Integral</option>
-          <option value="rref">Row reduce (RREF)</option>
-          <option value="det">Determinant</option>
-          <option value="inverse">Inverse</option>
-          <option value="eigen">Eigenvalues and eigenvectors</option>
-        </select>
-      </label>
-    </div>
+        <details class="tips">
+          <summary><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg>How to write it</summary>
+          <p id="syntax-help">
+            Tap the keys or type: <code>/</code> makes a fraction, <code>^</code> a power,
+            <code>sqrt</code>, <code>sin</code>, <code>pi</code> and <code>int</code> turn into symbols.
+            Enter starts the next line. Solving an equation? Put it on line 1 and end with
+            <code>x = 2 or x = 3</code>. Ctrl+Enter checks.
+          </p>
+        </details>
+      </div>
 
-    <div class="math-single" id="expression-block">
-      <math-field id="expression" aria-labelledby="target-label"></math-field>
-    </div>
+      <div class="results-pane">
+        <section id="results" class="results" aria-live="polite"></section>
+      </div>
+    </section>
 
-    <div class="sheet plain" id="matrix-block" hidden>
-      <textarea id="matrix" spellcheck="false" autocapitalize="off" autocorrect="off"
-        aria-labelledby="target-label" aria-describedby="target-help">[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]</textarea>
-    </div>
+    <!-- Work it out step by step ----------------------------------------- -->
+    <section class="screen" id="panel-linalg" role="tabpanel" aria-labelledby="tab-linalg" hidden>
+      <div class="workspace">
+        <header class="screen-head">
+          <h1>Work it out</h1>
+          <p>Derivatives, integrals with limits, and matrices, step by step.</p>
+        </header>
 
-    <div class="controls bounds" id="bounds" hidden>
-      <span>From</span>
-      <math-field id="lower" class="bound" aria-label="Lower limit"></math-field>
-      <span>to</span>
-      <math-field id="upper" class="bound" aria-label="Upper limit"></math-field>
-      <span class="help">leave both empty for an indefinite integral</span>
-    </div>
+        <div class="segmented operation-picker" role="radiogroup" aria-label="Work out" id="operation">
+          <label><input type="radio" name="operation" value="diff" checked><span>Derivative</span></label>
+          <label><input type="radio" name="operation" value="integrate"><span>Integral</span></label>
+          <label><input type="radio" name="operation" value="rref"><span>Row reduce</span></label>
+          <label><input type="radio" name="operation" value="det"><span>Determinant</span></label>
+          <label><input type="radio" name="operation" value="inverse"><span>Inverse</span></label>
+          <label><input type="radio" name="operation" value="eigen"><span>Eigenvalues</span></label>
+        </div>
 
-    <div class="keypad-slot" id="keypad-slot-steps"></div>
+        <article class="notebook">
+          <header class="notebook-bar">
+            <span class="notebook-title" id="target-label">Your expression</span>
+          </header>
 
-    <div class="controls">
-      <button id="show-steps" class="primary" type="button" disabled>Show the steps</button>
-      <p id="steps-status" role="status" aria-live="polite"></p>
-      <button id="stop-steps" class="text-button" type="button" hidden>Stop</button>
-    </div>
+          <ol class="math-lines single-line" id="expression-block">
+            <li class="math-line active"><math-field id="expression" aria-labelledby="target-label"></math-field></li>
+          </ol>
 
-    <p id="target-help" class="help"></p>
+          <div class="text-sheet plain" id="matrix-block" hidden>
+            <textarea id="matrix" spellcheck="false" autocapitalize="off" autocorrect="off"
+              aria-labelledby="target-label" aria-describedby="target-help">[[2, 1, -1], [-3, -1, 2], [-2, 1, 2]]</textarea>
+          </div>
 
-    <section id="worked" class="results" aria-live="polite"></section>
-  </section>
+          <footer class="notebook-foot bounds" id="bounds" hidden>
+            <span>From</span>
+            <math-field id="lower" class="bound" aria-label="Lower limit"></math-field>
+            <span>to</span>
+            <math-field id="upper" class="bound" aria-label="Upper limit"></math-field>
+            <span class="bounds-note">Leave both empty for an indefinite integral.</span>
+          </footer>
+        </article>
+
+        <div class="action-row">
+          <p class="status" id="steps-status" role="status" aria-live="polite"></p>
+          <button id="stop-steps" class="ghost-button stop-button" type="button" hidden>
+            <svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg>Stop
+          </button>
+          <button id="show-steps" class="primary action-button" type="button" disabled>
+            Show the steps<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </button>
+        </div>
+
+        <div class="keypad-slot" id="keypad-slot-steps"></div>
+
+        <details class="tips">
+          <summary><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg>How to write it</summary>
+          <p id="target-help"></p>
+        </details>
+      </div>
+
+      <div class="results-pane">
+        <section id="worked" class="results" aria-live="polite"></section>
+      </div>
+    </section>
+  </main>
 
   <div id="keypad"></div>
-</main>
+</div>
 
-<footer>
-  <a class="support-link" href="https://buymeacoffee.com/happy2rave" target="_blank" rel="noopener"
-    aria-label="Buy me a coffee (opens in a new tab)">
-    Buy me a coffee
-  </a>
-  <p>
-    Everything runs in your browser — nothing you type is sent anywhere.
-    <a href="https://github.com/happy2rave/mathlint">Source and bug reports</a> ·
-    <span id="version"></span>
-  </p>
-</footer>
+<!-- Examples: a bottom sheet on a phone, a dialog on a wide screen. -->
+<dialog class="sheet" id="examples-sheet" aria-labelledby="examples-title">
+  <div class="sheet-grip" aria-hidden="true"></div>
+  <header class="sheet-head">
+    <h2 id="examples-title">Examples</h2>
+    <button type="button" class="icon-button" data-close aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </header>
+  <div class="sheet-body">
+    <div id="example-list" class="example-list"></div>
+
+    <section class="textbook-library" id="textbook-library" aria-labelledby="textbook-title">
+      <h3 id="textbook-title">Open textbook problems</h3>
+      <p class="sheet-note">Exercises from a free, open-licensed textbook, with worked solutions made on your device.</p>
+      <label class="field">
+        <span>Choose an exercise</span>
+        <select id="textbook-problems"></select>
+      </label>
+      <p id="textbook-problem" class="textbook-problem"></p>
+      <div class="textbook-actions">
+        <button id="solve-textbook" class="primary" type="button">Show the worked solution</button>
+        <a id="textbook-source" target="_blank" rel="noopener">View the exercise in OpenStax</a>
+      </div>
+      <p class="attribution">
+        Adapted from <cite>College Algebra with Corequisite Support 2e</cite> by OpenStax,
+        licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="license noopener">CC BY 4.0</a>.
+        <a href="https://openstax.org/books/college-algebra-corequisite-support-2e/pages/1-introduction-to-prerequisites" target="_blank" rel="noopener">Access the book free at OpenStax</a>.
+      </p>
+    </section>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="about-sheet" aria-labelledby="about-title">
+  <div class="sheet-grip" aria-hidden="true"></div>
+  <header class="sheet-head">
+    <h2 id="about-title">About mathlint</h2>
+    <button type="button" class="icon-button" data-close aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </header>
+  <div class="sheet-body">
+    <p class="about-lead">
+      Type an equation and see it solved step by step — or write out your own working and
+      find your first mistake.
+    </p>
+
+    <ul class="about-list">
+      <li>
+        <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+        <span>Everything runs on your device — nothing you type is sent anywhere.</span>
+      </li>
+      <li>
+        <svg class="icon" aria-hidden="true"><use href="#i-sparkle"/></svg>
+        <span>Every answer is checked before it is shown. When mathlint is not sure, it says so.</span>
+      </li>
+      <li>
+        <svg class="icon" aria-hidden="true"><use href="#i-code"/></svg>
+        <span><a href="https://github.com/happy2rave/mathlint">Source and bug reports</a> ·
+          <span id="version">mathlint</span></span>
+      </li>
+    </ul>
+
+    <fieldset class="theme-picker">
+      <legend>Appearance</legend>
+      <div class="segmented" role="radiogroup" aria-label="Appearance">
+        <label><input type="radio" name="theme" value="system" checked><span>System</span></label>
+        <label><input type="radio" name="theme" value="light"><span>Light</span></label>
+        <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+      </div>
+    </fieldset>
+
+    <div class="support">
+      <p>mathlint is free for personal, educational and other noncommercial use. If it helps you, you can support its development.</p>
+      <a class="support-link" href="https://buymeacoffee.com/happy2rave" target="_blank" rel="noopener"
+        aria-label="Buy me a coffee (opens in a new tab)">
+        <svg class="icon" aria-hidden="true"><use href="#i-coffee"/></svg>
+        Buy me a coffee
+      </a>
+    </div>
+  </div>
+</dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/mathlive@0.110.0/mathlive.min.js"></script>

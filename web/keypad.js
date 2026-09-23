@@ -121,13 +121,29 @@ export const TABS = [
 ];
 
 export class Keypad {
-  constructor(root, { getTarget, onEnter, onInput }) {
+  // enterLabel(target): what the Enter key says for that field ("↵", "Solve"...)
+  // onDeleteEmpty(target): Delete on an empty line; onHide: the hide key
+  constructor(root, { getTarget, onEnter, onInput, enterLabel, onDeleteEmpty, onHide }) {
     this.root = root;
     this.getTarget = getTarget;
     this.onEnter = onEnter;
     this.onInput = onInput || (() => {});
+    this.enterLabel = enterLabel || (() => null);
+    this.onDeleteEmpty = onDeleteEmpty || (() => false);
+    this.onHide = onHide || null;
     this.tab = TABS[0].id;
     this.render();
+  }
+
+  // The Enter key's label follows the field it will act on.
+  refresh() {
+    const target = this.getTarget();
+    const label = target ? this.enterLabel(target) : null;
+    for (const key of this.root.querySelectorAll(".key-enter")) {
+      key.textContent = label || ENTER.text;
+      key.classList.toggle("key-enter-word", Boolean(label));
+      key.setAttribute("aria-label", label || ENTER.title);
+    }
   }
 
   render() {
@@ -151,7 +167,19 @@ export class Keypad {
       });
       tabs.append(button);
     }
-    this.root.append(tabs);
+    const bar = document.createElement("div");
+    bar.className = "keypad-bar";
+    bar.append(tabs);
+    if (this.onHide) {
+      const hide = document.createElement("button");
+      hide.type = "button";
+      hide.className = "keypad-hide";
+      hide.setAttribute("aria-label", "Hide the keypad");
+      hide.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>';
+      hide.addEventListener("click", () => this.onHide());
+      bar.append(hide);
+    }
+    this.root.append(bar);
 
     const tab = TABS.find((candidate) => candidate.id === this.tab);
     const grid = document.createElement("div");
@@ -161,6 +189,7 @@ export class Keypad {
       for (const key of row) grid.append(this.#keyButton(key));
     }
     this.root.append(grid);
+    this.refresh();
   }
 
   #keyButton(key) {
@@ -195,6 +224,8 @@ export class Keypad {
     }
     if (key.insert) {
       target.insert(key.insert, { focus: true, selectionMode: "placeholder", scrollIntoView: true });
+    } else if (key.command === "deleteBackward" && target.value === "" && this.onDeleteEmpty(target)) {
+      return;
     } else if (key.command) {
       target.executeCommand(key.command);
       target.focus();
