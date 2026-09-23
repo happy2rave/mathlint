@@ -52,10 +52,10 @@ KIND_LABELS = {
 }
 
 METHOD_LABELS = {
-    "balance": msg("Balance both sides"),
-    "sign-chart": msg("Sign chart"),
-    "cases": msg("Split into cases"),
-    "sympy": msg("Computer algebra"),
+    "balance": msg("Balance both sides", context="method"),
+    "sign-chart": msg("Sign chart", context="method"),
+    "cases": msg("Split into cases", context="method"),
+    "sympy": msg("Computer algebra", context="method"),
 }
 
 

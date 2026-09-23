@@ -25,20 +25,20 @@ METHODS: dict[str, MethodChooser] = {}
 
 #: What the method switcher calls each method.
 METHOD_LABELS = {
-    "balance": msg("Balance both sides"),
-    "factoring": msg("Factoring"),
-    "formula": msg("Quadratic formula"),
-    "completing-square": msg("Completing the square"),
-    "square-root": msg("Square roots"),
-    "roots": msg("Factor theorem"),
-    "denominators": msg("Clear the denominators"),
-    "isolate-and-square": msg("Isolate and square"),
-    "cases": msg("Split into cases"),
-    "same-base": msg("Same base"),
-    "logarithms": msg("Take logarithms"),
-    "combine-logs": msg("Combine the logarithms"),
-    "substitution": msg("Substitution"),
-    "sympy": msg("Computer algebra"),
+    "balance": msg("Balance both sides", context="method"),
+    "factoring": msg("Factoring", context="method"),
+    "formula": msg("Quadratic formula", context="method"),
+    "completing-square": msg("Completing the square", context="method"),
+    "square-root": msg("Square roots", context="method"),
+    "roots": msg("Factor theorem", context="method"),
+    "denominators": msg("Clear the denominators", context="method"),
+    "isolate-and-square": msg("Isolate and square", context="method"),
+    "cases": msg("Split into cases", context="method"),
+    "same-base": msg("Same base", context="method"),
+    "logarithms": msg("Take logarithms", context="method"),
+    "combine-logs": msg("Combine the logarithms", context="method"),
+    "substitution": msg("Substitution", context="method"),
+    "sympy": msg("Computer algebra", context="method"),
 }
 
 

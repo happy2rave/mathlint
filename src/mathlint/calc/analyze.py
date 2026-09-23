@@ -11,6 +11,7 @@ from __future__ import annotations
 import sympy as sp
 from sympy.calculus.util import continuous_domain
 
+from ..i18n import both, join, msg
 from ..parse.plain import latex_of, read_as
 from ..solve.intervals import as_intervals, pieces
 from .expression import Steps, method
@@ -31,7 +32,9 @@ def analyze_steps(expression: sp.Expr, steps: Steps) -> sp.Expr:
     computation.kind = "analysis"
     name = f"f({x})"
     steps.show_text(
-        "The function", f"{name} = {read_as(f)}", f"f\\left({latex_of(x)}\\right) = {latex_of(f)}"
+        msg("The function"),
+        f"{name} = {read_as(f)}",
+        f"f\\left({latex_of(x)}\\right) = {latex_of(f)}",
     )
 
     domain = _domain(f, x, steps)
@@ -40,7 +43,7 @@ def analyze_steps(expression: sp.Expr, steps: Steps) -> sp.Expr:
     derivative = _rising_and_falling(f, x, domain, steps)
     if derivative is not None:
         _bending(f, derivative, x, domain, steps)
-    computation.title = f"Analyze f({x}) = {read_as(f)}"
+    computation.title = msg("Analyze f({x}) = {f}", x=x, f=read_as(f))
     return expression
 
 
@@ -52,20 +55,30 @@ def _domain(f: sp.Expr, x: sp.Symbol, steps: Steps) -> sp.Set:
     reasons = []
     for node in sp.preorder_traversal(f):
         if isinstance(node, sp.Pow) and node.exp.is_negative and node.base.has(x):
-            reasons.append(f"the denominator {read_as(node.base)} must not be 0")
+            reasons.append(msg("the denominator {base} must not be 0", base=read_as(node.base)))
         elif isinstance(node, sp.Pow) and node.exp.is_Rational and node.exp.q % 2 == 0:
-            reasons.append(f"what is under the root, {read_as(node.base)}, must be at least 0")
+            reasons.append(
+                msg("what is under the root, {base}, must be at least 0", base=read_as(node.base))
+            )
         elif isinstance(node, sp.log):
-            reasons.append(f"what the logarithm takes, {read_as(node.args[0])}, must be positive")
+            reasons.append(
+                msg(
+                    "what the logarithm takes, {args}, must be positive", args=read_as(node.args[0])
+                )
+            )
     plain, latex = as_intervals(domain)
     if domain == sp.S.Reals:
-        text = (
-            "Domain: every real number, since nothing divides by zero or leaves a root or a "
-            "logarithm undefined"
+        text = msg(
+            "Domain: every real number, since nothing divides by zero or "
+            "leaves a root or a logarithm undefined"
         )
-        plain, latex = "all real numbers", r"\mathbb{R}"
+        plain, latex = msg("all real numbers"), r"\mathbb{R}"
     else:
-        text = "Domain: " + "; ".join(dict.fromkeys(reasons)) if reasons else "Domain"
+        text = (
+            msg("Domain: {reasons}", reasons=join("; ", dict.fromkeys(reasons)))
+            if reasons
+            else msg("Domain")
+        )
     steps.show_text(text, plain, latex)
     return domain
 
@@ -77,28 +90,28 @@ def _intercepts(f: sp.Expr, x: sp.Symbol, domain: sp.Set, steps: Steps) -> None:
     if sp.S.Zero in domain:
         value = sp.simplify(f.subs(x, 0))
         steps.show_text(
-            f"The y-intercept: put {x} = 0",
-            f"f(0) = {read_as(value)}, the point (0, {read_as(value)})",
+            msg("The y-intercept: put {x} = 0", x=x),
+            msg("f(0) = {value}, the point (0, {value})", value=read_as(value)),
             rf"f(0) = {latex_of(value)}",
         )
-        _mark(steps, 0, value, "y-intercept")
+        _mark(steps, 0, value, msg("y-intercept"))
     else:
-        steps.note(f"No y-intercept: {x} = 0 is not in the domain")
+        steps.note(msg("No y-intercept: {x} = 0 is not in the domain", x=x))
 
     zeros = _solve(f, x, domain)
     if zeros is None:
-        _endless(f, x, domain, steps, f"The zeros: f({x}) = 0")
+        _endless(f, x, domain, steps, msg("The zeros: f({x}) = 0", x=x))
     elif not zeros:
-        steps.note(f"No zeros: f({x}) is never 0, so the graph never touches the x-axis")
+        steps.note(msg("No zeros: f({x}) is never 0, so the graph never touches the x-axis", x=x))
     else:
         listed = ", ".join(f"{x} = {read_as(value)}" for value in zeros)
         steps.show_text(
-            f"The zeros (x-intercepts): solve f({x}) = 0",
+            msg("The zeros (x-intercepts): solve f({x}) = 0", x=x),
             listed,
             r",\ ".join(f"{latex_of(x)} = {latex_of(value)}" for value in zeros),
         )
         for value in zeros:
-            _mark(steps, value, 0, "zero")
+            _mark(steps, value, 0, msg("zero"))
 
 
 # --- asymptotes --------------------------------------------------------------------------
@@ -111,12 +124,21 @@ def _asymptotes(f: sp.Expr, x: sp.Symbol, domain: sp.Set, steps: Steps) -> None:
         limits = {side: sp.limit(f, x, point, "-" if side == "left" else "+") for side in sides}
         values = list(limits.values())
         if any(value.is_infinite for value in values):
-            approach = " and ".join(
-                f"{_infinity(value)} from the {side}" for side, value in limits.items()
+            approach = both(
+                (
+                    msg("{infinity} from the left", infinity=_infinity(value))
+                    if side == "left"
+                    else msg("{infinity} from the right", infinity=_infinity(value))
+                )
+                for side, value in limits.items()
             )
             steps.show_text(
-                f"Vertical asymptote: as {x} approaches {read_as(point)}, f({x}) goes to "
-                f"{approach}",
+                msg(
+                    "Vertical asymptote: as {x} approaches {point}, f({x}) goes to {approach}",
+                    x=x,
+                    point=read_as(point),
+                    approach=approach,
+                ),
                 f"{x} = {read_as(point)}",
                 f"{latex_of(x)} = {latex_of(point)}",
             )
@@ -124,8 +146,13 @@ def _asymptotes(f: sp.Expr, x: sp.Symbol, domain: sp.Set, steps: Steps) -> None:
         elif len(values) == 2 and values[0] == values[1] and values[0].is_finite:
             left = values[0]
             steps.show_text(
-                f"A hole, not an asymptote: f({x}) approaches {read_as(left)} at "
-                f"{x} = {read_as(point)} from both sides, but is not defined there",
+                msg(
+                    "A hole, not an asymptote: f({x}) approaches {left} at {x} = "
+                    "{point} from both sides, but is not defined there",
+                    x=x,
+                    left=read_as(left),
+                    point=read_as(point),
+                ),
                 f"({read_as(point)}, {read_as(left)})",
                 rf"\left({latex_of(point)},\ {latex_of(left)}\right)",
             )
@@ -139,25 +166,30 @@ def _asymptotes(f: sp.Expr, x: sp.Symbol, domain: sp.Set, steps: Steps) -> None:
         if isinstance(limit, sp.AccumBounds):
             continue  # it keeps going up and down, like sin(x): no line to approach
         if limit.is_number and limit.is_finite:
-            lines[end] = ("Horizontal", limit)
+            lines[end] = (msg("Horizontal"), limit)
             continue
         slant = _oblique(f, x, end)
         if slant is not None:
-            lines[end] = ("Oblique", slant)
-    ends = {sp.oo: f"{x} goes to infinity", -sp.oo: f"{x} goes to minus infinity"}
+            lines[end] = (msg("Oblique"), slant)
+    ends = {sp.oo: msg("{x} goes to infinity", x=x), -sp.oo: msg("{x} goes to minus infinity", x=x)}
     if len(lines) == 2 and lines[sp.oo] == lines[-sp.oo]:
         # the same line on both sides is one asymptote
         lines = {"both": lines[sp.oo]}
-        ends["both"] = f"{x} goes to infinity in either direction"
+        ends["both"] = msg("{x} goes to infinity in either direction", x=x)
     for end, (kind, line) in lines.items():
         steps.show_text(
-            f"{kind} asymptote: f({x}) gets closer and closer to it as {ends[end]}",
+            msg(
+                "{kind} asymptote: f({x}) gets closer and closer to it as {ends}",
+                kind=kind,
+                x=x,
+                ends=ends[end],
+            ),
             f"y = {read_as(line)}",
             f"y = {latex_of(line)}",
         )
         found = True
     if not found:
-        steps.note("No asymptotes")
+        steps.note(msg("No asymptotes"))
 
 
 def _oblique(f: sp.Expr, x: sp.Symbol, end: sp.Expr) -> sp.Expr | None:
@@ -197,9 +229,9 @@ def _reaches(domain: sp.Set, end: sp.Expr) -> bool:
 
 def _infinity(value: sp.Expr) -> str:
     if value == sp.oo:
-        return "+infinity"
+        return msg("+infinity")
     if value == -sp.oo:
-        return "-infinity"
+        return msg("-infinity")
     return read_as(value)
 
 
@@ -209,22 +241,22 @@ def _infinity(value: sp.Expr) -> str:
 def _rising_and_falling(f, x, domain, steps: Steps) -> sp.Expr | None:
     derivative = sp.factor(sp.simplify(sp.diff(f, x)))
     steps.show_text(
-        f"The derivative tells where f({x}) rises and falls",
+        msg("The derivative tells where f({x}) rises and falls", x=x),
         f"f'({x}) = {read_as(derivative)}",
         rf"f'\left({latex_of(x)}\right) = {latex_of(derivative)}",
     )
     if derivative == 0:
-        steps.note(f"f'({x}) = 0 everywhere: f is constant, it neither rises nor falls")
+        steps.note(msg("f'({x}) = 0 everywhere: f is constant, it neither rises nor falls", x=x))
         return None
     critical = _solve(derivative, x, domain)
     if critical is None:
-        _endless(derivative, x, domain, steps, f"Critical points: f'({x}) = 0")
+        _endless(derivative, x, domain, steps, msg("Critical points: f'({x}) = 0", x=x))
         return derivative
     if not critical:
-        steps.note(f"f'({x}) is never 0, so there are no critical points")
+        steps.note(msg("f'({x}) is never 0, so there are no critical points", x=x))
     else:
         steps.show_text(
-            f"Critical points: f'({x}) = 0",
+            msg("Critical points: f'({x}) = 0", x=x),
             ", ".join(f"{x} = {read_as(value)}" for value in critical),
             r",\ ".join(f"{latex_of(x)} = {latex_of(value)}" for value in critical),
         )
@@ -232,62 +264,76 @@ def _rising_and_falling(f, x, domain, steps: Steps) -> sp.Expr | None:
     rising = [interval for interval, sign in signs if sign > 0]
     falling = [interval for interval, sign in signs if sign < 0]
     if rising:
-        steps.show_text("Increasing where f'(x) > 0", *_listed(rising))
+        steps.show_text(msg("Increasing where f'(x) > 0"), *_listed(rising))
     if falling:
-        steps.show_text("Decreasing where f'(x) < 0", *_listed(falling))
+        steps.show_text(msg("Decreasing where f'(x) < 0"), *_listed(falling))
 
     for point in critical:
         before, after = _around(signs, point)
         value = sp.simplify(f.subs(x, point))
         if before is None or after is None or before == after:
             continue
-        kind = "maximum" if before > 0 > after else "minimum"
-        change = "rises then falls" if kind == "maximum" else "falls then rises"
+        maximum = before > 0 > after
+        if maximum:
+            text = msg(
+                "Local maximum: f({x}) rises then falls at {x} = {point}", x=x, point=read_as(point)
+            )
+        else:
+            text = msg(
+                "Local minimum: f({x}) falls then rises at {x} = {point}", x=x, point=read_as(point)
+            )
         steps.show_text(
-            f"Local {kind}: f({x}) {change} at {x} = {read_as(point)}",
+            text,
             f"({read_as(point)}, {read_as(value)})",
             rf"\left({latex_of(point)},\ {latex_of(value)}\right)",
         )
-        _mark(steps, point, value, f"local {kind}")
+        _mark(steps, point, value, msg("local maximum") if maximum else msg("local minimum"))
     return derivative
 
 
 def _bending(f, derivative, x, domain, steps: Steps) -> None:
     second = sp.factor(sp.simplify(sp.diff(derivative, x)))
     steps.show_text(
-        "The second derivative tells which way it bends",
+        msg("The second derivative tells which way it bends"),
         f"f''({x}) = {read_as(second)}",
         rf"f''\left({latex_of(x)}\right) = {latex_of(second)}",
     )
     if second == 0:
         steps.note(
-            f"f''({x}) = 0 everywhere: the graph is made of straight lines and does not bend"
+            msg(
+                "f''({x}) = 0 everywhere: the graph is made of straight lines and does not bend",
+                x=x,
+            )
         )
         return
     flat = _solve(second, x, domain)
     if flat is None:
-        _endless(second, x, domain, steps, f"Where f''({x}) = 0")
+        _endless(second, x, domain, steps, msg("Where f''({x}) = 0", x=x))
         return
     if not flat:
-        steps.note(f"f''({x}) is never 0, so there is no inflection point")
+        steps.note(msg("f''({x}) is never 0, so there is no inflection point", x=x))
     signs = _signs(second, x, domain, flat)
     up = [interval for interval, sign in signs if sign > 0]
     down = [interval for interval, sign in signs if sign < 0]
     if up:
-        steps.show_text("Concave up (bends upward) where f''(x) > 0", *_listed(up))
+        steps.show_text(msg("Concave up (bends upward) where f''(x) > 0"), *_listed(up))
     if down:
-        steps.show_text("Concave down (bends downward) where f''(x) < 0", *_listed(down))
+        steps.show_text(msg("Concave down (bends downward) where f''(x) < 0"), *_listed(down))
     for point in flat:
         before, after = _around(signs, point)
         if before is None or after is None or before == after:
             continue
         value = sp.simplify(f.subs(x, point))
         steps.show_text(
-            f"Inflection point: the bending changes direction at {x} = {read_as(point)}",
+            msg(
+                "Inflection point: the bending changes direction at {x} = {point}",
+                x=x,
+                point=read_as(point),
+            ),
             f"({read_as(point)}, {read_as(value)})",
             rf"\left({latex_of(point)},\ {latex_of(value)}\right)",
         )
-        _mark(steps, point, value, "inflection point")
+        _mark(steps, point, value, msg("inflection point"))
 
 
 # --- helpers -------------------------------------------------------------------------------
@@ -321,12 +367,16 @@ def _endless(expression, x, domain, steps: Steps, what: str) -> None:
             f"{latex_of(x)} = {latex_of(family)}" for family in families
         )
         steps.show_text(
-            f"{what} has infinitely many solutions, repeating along the axis",
-            f"{plain}, for any whole number {n}",
+            msg("{what} has infinitely many solutions, repeating along the axis", what=what),
+            msg("{plain}, for any whole number {n}", plain=plain, n=n),
             latex + rf", \quad {latex_of(n)} \in \mathbb{{Z}}",
         )
         return
-    steps.note(f"{what} could not be solved exactly, so this part is left out; see the graph")
+    steps.note(
+        msg(
+            "{what} could not be solved exactly, so this part is left out; see the graph", what=what
+        )
+    )
 
 
 def _families(found) -> list[sp.Expr]:

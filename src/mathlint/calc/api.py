@@ -5,6 +5,7 @@ from __future__ import annotations
 import sympy as sp
 
 from ..errors import MathlintError, ParseError, UnsupportedError
+from ..i18n import msg
 from ..parse.plain import latex_of, parse_expression, read_as
 from ..steps.calculus import differentiate_solution, integrate_solution
 from ..steps.derivatives import (
@@ -48,13 +49,15 @@ def compute(text: str, method: str | None = None) -> Computation:
     if looks_like_ode(text):
         return _ode(text)
     if "=" in text:
-        raise ParseError("this is an equation — use solve for it")
+        raise ParseError(msg("this is an equation — use solve for it"))
     try:
         tree = read_arithmetic(text)
     except NotArithmetic:
         return _calculus(text) or compute_expression(text, method)
     if method not in (None, "calculate"):
-        raise UnsupportedError(f"the method '{method}' does not apply here — try calculate")
+        raise UnsupportedError(
+            msg("the method '{method}' does not apply here — try calculate", method=method)
+        )
     return calculate(tree)
 
 
@@ -73,7 +76,7 @@ def calculate(tree) -> Computation:
         methods=["calculate"],
     )
     expected = sp.nsimplify(value_of(tree)) if value_of(tree).has(sp.Float) else value_of(tree)
-    computation.steps.append(_step("Start from", tree))
+    computation.steps.append(_step(msg("Start from"), tree))
     try:
         rounds, final = work_out(tree)
     except UnsupportedError:
@@ -81,7 +84,7 @@ def calculate(tree) -> Computation:
     if not isinstance(final, Num) or not _same(final.value, expected):
         # never show steps that do not add up: the checked answer alone instead
         answer = sp.simplify(expected)
-        computation.steps.append(_step_value("Calculate", answer))
+        computation.steps.append(_step_value(msg("Calculate"), answer))
         computation.finish(answer)
         return computation
     computation.steps.extend(_step(one.text, one.tree) for one in rounds)
@@ -149,7 +152,7 @@ def _limit(text: str) -> Computation:
     computation.steps = list(solution.steps)
     value = solution.result
     if value is DOES_NOT_EXIST:
-        computation.finish(value, "does not exist", r"\text{does not exist}")
+        computation.finish(value, msg("does not exist"), r"\text{does not exist}")
     elif value.is_infinite:
         computation.finish(value, "inf" if value == sp.oo else "-inf", latex_of(value))
     else:
@@ -174,7 +177,7 @@ def _tangent(text: str) -> Computation:
     )
     computation.steps = list(solution.steps)
     computation.plot = [curve] if line is None else [curve, line]
-    computation.marks.append({"x": float(a), "y": float(b), "what": "touches at"})
+    computation.marks.append({"x": float(a), "y": float(b), "what": msg("touches at")})
     left, right = solution.result.args
     # the equation of a line has no decimal to give
     computation.finish(
@@ -235,9 +238,7 @@ def _ode(text: str) -> Computation:
         for order, at, wanted in problem.conditions:
             if order == 0 and _finite(at) and _finite(wanted):
                 computation.marks.append({"x": float(at), "y": float(wanted), "what": "start"})
-    computation.finish(
-        solution.result, f"y = {read_as(value)}", f"y = {latex_of(value)}"
-    )
+    computation.finish(solution.result, f"y = {read_as(value)}", f"y = {latex_of(value)}")
     return computation
 
 

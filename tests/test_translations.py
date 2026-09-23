@@ -244,7 +244,7 @@ def _english(value, field) -> list[str]:
     if isinstance(value, Message):
         if value.parts:
             return [bad for part in value.parts for bad in _english(part, field)]
-        found = [] if i18n._catalog("ro")["messages"].get(value.template) else [value.template]
+        found = [] if i18n._catalog("ro")["messages"].get(value.key) else [value.key]
         for arg in value.args.values():
             if isinstance(arg, str):
                 found += _english(arg, field)

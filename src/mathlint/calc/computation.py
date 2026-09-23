@@ -6,37 +6,38 @@ from dataclasses import dataclass, field
 
 import sympy as sp
 
+from ..i18n import msg
 from ..parse.plain import latex_of, read_as
 from ..steps.solution import Solution
 
 KIND_LABELS = {
-    "arithmetic": "Arithmetic",
-    "expression": "Expression",
-    "derivative": "Derivative",
-    "integral": "Integral",
-    "analysis": "Function analysis",
-    "limit": "Limit",
-    "implicit": "Implicit differentiation",
-    "tangent": "Tangent line",
-    "normal": "Normal line",
-    "ode": "Differential equation",
-    "series": "Taylor series",
+    "arithmetic": msg("Arithmetic"),
+    "expression": msg("Expression"),
+    "derivative": msg("Derivative"),
+    "integral": msg("Integral"),
+    "analysis": msg("Function analysis"),
+    "limit": msg("Limit"),
+    "implicit": msg("Implicit differentiation"),
+    "tangent": msg("Tangent line"),
+    "normal": msg("Normal line"),
+    "ode": msg("Differential equation"),
+    "series": msg("Taylor series"),
 }
 
 METHOD_LABELS = {
-    "calculate": "Calculate",
-    "simplify": "Simplify",
-    "expand": "Expand",
-    "factor": "Factor",
-    "derivative": "Differentiate",
-    "integral": "Integrate",
-    "analyze": "Analyze the function",
-    "limit": "Limit",
-    "implicit": "Implicit differentiation",
-    "tangent": "Tangent line",
-    "normal": "Normal line",
-    "ode": "Differential equation",
-    "series": "Taylor series",
+    "calculate": msg("Calculate", context="method"),
+    "simplify": msg("Simplify", context="method"),
+    "expand": msg("Expand", context="method"),
+    "factor": msg("Factor", context="method"),
+    "derivative": msg("Differentiate", context="method"),
+    "integral": msg("Integrate", context="method"),
+    "analyze": msg("Analyze the function", context="method"),
+    "limit": msg("Limit", context="method"),
+    "implicit": msg("Implicit differentiation", context="method"),
+    "tangent": msg("Tangent line", context="method"),
+    "normal": msg("Normal line", context="method"),
+    "ode": msg("Differential equation", context="method"),
+    "series": msg("Taylor series", context="method"),
 }
 
 SIGNIFICANT_DIGITS = 10
@@ -70,11 +71,11 @@ class Computation(Solution):
         self.decimal, decimal_latex = approximate(value, self.answer_plain)
         # ready to show under the answer
         self.decimal_latex = None if decimal_latex is None else rf"\approx {decimal_latex}"
-        self.summary = f"Answer: {self.answer_plain}"
+        self.summary = msg("Answer: {answer}", answer=self.answer_plain)
         if self.decimal is not None:
-            self.summary += f" (about {self.decimal})"
+            self.summary += msg(" (about {decimal})", decimal=self.decimal)
         if self.conditions:
-            self.summary += f", for {', '.join(self.conditions)}"
+            self.summary += msg(", for {conditions}", conditions=", ".join(self.conditions))
 
     def to_text(self) -> str:
         text = super().to_text()

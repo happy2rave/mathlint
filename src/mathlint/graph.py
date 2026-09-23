@@ -13,6 +13,7 @@ import re
 
 import sympy as sp
 
+from .i18n import join
 from .parse.plain import latex_of, parse_expression, read_as
 
 SAMPLES = 400
@@ -160,7 +161,7 @@ def _expression(computation) -> dict | None:
             if point["what"] not in grouped.setdefault(key, []):
                 grouped[key].append(point["what"])
         for (a, b), what in grouped.items():
-            label = f"{', '.join(what)} {_pair(a, b)}"
+            label = join(", ", what) + " " + _pair(a, b)
             marks.append({"x": a, "y": b, "label": label, "closed": True})
         return _spec(x, [function], marks=marks)
     if function.is_polynomial(x):

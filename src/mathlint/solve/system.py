@@ -31,17 +31,24 @@ from ..steps.solution import Solution
 from . import dispatch
 from .core import Equation, Work, show
 
-_ORDINALS = [msg("first"), msg("second"), msg("third"), msg("fourth"), msg("fifth"), msg("sixth")]
+_ORDINALS = [
+    msg("first", context="equation"),
+    msg("second", context="equation"),
+    msg("third", context="equation"),
+    msg("fourth", context="equation"),
+    msg("fifth", context="equation"),
+    msg("sixth", context="equation"),
+]
 _CASES = re.compile(r"\\begin\{cases\}(.*?)\\end\{cases\}", re.S)
 
 SYSTEM_METHOD_LABELS = {
-    "elimination": msg("Elimination"),
-    "substitution": msg("Substitution"),
-    "gaussian": msg("Gaussian elimination"),
-    "cramer": msg("Cramer's rule"),
-    "inverse": msg("Inverse matrix"),
-    "squares": msg("Squares as unknowns"),
-    "computer": msg("Computer algebra"),
+    "elimination": msg("Elimination", context="method"),
+    "substitution": msg("Substitution", context="method"),
+    "gaussian": msg("Gaussian elimination", context="method"),
+    "cramer": msg("Cramer's rule", context="method"),
+    "inverse": msg("Inverse matrix", context="method"),
+    "squares": msg("Squares as unknowns", context="method"),
+    "computer": msg("Computer algebra", context="method"),
 }
 
 

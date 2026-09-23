@@ -31,8 +31,13 @@ def templates() -> tuple[list[str], list[str]]:
             if not (isinstance(node, ast.Call) and _called(node) == "msg"):
                 continue
             first = node.args[0] if node.args else None
-            if isinstance(first, ast.Constant) and isinstance(first.value, str):
-                found.setdefault(first.value)
+            context = next((k.value for k in node.keywords if k.arg == "context"), None)
+            if context is not None and not isinstance(context, ast.Constant):
+                where = path.relative_to(ROOT).as_posix()
+                problems.append(f"{where}:{node.lineno}: msg() needs a literal context")
+            elif isinstance(first, ast.Constant) and isinstance(first.value, str):
+                prefix = f"{context.value}|" if context is not None else ""
+                found.setdefault(prefix + first.value)
             else:
                 where = path.relative_to(ROOT).as_posix()
                 problems.append(f"{where}:{node.lineno}: msg() needs a literal template")

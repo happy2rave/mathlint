@@ -37,17 +37,26 @@ class Message(str):
     template: str
     args: dict[str, Any]
     parts: tuple[Any, ...]
+    #: the catalog key: the template, or ``context|template`` (see :func:`msg`)
+    key: str
 
-    def __new__(cls, template: str, args: dict[str, Any], parts: tuple[Any, ...] = ()):
+    def __new__(
+        cls,
+        template: str,
+        args: dict[str, Any],
+        parts: tuple[Any, ...] = (),
+        key: str | None = None,
+    ):
         english = "".join(map(str, parts)) if parts else template.format_map(args)
         message = super().__new__(cls, english)
         message.template = template
         message.args = args
         message.parts = parts
+        message.key = key or template
         return message
 
     def __getnewargs__(self) -> tuple:  # copy and pickle rebuild it from these
-        return (self.template, self.args, self.parts)
+        return (self.template, self.args, self.parts, self.key)
 
     def __add__(self, other: object) -> Message:
         if not isinstance(other, str):
@@ -64,7 +73,7 @@ class Message(str):
             return "".join(_render(part, lang) for part in self.parts)
         if lang == "en":
             return str.__str__(self)
-        translation = _catalog(lang).get("messages", {}).get(self.template)
+        translation = _catalog(lang).get("messages", {}).get(self.key)
         if not translation:
             return str.__str__(self)
         args = {
@@ -74,9 +83,14 @@ class Message(str):
         return translation.format_map(args)
 
 
-def msg(template: str, **args: Any) -> Message:
-    """A sentence to show a student; ``template`` is the key in every catalog."""
-    return Message(template, args)
+def msg(template: str, *, context: str | None = None, **args: Any) -> Message:
+    """A sentence to show a student; ``template`` is the key in every catalog.
+
+    The same English can need two translations — "Factor" names a method on
+    a button but is an instruction in a step — so ``context`` makes the key
+    ``context|template``.
+    """
+    return Message(template, args, key=f"{context}|{template}" if context else None)
 
 
 def join(separator: str, parts: Iterable[Any]) -> Message:
