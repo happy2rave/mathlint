@@ -3,6 +3,7 @@ import { Engine } from "./engine.js";
 import { Keypad } from "./keypad.js";
 import { numberLine } from "./numberline.js";
 import { Graph } from "./graph.js";
+import { History } from "./history.js";
 import { LANGUAGE_KEY, language, onLanguageChange, pickLanguage, setLanguage, t } from "./i18n.js";
 
 const STORAGE_KEY = "mathlint:last-solution";
@@ -48,6 +49,11 @@ const engineText = $("engine-text");
 const examplesSheet = $("examples-sheet");
 const exampleList = $("example-list");
 const aboutSheet = $("about-sheet");
+const historySheet = $("history-sheet");
+const historyList = $("history-list");
+const historyEmpty = $("history-empty");
+const historyClear = $("history-clear");
+const historyStore = new History();
 
 // A phone-sized screen: the keypad docks at the bottom like a keyboard.
 const COMPACT = window.matchMedia("(max-width: 899px)");
@@ -423,7 +429,9 @@ function renderReport(report) {
   }
 }
 
-async function check({ reveal = false } = {}) {
+// `record`: a check the reader asked for goes into the history; one run on
+// their behalf (opening the tab, changing the language) does not.
+async function check({ reveal = false, record = true } = {}) {
   if (!engineReady) return;
   checkedOnce = true;
   const text = currentText();
@@ -436,6 +444,10 @@ async function check({ reveal = false } = {}) {
   );
   if (outcome.ok) renderReport(outcome.result);
   else renderFailure(results, outcome.error);
+  if (outcome.ok && record && text) {
+    const error = outcome.result.steps.find((step) => step.verdict === "WRONG");
+    historyStore.add({ tab: "check", input: text, extra: { mistake: error ? error.line : null, asMath: checkedAsMath } });
+  }
   if (reveal) revealResults(results);
 }
 
@@ -453,13 +465,18 @@ function closeSheet(dialog) {
 }
 
 function setUpSheets() {
-  for (const dialog of [examplesSheet, aboutSheet]) {
+  for (const dialog of [examplesSheet, aboutSheet, historySheet]) {
     dialog.addEventListener("click", (event) => {
       // a tap on the backdrop, or on a close button
       if (event.target === dialog || event.target.closest("[data-close]")) closeSheet(dialog);
     });
   }
   $("open-about").addEventListener("click", () => openSheet(aboutSheet));
+  $("open-history").addEventListener("click", openHistory);
+  for (const input of document.querySelectorAll('input[name="history-filter"]')) {
+    input.addEventListener("change", renderHistory);
+  }
+  historyClear.addEventListener("click", clearHistory);
   $("open-solve-examples").addEventListener("click", () => openExamples("solve"));
   $("open-check-examples").addEventListener("click", () => openExamples("check"));
 }
@@ -530,7 +547,7 @@ function openExamples(context) {
 
 async function solve(options = null) {
   // solve() and solve("factoring") are both still fine
-  const { method = null, reveal = false } =
+  const { method = null, reveal = false, record = true } =
     typeof options === "string" ? { method: options } : options || {};
   const variable = solveVariable;
   if (!engineReady) return;
@@ -547,6 +564,16 @@ async function solve(options = null) {
   );
   if (outcome.ok) renderSolved(outcome.result);
   else renderFailure(solved, outcome.error);
+  if (outcome.ok && record && !outcome.result.needs_letter) {
+    const solution = outcome.result;
+    historyStore.add({
+      tab: "solve",
+      input: text,
+      kind: solution.kind_label,
+      answer: solution.answer_latex,
+      extra: { method, variable },
+    });
+  }
   if (reveal) revealResults(solved);
 }
 
@@ -1026,7 +1053,7 @@ function renderSolution(solution) {
   }
 }
 
-async function showSteps({ reveal = false } = {}) {
+async function showSteps({ reveal = false, record = true } = {}) {
   if (!engineReady) return;
   workedOnce = true;
   const operation = operationValue();
@@ -1045,7 +1072,155 @@ async function showSteps({ reveal = false } = {}) {
   );
   if (outcome.ok) renderSolution(outcome.result);
   else renderFailure(worked, outcome.error);
+  if (outcome.ok && record && target.trim()) {
+    historyStore.add({
+      tab: "linalg",
+      input: target,
+      kind: outcome.result.title,
+      answer: outcome.result.result_latex || "",
+      extra: { operation, lower, upper },
+    });
+  }
   if (reveal) revealResults(worked);
+}
+
+// ---------------------------------------------------------------- history
+
+function openHistory() {
+  renderHistory();
+  openSheet(historySheet);
+}
+
+function historyFilter() {
+  return document.querySelector('input[name="history-filter"]:checked')?.value || "all";
+}
+
+function when(time) {
+  const seconds = Math.round((time - Date.now()) / 1000);
+  const format = new Intl.RelativeTimeFormat(language(), { numeric: "auto" });
+  for (const [unit, size] of [["year", 31536000], ["month", 2592000], ["week", 604800], ["day", 86400], ["hour", 3600], ["minute", 60]]) {
+    if (Math.abs(seconds) >= size) return format.format(Math.round(seconds / size), unit);
+  }
+  return format.format(0, "second");
+}
+
+function historyEntry(entry) {
+  const row = el("li", "history-entry");
+  const open = el("button", "history-open");
+  open.type = "button";
+  const tabName = { solve: t("tab.solve"), check: t("tab.check"), linalg: t("tab.workout") }[entry.tab];
+  const meta = [tabName, entry.kind, when(entry.time)].filter(Boolean).join(" · ");
+  open.append(el("span", "history-meta", meta));
+  for (const line of entry.input.split("\n").slice(0, 3)) {
+    const math = el("span", "history-line");
+    math.dataset.plain = line;
+    if (entry.tab === "check" && entry.extra && entry.extra.asMath === false) math.textContent = line;
+    else renderMath(math, displayLatex(entry.tab === "linalg" ? toLatex(line) : line));
+    open.append(math);
+  }
+  if (entry.tab === "check") {
+    const mistake = entry.extra && entry.extra.mistake;
+    open.append(
+      el(
+        "span",
+        "history-answer " + (mistake ? "mark-wrong" : "mark-ok"),
+        mistake ? "✗ " + t("report.firstMistake", { line: mistake }) : "✓ " + t("report.noMistakes")
+      )
+    );
+  } else if (entry.answer) {
+    const answer = el("span", "history-answer");
+    renderMath(answer, entry.answer);
+    open.append(answer);
+  }
+  open.addEventListener("click", () => {
+    closeSheet(historySheet);
+    reopen(entry);
+  });
+
+  const star = el("button", "icon-button history-star");
+  star.type = "button";
+  star.append(icon("star"));
+  star.setAttribute("aria-pressed", String(entry.starred));
+  star.setAttribute("aria-label", t(entry.starred ? "history.unstar" : "history.star"));
+  star.title = star.getAttribute("aria-label");
+  star.addEventListener("click", () => {
+    historyStore.star(entry.id, !entry.starred);
+    renderHistory();
+    historyList.querySelector(`[data-id="${entry.id}"] .history-star`)?.focus();
+  });
+
+  const remove = el("button", "icon-button history-delete");
+  remove.type = "button";
+  remove.append(icon("trash"));
+  remove.setAttribute("aria-label", t("history.delete"));
+  remove.title = t("history.delete");
+  remove.addEventListener("click", () => {
+    historyStore.remove(entry.id);
+    renderHistory();
+    historyList.querySelector(".history-open")?.focus();
+  });
+
+  row.dataset.id = entry.id;
+  row.append(open, star, remove);
+  return row;
+}
+
+function renderHistory() {
+  const starredOnly = historyFilter() === "starred";
+  const entries = historyStore.list({ starred: starredOnly });
+  historyList.replaceChildren(...entries.map(historyEntry));
+  const available = historyStore.available;
+  historyEmpty.hidden = entries.length > 0;
+  historyEmpty.textContent = !available
+    ? t("history.unavailable")
+    : starredOnly
+      ? t("history.noStarred")
+      : t("history.empty");
+  historyClear.hidden = !historyStore.list().some((entry) => !entry.starred);
+  historyClear.classList.remove("confirming");
+  historyClear.textContent = t("history.clear");
+}
+
+// Clearing asks once more; starred entries stay.
+let clearTimer = null;
+function clearHistory() {
+  if (!historyClear.classList.contains("confirming")) {
+    historyClear.classList.add("confirming");
+    historyClear.textContent = t("history.confirmClear");
+    clearTimeout(clearTimer);
+    clearTimer = setTimeout(renderHistory, 4000);
+    return;
+  }
+  clearTimeout(clearTimer);
+  historyStore.clear();
+  renderHistory();
+}
+
+function reopen(entry) {
+  const extra = entry.extra || {};
+  if (entry.tab === "solve") {
+    solveSheet.setLines(entry.input.split("\n"));
+    selectTab("solve");
+    solveVariable = extra.variable || null;
+    solve({ method: extra.method || null, reveal: true });
+  } else if (entry.tab === "check") {
+    checkedOnce = true;
+    selectTab("check");
+    setTextMode(extra.asMath === false);
+    setText(entry.input);
+    check({ reveal: true });
+  } else {
+    workedOnce = true;
+    const radio = operationGroup.querySelector(`input[value="${extra.operation}"]`);
+    if (radio) radio.checked = true;
+    updateOperationInput();
+    if (isCalculus(extra.operation)) expressionField.value = entry.input;
+    else matrixInput.value = entry.input;
+    lowerField.value = extra.lower || "";
+    upperField.value = extra.upper || "";
+    selectTab("linalg");
+    showSteps({ reveal: true });
+  }
 }
 
 // ---------------------------------------------------------------- the app shell
@@ -1073,8 +1248,8 @@ function selectTab(name, { focus = false } = {}) {
   window.scrollTo({ top: 0 });
   keypad?.refresh();
   // the other tabs run their example the first time they are opened
-  if (name === "check" && engineReady && !checkedOnce) check();
-  if (name === "linalg" && engineReady && !workedOnce) showSteps();
+  if (name === "check" && engineReady && !checkedOnce) check({ record: false });
+  if (name === "linalg" && engineReady && !workedOnce) showSteps({ record: false });
 }
 
 function setUpTabs() {
@@ -1128,9 +1303,10 @@ function setUpLanguage() {
     sheet?.relabel(t("check.line"));
     // what is on the screen is said again in the new language
     if (!engineReady) return;
-    if (solved.childElementCount) solve();
-    if (checkedOnce) check();
-    if (workedOnce) showSteps();
+    if (solved.childElementCount) solve({ record: false });
+    if (checkedOnce) check({ record: false });
+    if (workedOnce) showSteps({ record: false });
+    if (historySheet.open) renderHistory();
   });
 }
 
@@ -1229,7 +1405,7 @@ async function boot() {
   for (const input of operationGroup.querySelectorAll("input")) {
     input.addEventListener("change", () => {
       updateOperationInput();
-      if (engineReady) showSteps();
+      if (engineReady) showSteps({ record: false });
     });
   }
   updateOperationInput();
@@ -1267,8 +1443,8 @@ async function boot() {
   checkButton.disabled = false;
   stepsButton.disabled = false;
   solveButton.disabled = false;
-  solve();
-  if (activeTab() === "check") check();
+  solve({ record: false });
+  if (activeTab() === "check") check({ record: false });
 }
 
 boot().catch((error) => {

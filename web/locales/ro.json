@@ -7,6 +7,7 @@
   "tab.check": "Verifică",
   "tab.workout": "Calculează",
   "nav.about": "Despre",
+  "nav.history": "Istoric",
   "engine.starting": "Pornește",
   "engine.loading": "Se încarcă",
   "engine.ready": "Gata",
@@ -218,5 +219,18 @@
   "example.Squaring invents a root": "Ridicarea la pătrat inventează o rădăcină",
   "example.Dividing loses a root": "Împărțirea pierde o rădăcină",
   "example.Row reduction": "Reducere pe rânduri",
-  "example.System, with a slip": "Sistem, cu o greșeală"
+  "example.System, with a slip": "Sistem, cu o greșeală",
+  "history.title": "Istoric",
+  "history.show": "Arată",
+  "history.all": "Toate",
+  "history.starred": "Cu stea",
+  "history.private": "Păstrat doar pe acest dispozitiv.",
+  "history.clear": "Șterge istoricul",
+  "history.confirmClear": "Apasă din nou ca să ștergi (cele cu stea rămân)",
+  "history.star": "Adaugă o stea",
+  "history.unstar": "Scoate steaua",
+  "history.delete": "Șterge",
+  "history.empty": "Nimic încă — aici apare ce rezolvi, verifici și calculezi.",
+  "history.noStarred": "Nicio problemă cu stea încă. Apasă steaua de lângă una ca s-o păstrezi.",
+  "history.unavailable": "Istoricul are nevoie de spațiul de stocare al browserului, care este oprit."
 }

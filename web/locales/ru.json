@@ -7,6 +7,7 @@
   "tab.check": "Проверить",
   "tab.workout": "Вычислить",
   "nav.about": "О программе",
+  "nav.history": "История",
   "engine.starting": "Запуск",
   "engine.loading": "Загрузка",
   "engine.ready": "Готово",
@@ -218,5 +219,18 @@
   "example.Squaring invents a root": "Возведение в квадрат даёт лишний корень",
   "example.Dividing loses a root": "Деление теряет корень",
   "example.Row reduction": "Приведение к ступенчатому виду",
-  "example.System, with a slip": "Система с ошибкой"
+  "example.System, with a slip": "Система с ошибкой",
+  "history.title": "История",
+  "history.show": "Показать",
+  "history.all": "Все",
+  "history.starred": "Избранное",
+  "history.private": "Хранится только на этом устройстве.",
+  "history.clear": "Очистить историю",
+  "history.confirmClear": "Нажмите ещё раз, чтобы очистить (избранное останется)",
+  "history.star": "В избранное",
+  "history.unstar": "Убрать из избранного",
+  "history.delete": "Удалить",
+  "history.empty": "Пока пусто — здесь появится то, что вы решаете, проверяете и вычисляете.",
+  "history.noStarred": "В избранном пока ничего нет. Нажмите на звёздочку рядом с задачей, чтобы сохранить её.",
+  "history.unavailable": "Для истории нужно хранилище браузера, а оно отключено."
 }

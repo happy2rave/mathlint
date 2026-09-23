@@ -31,7 +31,7 @@ def _used_keys() -> set[str]:
         keys |= set(re.findall(r'\bt\("([a-zA-Z][\w.]*\w)"', text))
         for line in re.findall(r"dataset\.i18n = [^;]*;", text):
             keys |= set(re.findall(r'"([a-z]+\.[\w.]+)"', line))
-        keys |= set(re.findall(r'"((?:keypad|engine)\.[\w.]+)"', text))
+        keys |= set(re.findall(r'"((?:keypad|engine|history)\.[\w.]+)"', text))
     for verdict in ("OK", "WRONG", "WARNING", "UNSURE"):
         keys.add(f"verdict.{verdict}")
     for part in ("rule", "example", "mistake"):
@@ -89,3 +89,15 @@ def test_every_request_carries_the_language():
 def test_the_page_tests_are_not_published():
     build = (ROOT / "scripts" / "build_web.py").read_text(encoding="utf-8")
     assert 'ignore_patterns("tests")' in build
+
+
+def test_history_is_kept_on_the_device_and_only_for_what_the_reader_asked():
+    assert 'id="history-sheet"' in HTML
+    assert 'id="open-history"' in HTML
+    app = SCRIPTS["app.js"]
+    assert app.count("historyStore.add(") == 3  # solve, check and work out
+    # runs made on the reader's behalf stay out of it
+    assert "check({ record: false })" in app
+    assert "solve({ record: false })" in app
+    assert "showSteps({ record: false })" in app
+    assert '"history.js"' in (ROOT / "scripts" / "build_web.py").read_text(encoding="utf-8")

@@ -7,6 +7,7 @@
   "tab.check": "Comprobar",
   "tab.workout": "Calcular",
   "nav.about": "Acerca de",
+  "nav.history": "Historial",
   "engine.starting": "Iniciando",
   "engine.loading": "Cargando",
   "engine.ready": "Listo",
@@ -218,5 +219,18 @@
   "example.Squaring invents a root": "Elevar al cuadrado inventa una raíz",
   "example.Dividing loses a root": "Dividir pierde una raíz",
   "example.Row reduction": "Reducción por filas",
-  "example.System, with a slip": "Sistema, con un error"
+  "example.System, with a slip": "Sistema, con un error",
+  "history.title": "Historial",
+  "history.show": "Mostrar",
+  "history.all": "Todo",
+  "history.starred": "Favoritos",
+  "history.private": "Se guarda solo en este dispositivo.",
+  "history.clear": "Borrar el historial",
+  "history.confirmClear": "Pulsa otra vez para borrar (los favoritos se quedan)",
+  "history.star": "Marcar como favorito",
+  "history.unstar": "Quitar de favoritos",
+  "history.delete": "Borrar",
+  "history.empty": "Nada todavía — aquí aparece lo que resuelves, compruebas y calculas.",
+  "history.noStarred": "Aún no hay favoritos. Pulsa la estrella junto a un problema para guardarlo.",
+  "history.unavailable": "El historial necesita el almacenamiento del navegador, que está desactivado."
 }

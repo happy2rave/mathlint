@@ -7,6 +7,7 @@
   "tab.check": "Check",
   "tab.workout": "Work out",
   "nav.about": "About",
+  "nav.history": "History",
   "engine.starting": "Starting",
   "engine.loading": "Loading",
   "engine.ready": "Ready",
@@ -218,5 +219,18 @@
   "example.Squaring invents a root": "Squaring invents a root",
   "example.Dividing loses a root": "Dividing loses a root",
   "example.Row reduction": "Row reduction",
-  "example.System, with a slip": "System, with a slip"
+  "example.System, with a slip": "System, with a slip",
+  "history.title": "History",
+  "history.show": "Show",
+  "history.all": "All",
+  "history.starred": "Starred",
+  "history.private": "Kept on this device only.",
+  "history.clear": "Clear history",
+  "history.confirmClear": "Tap again to clear (starred ones stay)",
+  "history.star": "Star",
+  "history.unstar": "Remove the star",
+  "history.delete": "Delete",
+  "history.empty": "Nothing yet — what you solve, check and work out appears here.",
+  "history.noStarred": "No starred problems yet. Tap the star next to one to keep it.",
+  "history.unavailable": "History needs this browser's storage, which is turned off."
 }
