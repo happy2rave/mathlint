@@ -1321,6 +1321,46 @@ function setUpTheme() {
 
 // ---------------------------------------------------------------- start-up
 
+// ---------------------------------------------------------------- offline
+
+// sw.js keeps the whole app, engine included, on the device. A new version
+// installs quietly and waits until the reader chooses to reload.
+function setUpOffline() {
+  const state = $("offline-state");
+  const toast = $("update-toast");
+  const say = (key) => {
+    state.dataset.i18n = key;
+    state.textContent = t(key);
+  };
+  if (!("serviceWorker" in navigator)) return say("offline.unsupported");
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    // a reload only when the reader asked for the new version
+    if (reloading) location.reload();
+  });
+  const offer = (worker) => {
+    toast.hidden = false;
+    $("update-reload").onclick = () => {
+      reloading = true;
+      worker.postMessage("skip-waiting");
+    };
+  };
+  navigator.serviceWorker
+    .register("sw.js")
+    .then((registration) => {
+      if (registration.waiting && navigator.serviceWorker.controller) offer(registration.waiting);
+      registration.addEventListener("updatefound", () => {
+        const next = registration.installing;
+        next?.addEventListener("statechange", () => {
+          if (next.state === "installed" && navigator.serviceWorker.controller) offer(next);
+        });
+      });
+      return navigator.serviceWorker.ready;
+    })
+    .then(() => say("offline.ready"))
+    .catch(() => say("offline.unsupported"));
+}
+
 function savedLanguage() {
   try {
     return localStorage.getItem(LANGUAGE_KEY);
@@ -1346,6 +1386,7 @@ async function boot() {
   setUpSheets();
   setUpTheme();
   setUpLanguage();
+  setUpOffline();
   await customElements.whenDefined("math-field");
 
   for (const field of [expressionField, lowerField, upperField]) configureField(field);

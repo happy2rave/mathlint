@@ -232,5 +232,10 @@
   "history.delete": "Delete",
   "history.empty": "Nothing yet — what you solve, check and work out appears here.",
   "history.noStarred": "No starred problems yet. Tap the star next to one to keep it.",
-  "history.unavailable": "History needs this browser's storage, which is turned off."
+  "history.unavailable": "History needs this browser's storage, which is turned off.",
+  "offline.updateReady": "A new version of mathlint is ready.",
+  "offline.reload": "Reload",
+  "offline.ready": "Works offline: everything, the math engine included, is kept on this device.",
+  "offline.preparing": "Getting ready to work offline…",
+  "offline.unsupported": "This browser cannot keep mathlint for offline use."
 }

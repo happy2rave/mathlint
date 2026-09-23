@@ -33,7 +33,7 @@ def _used_keys() -> set[str]:
         keys |= set(re.findall(r'\bt\("([a-zA-Z][\w.]*\w)"', text))
         for line in re.findall(r"dataset\.i18n = [^;]*;", text):
             keys |= set(re.findall(r'"([a-z]+\.[\w.]+)"', line))
-        keys |= set(re.findall(r'"((?:keypad|engine|history)\.[\w.]+)"', text))
+        keys |= set(re.findall(r'"((?:keypad|engine|history|offline)\.[\w.]+)"', text))
     for verdict in ("OK", "WRONG", "WARNING", "UNSURE"):
         keys.add(f"verdict.{verdict}")
     for part in ("rule", "example", "mistake"):
@@ -165,3 +165,33 @@ def test_a_download_that_does_not_match_its_pin_is_refused():
     with pytest.raises(SystemExit):
         vendor._verify("x", b"data", integrity="", sha256="00")
     vendor._verify("x", b"data", integrity="", sha256=hashlib.sha256(b"data").hexdigest())
+
+
+def test_the_service_worker_keeps_every_file_of_this_build(tmp_path):
+    build = _scripts_module("build_web")
+    (tmp_path / "sw.js").write_text((WEB / "sw.js").read_text(encoding="utf-8"), encoding="utf-8")
+    for name in (
+        "index.html",
+        "app.js",
+        "vendor/pyodide/python_stdlib.zip",
+        "vendor/katex/LICENSE",
+        "vendor/pyodide/pyodide.mjs.map",
+    ):
+        (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / name).write_text("x", encoding="utf-8")
+    files = build.write_service_worker(tmp_path, "abc123")
+    assert files == ["./", "app.js", "index.html", "vendor/pyodide/python_stdlib.zip"]
+    worker = (tmp_path / "sw.js").read_text(encoding="utf-8")
+    assert 'const VERSION = "abc123";' in worker
+    assert '"vendor/pyodide/python_stdlib.zip"' in worker
+    assert "__PRECACHE__" not in worker
+
+
+def test_a_new_version_waits_for_the_reader():
+    app = SCRIPTS["app.js"]
+    assert 'navigator.serviceWorker\n    .register("sw.js")' in app
+    assert 'postMessage("skip-waiting")' in app
+    # the worker's own URL never changes, so the browser can see a new build
+    build = (ROOT / "scripts" / "build_web.py").read_text(encoding="utf-8")
+    assert '"sw.js"' not in build.split("_LOCAL_FILES = (")[1].split(")")[0]
+    assert "self.skipWaiting()" in SCRIPTS["sw.js"]

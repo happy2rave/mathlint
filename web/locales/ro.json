@@ -232,5 +232,10 @@
   "history.delete": "Șterge",
   "history.empty": "Nimic încă — aici apare ce rezolvi, verifici și calculezi.",
   "history.noStarred": "Nicio problemă cu stea încă. Apasă steaua de lângă una ca s-o păstrezi.",
-  "history.unavailable": "Istoricul are nevoie de spațiul de stocare al browserului, care este oprit."
+  "history.unavailable": "Istoricul are nevoie de spațiul de stocare al browserului, care este oprit.",
+  "offline.updateReady": "O versiune nouă de mathlint este gata.",
+  "offline.reload": "Reîncarcă",
+  "offline.ready": "Funcționează offline: totul, inclusiv motorul matematic, este păstrat pe acest dispozitiv.",
+  "offline.preparing": "Se pregătește pentru lucrul offline…",
+  "offline.unsupported": "Acest browser nu poate păstra mathlint pentru folosire offline."
 }

@@ -232,5 +232,10 @@
   "history.delete": "Borrar",
   "history.empty": "Nada todavía — aquí aparece lo que resuelves, compruebas y calculas.",
   "history.noStarred": "Aún no hay favoritos. Pulsa la estrella junto a un problema para guardarlo.",
-  "history.unavailable": "El historial necesita el almacenamiento del navegador, que está desactivado."
+  "history.unavailable": "El historial necesita el almacenamiento del navegador, que está desactivado.",
+  "offline.updateReady": "Hay una nueva versión de mathlint lista.",
+  "offline.reload": "Recargar",
+  "offline.ready": "Funciona sin conexión: todo, incluido el motor matemático, se guarda en este dispositivo.",
+  "offline.preparing": "Preparándose para funcionar sin conexión…",
+  "offline.unsupported": "Este navegador no puede guardar mathlint para usarlo sin conexión."
 }

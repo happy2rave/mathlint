@@ -32,12 +32,16 @@ DIST = ROOT / "dist"
 def build_wheel() -> Path:
     for stale in DIST.glob("*.whl"):
         stale.unlink()
-    command = ["uv", "build", "--wheel"] if shutil.which("uv") else [
-        sys.executable,
-        "-m",
-        "build",
-        "--wheel",
-    ]
+    command = (
+        ["uv", "build", "--wheel"]
+        if shutil.which("uv")
+        else [
+            sys.executable,
+            "-m",
+            "build",
+            "--wheel",
+        ]
+    )
     subprocess.run(command, cwd=ROOT, check=True)
     wheels = sorted(DIST.glob("*.whl"))
     if not wheels:
@@ -87,6 +91,25 @@ def stamp_references(site: Path, stamp: str) -> None:
         page.write_text(text, encoding="utf-8")
 
 
+def write_service_worker(site: Path, version: str) -> list[str]:
+    """Fill in sw.js: its version, and every file of the site to keep offline."""
+    files = ["./"]
+    for path in sorted(site.rglob("*")):
+        name = path.relative_to(site).as_posix()
+        if path.is_file() and name != "sw.js" and not _NOT_CACHED.search(name):
+            files.append(name)
+    worker = site / "sw.js"
+    text = worker.read_text(encoding="utf-8")
+    text = text.replace('"__VERSION__"', json.dumps(version))
+    text = text.replace("__PRECACHE__", json.dumps(files, indent=2))
+    worker.write_text(text, encoding="utf-8")
+    return files
+
+
+#: files the app never loads: licenses, source maps
+_NOT_CACHED = re.compile(r"(^|/)(LICENSE[^/]*|[^/]+\.map)$")
+
+
 def write_icons(site: Path) -> None:
     folder = site / "icons"
     folder.mkdir(parents=True, exist_ok=True)
@@ -107,10 +130,17 @@ def main(argv: list[str]) -> None:
         vendor(SITE, ROOT / ".cache" / "vendor")
 
     digest = hashlib.sha256(wheel.read_bytes())
-    for source in sorted(WEB.rglob("*")):
-        if source.is_file() and "tests" not in source.relative_to(WEB).parts:
+    # the page, and the scripts that draw its icons and fetch its vendored files
+    sources = [
+        *sorted(WEB.rglob("*")),
+        *(ROOT / "scripts" / name for name in ("icons.py", "vendor.py")),
+    ]
+    for source in sources:
+        if source.is_file() and "tests" not in source.relative_to(ROOT).parts:
             digest.update(source.read_bytes())
-    stamp_references(SITE, digest.hexdigest()[:10])
+    stamp = digest.hexdigest()[:10]
+    stamp_references(SITE, stamp)
+    write_service_worker(SITE, stamp)
     print(f"built {SITE} with {wheel.name}")
 
 

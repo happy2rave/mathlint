@@ -274,6 +274,11 @@
   </main>
 
   <div id="keypad"></div>
+
+  <div class="update-toast" id="update-toast" role="status" hidden>
+    <span data-i18n="offline.updateReady">A new version of mathlint is ready.</span>
+    <button type="button" class="primary" id="update-reload" data-i18n="offline.reload">Reload</button>
+  </div>
 </div>
 
 <!-- Examples: a bottom sheet on a phone, a dialog on a wide screen. -->
@@ -351,6 +356,10 @@
       <li>
         <svg class="icon" aria-hidden="true"><use href="#i-sparkle"/></svg>
         <span data-i18n="about.checked">Every answer is checked before it is shown. When mathlint is not sure, it says so.</span>
+      </li>
+      <li>
+        <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+        <span id="offline-state" data-i18n="offline.preparing">Getting ready to work offline…</span>
       </li>
       <li>
         <svg class="icon" aria-hidden="true"><use href="#i-code"/></svg>
