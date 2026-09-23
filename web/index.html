@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>mathlint — solve it, then check your own working</title>
+<title data-i18n="page.title">mathlint — solve it, then check your own working</title>
 <meta name="description" content="Type an equation and see it solved step by step, or write out your own working and find the first wrong line. Runs entirely on your device.">
 <meta name="theme-color" content="#f4f3ef" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e1014" media="(prefers-color-scheme: dark)">
@@ -14,11 +14,25 @@
 <meta name="format-detection" content="telephone=no">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='3' y='2' width='26' height='28' rx='6' fill='%23fffdf7' stroke='%232d46c8' stroke-width='2'/><path d='M10 2v28' stroke='%23eaa59c' stroke-width='2'/><path d='M14 16l3 3 7-7' fill='none' stroke='%232d46c8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <script>
-  // the saved theme, before the first paint, so the page never flashes
+  // the saved theme and language, before the first paint, so the page never flashes
   try {
     const theme = localStorage.getItem("mathlint:theme");
     if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
   } catch {}
+  (function () {
+    let lang = null;
+    try {
+      lang = localStorage.getItem("mathlint:lang");
+    } catch {}
+    const spoken = ["ro", "ru", "es"];
+    if (!lang) lang = (navigator.languages || [navigator.language]).map((tag) => String(tag).slice(0, 2).toLowerCase()).find((tag) => tag === "en" || spoken.includes(tag));
+    if (spoken.includes(lang)) {
+      // hidden until the words arrive, never for long
+      document.documentElement.lang = lang;
+      document.documentElement.classList.add("translating");
+      setTimeout(() => document.documentElement.classList.remove("translating"), 1500);
+    }
+  })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +41,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<a class="skip" href="#equation-lines">Skip to the notebook</a>
+<a class="skip" href="#equation-lines" data-i18n="skip">Skip to the notebook</a>
 
 <!-- The shapes every icon on the page is drawn from. -->
 <svg class="icon-sprite" aria-hidden="true" focusable="false">
@@ -57,24 +71,24 @@
     </div>
     <p class="engine-pill" id="engine-pill" data-state="loading" role="status" aria-live="polite">
       <span class="engine-dot" aria-hidden="true"></span>
-      <span id="engine-text">Starting</span>
+      <span id="engine-text" data-i18n="engine.starting">Starting</span>
     </p>
   </header>
 
-  <nav class="navbar" aria-label="mathlint">
-    <div class="nav-tabs" role="tablist" aria-label="What to do">
+  <nav class="navbar" aria-label="mathlint" data-i18n-aria-label="nav.label">
+    <div class="nav-tabs" role="tablist" aria-label="What to do" data-i18n-aria-label="nav.tabs">
       <button role="tab" class="nav-item" id="tab-solve" aria-controls="panel-solve" aria-selected="true">
-        <svg class="icon" aria-hidden="true"><use href="#i-solve"/></svg><span>Solve</span>
+        <svg class="icon" aria-hidden="true"><use href="#i-solve"/></svg><span data-i18n="tab.solve">Solve</span>
       </button>
       <button role="tab" class="nav-item" id="tab-check" aria-controls="panel-check" aria-selected="false" tabindex="-1">
-        <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span>Check</span>
+        <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="tab.check">Check</span>
       </button>
       <button role="tab" class="nav-item" id="tab-linalg" aria-controls="panel-linalg" aria-selected="false" tabindex="-1">
-        <svg class="icon" aria-hidden="true"><use href="#i-workout"/></svg><span>Work out</span>
+        <svg class="icon" aria-hidden="true"><use href="#i-workout"/></svg><span data-i18n="tab.workout">Work out</span>
       </button>
     </div>
     <button type="button" class="nav-item nav-about" id="open-about" aria-haspopup="dialog">
-      <svg class="icon" aria-hidden="true"><use href="#i-about"/></svg><span>About</span>
+      <svg class="icon" aria-hidden="true"><use href="#i-about"/></svg><span data-i18n="nav.about">About</span>
     </button>
   </nav>
 
@@ -83,15 +97,15 @@
     <section class="screen" id="panel-solve" role="tabpanel" aria-labelledby="tab-solve">
       <div class="workspace">
         <header class="screen-head">
-          <h1>Solve</h1>
-          <p>Type an equation, a system, or anything to work out.</p>
+          <h1 data-i18n="solve.title">Solve</h1>
+          <p data-i18n="solve.lead">Type an equation, a system, or anything to work out.</p>
         </header>
 
         <article class="notebook">
           <header class="notebook-bar">
-            <span class="notebook-title" id="equation-label">Your problem</span>
+            <span class="notebook-title" id="equation-label" data-i18n="solve.notebook">Your problem</span>
             <button type="button" class="pill-button" id="open-solve-examples" aria-haspopup="dialog">
-              <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Examples
+              <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg><span data-i18n="common.examples">Examples</span>
             </button>
           </header>
           <ol class="math-lines equation-lines" id="equation-lines" aria-labelledby="equation-label"
@@ -99,26 +113,26 @@
           <p id="live-answer" class="live-answer" aria-live="polite" hidden></p>
           <footer class="notebook-foot">
             <button type="button" class="ghost-button" id="add-equation">
-              <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Add an equation (for a system)
+              <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span data-i18n="solve.addEquation">Add an equation (for a system)</span>
             </button>
           </footer>
         </article>
 
         <div class="action-row">
-          <p class="status" id="solve-status" role="status" aria-live="polite">Starting the math engine…</p>
+          <p class="status" id="solve-status" role="status" aria-live="polite" data-i18n="engine.status.starting">Starting the math engine…</p>
           <button id="stop-solve" class="ghost-button stop-button" type="button" hidden>
-            <svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg>Stop
+            <svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg><span data-i18n="common.stop">Stop</span>
           </button>
           <button id="solve-button" class="primary action-button" type="button" disabled>
-            Solve<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
+            <span data-i18n="solve.button">Solve</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
           </button>
         </div>
 
         <div class="keypad-slot" id="keypad-slot-solve"></div>
 
         <details class="tips">
-          <summary><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg>What can I type?</summary>
-          <p id="solve-help">
+          <summary><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg><span data-i18n="solve.tipsTitle">What can I type?</span></summary>
+          <p id="solve-help" data-i18n="solve.tips">
             An equation — linear, quadratic, higher powers, fractions, roots, absolute values,
             exponentials, logarithms — or a system, one equation per line. Or anything without an
             equals sign: arithmetic with fractions, powers and roots, an expression to simplify, expand
@@ -136,17 +150,17 @@
     <section class="screen" id="panel-check" role="tabpanel" aria-labelledby="tab-check" hidden>
       <div class="workspace">
         <header class="screen-head">
-          <h1>Check my working</h1>
-          <p>Write your solution one step per line. mathlint finds the first wrong step.</p>
+          <h1 data-i18n="check.title">Check my working</h1>
+          <p data-i18n="check.lead">Write your solution one step per line. mathlint finds the first wrong step.</p>
         </header>
 
         <article class="notebook">
           <header class="notebook-bar">
-            <span class="notebook-title" id="sheet-label">Your working</span>
+            <span class="notebook-title" id="sheet-label" data-i18n="check.notebook">Your working</span>
             <div class="notebook-tools">
-              <button type="button" class="pill-button" id="mode-toggle" aria-pressed="false">Type as text</button>
+              <button type="button" class="pill-button" id="mode-toggle" aria-pressed="false" data-i18n="check.typeAsText">Type as text</button>
               <button type="button" class="pill-button" id="open-check-examples" aria-haspopup="dialog">
-                <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Examples
+                <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg><span data-i18n="common.examples">Examples</span>
               </button>
             </div>
           </header>
@@ -161,20 +175,20 @@
         </article>
 
         <div class="action-row">
-          <p class="status" id="status" role="status" aria-live="polite">Starting the math engine…</p>
+          <p class="status" id="status" role="status" aria-live="polite" data-i18n="engine.status.starting">Starting the math engine…</p>
           <button id="stop-check" class="ghost-button stop-button" type="button" hidden>
-            <svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg>Stop
+            <svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg><span data-i18n="common.stop">Stop</span>
           </button>
           <button id="check" class="primary action-button" type="button" disabled>
-            Check<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
+            <span data-i18n="check.button">Check</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
           </button>
         </div>
 
         <div class="keypad-slot" id="keypad-slot-check"></div>
 
         <details class="tips">
-          <summary><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg>How to write it</summary>
-          <p id="syntax-help">
+          <summary><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg><span data-i18n="check.tipsTitle">How to write it</span></summary>
+          <p id="syntax-help" data-i18n-html="check.tips">
             Tap the keys or type: <code>/</code> makes a fraction, <code>^</code> a power,
             <code>sqrt</code>, <code>sin</code>, <code>pi</code> and <code>int</code> turn into symbols.
             Enter starts the next line. Solving an equation? Put it on line 1 and end with
@@ -192,17 +206,17 @@
     <section class="screen" id="panel-linalg" role="tabpanel" aria-labelledby="tab-linalg" hidden>
       <div class="workspace">
         <header class="screen-head">
-          <h1>Work it out</h1>
-          <p>Derivatives, integrals with limits, and matrices, step by step.</p>
+          <h1 data-i18n="workout.title">Work it out</h1>
+          <p data-i18n="workout.lead">Derivatives, integrals with limits, and matrices, step by step.</p>
         </header>
 
-        <div class="segmented operation-picker" role="radiogroup" aria-label="Work out" id="operation">
-          <label><input type="radio" name="operation" value="diff" checked><span>Derivative</span></label>
-          <label><input type="radio" name="operation" value="integrate"><span>Integral</span></label>
-          <label><input type="radio" name="operation" value="rref"><span>Row reduce</span></label>
-          <label><input type="radio" name="operation" value="det"><span>Determinant</span></label>
-          <label><input type="radio" name="operation" value="inverse"><span>Inverse</span></label>
-          <label><input type="radio" name="operation" value="eigen"><span>Eigenvalues</span></label>
+        <div class="segmented operation-picker" role="radiogroup" aria-label="Work out" data-i18n-aria-label="workout.picker" id="operation">
+          <label><input type="radio" name="operation" value="diff" checked><span data-i18n="workout.derivative">Derivative</span></label>
+          <label><input type="radio" name="operation" value="integrate"><span data-i18n="workout.integral">Integral</span></label>
+          <label><input type="radio" name="operation" value="rref"><span data-i18n="workout.rref">Row reduce</span></label>
+          <label><input type="radio" name="operation" value="det"><span data-i18n="workout.det">Determinant</span></label>
+          <label><input type="radio" name="operation" value="inverse"><span data-i18n="workout.inverse">Inverse</span></label>
+          <label><input type="radio" name="operation" value="eigen"><span data-i18n="workout.eigen">Eigenvalues</span></label>
         </div>
 
         <article class="notebook">
@@ -220,28 +234,28 @@
           </div>
 
           <footer class="notebook-foot bounds" id="bounds" hidden>
-            <span>From</span>
-            <math-field id="lower" class="bound" aria-label="Lower limit"></math-field>
-            <span>to</span>
-            <math-field id="upper" class="bound" aria-label="Upper limit"></math-field>
-            <span class="bounds-note">Leave both empty for an indefinite integral.</span>
+            <span data-i18n="workout.from">From</span>
+            <math-field id="lower" class="bound" aria-label="Lower limit" data-i18n-aria-label="workout.lower"></math-field>
+            <span data-i18n="workout.to">to</span>
+            <math-field id="upper" class="bound" aria-label="Upper limit" data-i18n-aria-label="workout.upper"></math-field>
+            <span class="bounds-note" data-i18n="workout.boundsNote">Leave both empty for an indefinite integral.</span>
           </footer>
         </article>
 
         <div class="action-row">
           <p class="status" id="steps-status" role="status" aria-live="polite"></p>
           <button id="stop-steps" class="ghost-button stop-button" type="button" hidden>
-            <svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg>Stop
+            <svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg><span data-i18n="common.stop">Stop</span>
           </button>
           <button id="show-steps" class="primary action-button" type="button" disabled>
-            Show the steps<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
+            <span data-i18n="workout.button">Show the steps</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
           </button>
         </div>
 
         <div class="keypad-slot" id="keypad-slot-steps"></div>
 
         <details class="tips">
-          <summary><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg>How to write it</summary>
+          <summary><svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg><span data-i18n="check.tipsTitle">How to write it</span></summary>
           <p id="target-help"></p>
         </details>
       </div>
@@ -259,8 +273,8 @@
 <dialog class="sheet" id="examples-sheet" aria-labelledby="examples-title">
   <div class="sheet-grip" aria-hidden="true"></div>
   <header class="sheet-head">
-    <h2 id="examples-title">Examples</h2>
-    <button type="button" class="icon-button" data-close aria-label="Close">
+    <h2 id="examples-title" data-i18n="examples.solve">Examples</h2>
+    <button type="button" class="icon-button" data-close aria-label="Close" data-i18n-aria-label="common.close">
       <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
     </button>
   </header>
@@ -268,18 +282,18 @@
     <div id="example-list" class="example-list"></div>
 
     <section class="textbook-library" id="textbook-library" aria-labelledby="textbook-title">
-      <h3 id="textbook-title">Open textbook problems</h3>
-      <p class="sheet-note">Exercises from a free, open-licensed textbook, with worked solutions made on your device.</p>
+      <h3 id="textbook-title" data-i18n="textbook.title">Open textbook problems</h3>
+      <p class="sheet-note" data-i18n="textbook.note">Exercises from a free, open-licensed textbook, with worked solutions made on your device.</p>
       <label class="field">
-        <span>Choose an exercise</span>
+        <span data-i18n="textbook.choose">Choose an exercise</span>
         <select id="textbook-problems"></select>
       </label>
       <p id="textbook-problem" class="textbook-problem"></p>
       <div class="textbook-actions">
-        <button id="solve-textbook" class="primary" type="button">Show the worked solution</button>
-        <a id="textbook-source" target="_blank" rel="noopener">View the exercise in OpenStax</a>
+        <button id="solve-textbook" class="primary" type="button" data-i18n="textbook.solve">Show the worked solution</button>
+        <a id="textbook-source" target="_blank" rel="noopener" data-i18n="textbook.source">View the exercise in OpenStax</a>
       </div>
-      <p class="attribution">
+      <p class="attribution" data-i18n-html="textbook.attribution">
         Adapted from <cite>College Algebra with Corequisite Support 2e</cite> by OpenStax,
         licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="license noopener">CC BY 4.0</a>.
         <a href="https://openstax.org/books/college-algebra-corequisite-support-2e/pages/1-introduction-to-prerequisites" target="_blank" rel="noopener">Access the book free at OpenStax</a>.
@@ -291,13 +305,13 @@
 <dialog class="sheet" id="about-sheet" aria-labelledby="about-title">
   <div class="sheet-grip" aria-hidden="true"></div>
   <header class="sheet-head">
-    <h2 id="about-title">About mathlint</h2>
-    <button type="button" class="icon-button" data-close aria-label="Close">
+    <h2 id="about-title" data-i18n="about.title">About mathlint</h2>
+    <button type="button" class="icon-button" data-close aria-label="Close" data-i18n-aria-label="common.close">
       <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
     </button>
   </header>
   <div class="sheet-body">
-    <p class="about-lead">
+    <p class="about-lead" data-i18n="about.lead">
       Type an equation and see it solved step by step — or write out your own working and
       find your first mistake.
     </p>
@@ -305,34 +319,45 @@
     <ul class="about-list">
       <li>
         <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
-        <span>Everything runs on your device — nothing you type is sent anywhere.</span>
+        <span data-i18n="about.private">Everything runs on your device — nothing you type is sent anywhere.</span>
       </li>
       <li>
         <svg class="icon" aria-hidden="true"><use href="#i-sparkle"/></svg>
-        <span>Every answer is checked before it is shown. When mathlint is not sure, it says so.</span>
+        <span data-i18n="about.checked">Every answer is checked before it is shown. When mathlint is not sure, it says so.</span>
       </li>
       <li>
         <svg class="icon" aria-hidden="true"><use href="#i-code"/></svg>
-        <span><a href="https://github.com/happy2rave/mathlint">Source and bug reports</a> ·
+        <span><a href="https://github.com/happy2rave/mathlint" data-i18n="about.source">Source and bug reports</a> ·
           <span id="version">mathlint</span></span>
       </li>
     </ul>
 
+    <fieldset class="theme-picker language-picker">
+      <legend data-i18n="about.language">Language</legend>
+      <div class="segmented" role="radiogroup" aria-label="Language" data-i18n-aria-label="about.language">
+        <label><input type="radio" name="language" value="en"><span lang="en">English</span></label>
+        <label><input type="radio" name="language" value="ro"><span lang="ro">Română</span></label>
+        <label><input type="radio" name="language" value="ru"><span lang="ru">Русский</span></label>
+        <label><input type="radio" name="language" value="es"><span lang="es">Español</span></label>
+      </div>
+      <p class="sheet-note" data-i18n="about.translationNote">Translations are new: if a step reads oddly, the English original is the reference.</p>
+    </fieldset>
+
     <fieldset class="theme-picker">
-      <legend>Appearance</legend>
-      <div class="segmented" role="radiogroup" aria-label="Appearance">
-        <label><input type="radio" name="theme" value="system" checked><span>System</span></label>
-        <label><input type="radio" name="theme" value="light"><span>Light</span></label>
-        <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+      <legend data-i18n="about.appearance">Appearance</legend>
+      <div class="segmented" role="radiogroup" aria-label="Appearance" data-i18n-aria-label="about.appearance">
+        <label><input type="radio" name="theme" value="system" checked><span data-i18n="about.system">System</span></label>
+        <label><input type="radio" name="theme" value="light"><span data-i18n="about.light">Light</span></label>
+        <label><input type="radio" name="theme" value="dark"><span data-i18n="about.dark">Dark</span></label>
       </div>
     </fieldset>
 
     <div class="support">
-      <p>mathlint is free for personal, educational and other noncommercial use. If it helps you, you can support its development.</p>
+      <p data-i18n="about.support">mathlint is free for personal, educational and other noncommercial use. If it helps you, you can support its development.</p>
       <a class="support-link" href="https://buymeacoffee.com/happy2rave" target="_blank" rel="noopener"
-        aria-label="Buy me a coffee (opens in a new tab)">
+        aria-label="Buy me a coffee (opens in a new tab)" data-i18n-aria-label="about.coffeeLabel">
         <svg class="icon" aria-hidden="true"><use href="#i-coffee"/></svg>
-        Buy me a coffee
+        <span data-i18n="about.coffee">Buy me a coffee</span>
       </a>
     </div>
   </div>

@@ -36,6 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test web/tests/*.test.mjs
       - uses: astral-sh/setup-uv@v5
       - run: uv run python scripts/build_web.py
       - run: test -f _site/index.html && test -f _site/wheel.json

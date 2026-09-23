@@ -1540,6 +1540,10 @@ select {
 }
 .theme-picker label { flex: 1; }
 .theme-picker span { width: 100%; }
+.language-picker .sheet-note { margin: 0.5rem 0 0; }
+
+/* the saved language's words are on their way: no flash of English */
+.translating .app { visibility: hidden; }
 
 .support {
   margin-top: 1.25rem;

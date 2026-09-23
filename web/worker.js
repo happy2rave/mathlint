@@ -7,7 +7,7 @@ const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
 const status = (text) => postMessage({ type: "status", text });
 
 const booting = (async () => {
-  status("Loading the math engine (about 12 MB, once)…");
+  status("engine.status.loading");
   const pyodide = await loadPyodide({ indexURL: PYODIDE_URL });
   await pyodide.loadPackage(["sympy", "micropip"]);
   const info = await fetch("wheel.json").then((response) => response.json());

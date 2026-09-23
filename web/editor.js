@@ -1,5 +1,6 @@
 // The ruled sheet: every line is a MathLive <math-field>, so fractions stack,
 // powers rise and integrals look like integrals while you type.
+import { t } from "./i18n.js";
 
 const TOUCH = window.matchMedia("(pointer: coarse)").matches;
 
@@ -82,7 +83,7 @@ export class MathSheet {
   // onEnter: what Enter does in this sheet (by default it starts a new line)
   constructor(list, { onChange, onEnter, lineLabel } = {}) {
     this.list = list;
-    this.lineLabel = lineLabel || "A line of your working";
+    this.lineLabel = lineLabel || t("check.line");
     this.onChange = onChange || (() => {});
     this.onEnter = onEnter || ((field) => this.newLineAfter(field));
     this.active = null;
@@ -92,6 +93,15 @@ export class MathSheet {
 
   get fields() {
     return [...this.list.querySelectorAll("math-field")];
+  }
+
+  // The words a screen reader says for each line, in a new language.
+  relabel(lineLabel) {
+    this.lineLabel = lineLabel;
+    for (const field of this.fields) field.setAttribute("aria-label", lineLabel);
+    for (const button of this.list.querySelectorAll(".line-remove")) {
+      button.setAttribute("aria-label", t("check.removeLine"));
+    }
   }
 
   contains(field) {
@@ -169,7 +179,7 @@ export class MathSheet {
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "line-remove";
-    remove.setAttribute("aria-label", "Remove this line");
+    remove.setAttribute("aria-label", t("check.removeLine"));
     remove.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>';
     remove.addEventListener("pointerdown", (event) => event.preventDefault());
     remove.addEventListener("click", () => this.removeLine(field));

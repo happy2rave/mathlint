@@ -2,6 +2,7 @@
 // of the x-axis for an inequality. Drag to move, scroll or pinch to zoom; the
 // buttons do the same without a pointer. Moving asks the engine for fresh
 // points across the new range.
+import { t } from "./i18n.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 const WIDTH = 640;
@@ -46,7 +47,7 @@ export class Graph {
       viewBox: `0 0 ${WIDTH} ${HEIGHT}`,
       role: "img",
       tabindex: "0",
-      "aria-label": "Graph. Drag to move, scroll or pinch to zoom; arrow keys move, + and - zoom.",
+      "aria-label": t("graph.label"),
     });
     const stage = document.createElement("div");
     stage.className = "graph-stage";
@@ -68,9 +69,9 @@ export class Graph {
       control.addEventListener("click", action);
       bar.append(control);
     };
-    button("Zoom in", "+", () => this.zoom(1 / 1.5));
-    button("Zoom out", "−", () => this.zoom(1.5));
-    button("Back to the start", "⟲", () => this.reset());
+    button(t("graph.zoomIn"), "+", () => this.zoom(1 / 1.5));
+    button(t("graph.zoomOut"), "−", () => this.zoom(1.5));
+    button(t("graph.reset"), "⟲", () => this.reset());
     return bar;
   }
 
@@ -91,7 +92,7 @@ export class Graph {
     if (this.spec.area) {
       const item = document.createElement("span");
       item.className = "legend-item area-note";
-      item.textContent = "Shaded: the area, counted positive above the x-axis and negative below";
+      item.textContent = t("graph.area");
       legend.append(item);
     }
     for (const line of this.spec.vertical) {

@@ -49,6 +49,7 @@ _LOCAL_FILES = (
     "graph.js",
     "engine.js",
     "worker.js",
+    "i18n.js",
     "examples.json",
     "solve-examples.json",
     "textbook-problems.json",
@@ -73,13 +74,14 @@ def main() -> None:
     wheel = build_wheel()
     if SITE.exists():
         shutil.rmtree(SITE)
-    shutil.copytree(WEB, SITE)
+    # the page's own tests stay behind
+    shutil.copytree(WEB, SITE, ignore=shutil.ignore_patterns("tests"))
     shutil.copy2(wheel, SITE / wheel.name)
     (SITE / "wheel.json").write_text(json.dumps({"wheel": wheel.name}), encoding="utf-8")
 
     digest = hashlib.sha256(wheel.read_bytes())
     for source in sorted(WEB.rglob("*")):
-        if source.is_file():
+        if source.is_file() and "tests" not in source.relative_to(WEB).parts:
             digest.update(source.read_bytes())
     stamp_references(SITE, digest.hexdigest()[:10])
     print(f"built {SITE} with {wheel.name}")

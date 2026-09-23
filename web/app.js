@@ -3,6 +3,7 @@ import { Engine } from "./engine.js";
 import { Keypad } from "./keypad.js";
 import { numberLine } from "./numberline.js";
 import { Graph } from "./graph.js";
+import { LANGUAGE_KEY, language, onLanguageChange, pickLanguage, setLanguage, t } from "./i18n.js";
 
 const STORAGE_KEY = "mathlint:last-solution";
 const THEME_KEY = "mathlint:theme";
@@ -52,12 +53,6 @@ const aboutSheet = $("about-sheet");
 const COMPACT = window.matchMedia("(max-width: 899px)");
 
 const MARKS = { OK: "✓", WRONG: "✗", WARNING: "!", UNSURE: "?" };
-const VERDICT_WORDS = { OK: "Correct", WRONG: "Wrong", WARNING: "Careful", UNSURE: "Not sure" };
-const EXPRESSION_HELP =
-  "Tap the keys or type it: x^2 sin x, e^(2x), 1/(x^2+1). The variable is picked up from the expression.";
-const MATRIX_HELP =
-  "Write it as [[2, 1], [3, 4]], MATLAB style [2 1; 3 4], or as a LaTeX pmatrix. " +
-  "Fractions stay exact — no decimals.";
 
 let engine = null;
 let engineReady = false;
@@ -102,9 +97,11 @@ function card(className, title = null) {
 
 // ---------------------------------------------------------------- the engine pill
 
-function setEngineState(state, text) {
+// `key` names the words, so they can be said again in another language.
+function setEngineState(state, key) {
   enginePill.dataset.state = state;
-  engineText.textContent = text;
+  engineText.dataset.i18n = key;
+  engineText.textContent = t(key);
 }
 
 // ---------------------------------------------------------------- the sheet
@@ -139,7 +136,8 @@ function setTextMode(on) {
   mathLines.hidden = on;
   textSheet.hidden = !on;
   checkKeypadSlot.hidden = on;
-  modeToggle.textContent = on ? "Use the keypad" : "Type as text";
+  modeToggle.dataset.i18n = on ? "check.useKeypad" : "check.typeAsText";
+  modeToggle.textContent = t(modeToggle.dataset.i18n);
   modeToggle.setAttribute("aria-pressed", String(on));
   drawGutter();
   if (on) {
@@ -217,10 +215,10 @@ function handleEnter(field) {
 
 // What the Enter key does, in words, for the field it will act on.
 function enterLabel(field) {
-  if (field.closest(".tutor-card")) return "Check";
-  if (solveSheet.contains(field)) return "Solve";
+  if (field.closest(".tutor-card")) return t("keypad.enterCheck");
+  if (solveSheet.contains(field)) return t("keypad.enterSolve");
   if (sheet.contains(field)) return null;
-  return "Go";
+  return t("keypad.enterGo");
 }
 
 function deleteEmptyLine(field) {
@@ -304,7 +302,7 @@ async function run(kind, payload, { statusLine, button, stopButton, label, pane 
   button.disabled = true;
   stopButton.hidden = false;
   pane.setAttribute("aria-busy", "true");
-  setEngineState("busy", "Working");
+  setEngineState("busy", "engine.working");
   try {
     return await engine.call(kind, payload);
   } finally {
@@ -313,7 +311,7 @@ async function run(kind, payload, { statusLine, button, stopButton, label, pane 
     button.disabled = false;
     stopButton.hidden = true;
     pane.removeAttribute("aria-busy");
-    if (engineReady) setEngineState("ready", "Ready");
+    if (engineReady) setEngineState("ready", readyKey());
   }
 }
 
@@ -333,7 +331,7 @@ function stepElement(step) {
   const mark = el("div", "mark");
   const number = el("span", "mark-number", String(step.line));
   const symbol = el("b", "mark-symbol", MARKS[verdict] || "");
-  if (verdict) symbol.setAttribute("aria-label", VERDICT_WORDS[verdict]);
+  if (verdict) symbol.setAttribute("aria-label", t("verdict." + verdict));
   mark.append(number, symbol);
   row.append(mark);
 
@@ -350,7 +348,7 @@ function stepElement(step) {
   body.append(raw);
 
   const read = el("p", "step-read");
-  const label = el("span", "", "reads as ");
+  const label = el("span", "", t("report.readsAs"));
   const math = el("span");
   math.dataset.plain = step.read_as;
   renderMath(math, step.read_as_latex);
@@ -358,7 +356,7 @@ function stepElement(step) {
   body.append(read);
 
   if (step.message) {
-    const method = { exact: " (proved exactly)", numeric: " (checked with numbers)" }[step.method] || "";
+    const method = { exact: t("report.proved"), numeric: t("report.numeric") }[step.method] || "";
     body.append(el("p", "step-note " + verdict.toLowerCase(), step.message + method));
   }
 
@@ -367,11 +365,13 @@ function stepElement(step) {
       ? Object.entries(step.counterexample).map(([name, value]) => `${name} = ${value}`).join(", ")
       : null;
     const evidence = el("div", "evidence");
-    evidence.append(el("span", "evidence-label", at ? `Counterexample · at ${at}` : "Counterexample"));
+    evidence.append(
+      el("span", "evidence-label", at ? t("report.counterexampleAt", { point: at }) : t("report.counterexample"))
+    );
     const values = el("span", "evidence-values");
     values.append(
-      el("span", "", `line ${step.compared_to} = ${step.values[0]}`),
-      el("span", "", `line ${step.line} = ${step.values[1]}`)
+      el("span", "", t("report.lineValue", { line: step.compared_to, value: step.values[0] })),
+      el("span", "", t("report.lineValue", { line: step.line, value: step.values[1] }))
     );
     evidence.append(values);
     body.append(evidence);
@@ -395,20 +395,20 @@ function renderReport(report) {
   if (error) {
     words.append(
       el("strong", "", error.compared_to
-        ? `First mistake: line ${error.compared_to} → ${error.line}.`
-        : `First mistake: line ${error.line}.`),
-      el("span", "", error.compared_to ? "Everything above it checks out." : "Look at this line again.")
+        ? t("report.firstMistakePair", { from: error.compared_to, to: error.line })
+        : t("report.firstMistake", { line: error.line })),
+      el("span", "", error.compared_to ? t("report.aboveChecks") : t("report.lookAgain"))
     );
   } else {
     words.append(
-      el("strong", "", "No mistakes found."),
-      el("span", "", "Every line follows from the one before it.")
+      el("strong", "", t("report.noMistakes")),
+      el("span", "", t("report.follows"))
     );
   }
   summary.append(badge, words);
   results.append(summary);
 
-  const marked = card("report-card", report.mode === "equation" ? "Solving, step by step" : "Your working, marked");
+  const marked = card("report-card", report.mode === "equation" ? t("report.solving") : t("report.marked"));
   const list = el("ol", "verdict-lines");
   for (const step of report.steps) list.append(stepElement(step));
   marked.append(list);
@@ -432,7 +432,7 @@ async function check({ reveal = false } = {}) {
   const outcome = await run(
     "check",
     { text },
-    { statusLine: status, button: checkButton, stopButton: $("stop-check"), label: "Checking…", pane: results }
+    { statusLine: status, button: checkButton, stopButton: $("stop-check"), label: t("check.busy"), pane: results }
   );
   if (outcome.ok) renderReport(outcome.result);
   else renderFailure(results, outcome.error);
@@ -467,7 +467,7 @@ function setUpSheets() {
 function exampleButton(name, lines, onPick) {
   const button = el("button", "example");
   button.type = "button";
-  button.append(el("span", "example-name", name));
+  button.append(el("span", "example-name", t("example." + name)));
   const math = el("span", "example-math");
   for (const line of lines) {
     const row = el("span", "example-line");
@@ -486,7 +486,8 @@ function exampleButton(name, lines, onPick) {
 function openExamples(context) {
   exampleList.replaceChildren();
   $("textbook-library").hidden = context !== "solve";
-  $("examples-title").textContent = context === "solve" ? "Examples" : "Worked examples to check";
+  $("examples-title").dataset.i18n = context === "solve" ? "examples.solve" : "examples.check";
+  $("examples-title").textContent = t($("examples-title").dataset.i18n);
 
   if (context === "solve") {
     const groups = new Map();
@@ -496,7 +497,7 @@ function openExamples(context) {
       groups.get(group).push(example);
     }
     for (const [group, list] of groups) {
-      exampleList.append(el("h3", "example-group", group));
+      exampleList.append(el("h3", "example-group", group === "More" ? t("examples.more") : t("example." + group)));
       const grid = el("div", "example-grid");
       for (const example of list) {
         grid.append(
@@ -536,16 +537,13 @@ async function solve(options = null) {
   // one line is an equation; several lines are a system
   const text = solveSheet.getText();
   if (!text) {
-    renderFailure(
-      solved,
-      "Type something first — an equation like x^2 - 5x + 6 = 0, or something to work out like 1/2 + 1/3."
-    );
+    renderFailure(solved, t("solve.empty"));
     return;
   }
   const outcome = await run(
     "solve",
     { text, method, variable },
-    { statusLine: solveStatus, button: solveButton, stopButton: $("stop-solve"), label: "Solving…", pane: solved }
+    { statusLine: solveStatus, button: solveButton, stopButton: $("stop-solve"), label: t("solve.busy"), pane: solved }
   );
   if (outcome.ok) renderSolved(outcome.result);
   else renderFailure(solved, outcome.error);
@@ -589,7 +587,7 @@ function showPreview(result) {
     : result.latex;
   const math = el("span", "live-math");
   renderMath(math, latex);
-  liveAnswer.replaceChildren(el("span", "live-tag", "Answer"), math);
+  liveAnswer.replaceChildren(el("span", "live-tag", t("answer.live")), math);
   liveAnswer.hidden = false;
 }
 
@@ -632,10 +630,10 @@ function renderSolved(solution) {
   solved.append(answerCard);
 
   if (solution.needs_letter) {
-    answerCard.append(el("p", "eyebrow", "Several letters"));
+    answerCard.append(el("p", "eyebrow", t("answer.severalLetters")));
     answerCard.append(
-      el("p", "answer-question", "This equation has several letters. Which one do you want to solve for?"),
-      letterChips(solution.letters, null, "Solve for")
+      el("p", "answer-question", t("answer.whichLetter")),
+      letterChips(solution.letters, null, t("answer.solveFor"))
     );
     return;
   }
@@ -644,9 +642,9 @@ function renderSolved(solution) {
   const head = el("div", "answer-head");
   head.append(el("p", "eyebrow solved-kind", solution.kind_label));
   if (found) {
-    const verified = el("span", "answer-badge", "Checked");
+    const verified = el("span", "answer-badge", t("answer.checked"));
     verified.prepend(icon("shield"));
-    verified.title = "Every answer is checked in the original problem before it is shown";
+    verified.title = t("answer.checkedTitle");
     head.append(verified);
   }
   answerCard.append(head);
@@ -660,7 +658,7 @@ function renderSolved(solution) {
   if (solution.interval_latex && solution.number_line && !solution.everything) {
     const intervals = el("p", "answer-note");
     intervals.dataset.plain = solution.interval_text;
-    renderMath(intervals, String.raw`\text{that is } ` + solution.interval_latex);
+    renderMath(intervals, String.raw`\text{${t("answer.thatIs")} } ` + solution.interval_latex);
     answerCard.append(intervals);
     if (solution.number_line.intervals.length || solution.number_line.points.length) {
       answerCard.append(numberLine(solution.number_line, renderMath));
@@ -670,23 +668,24 @@ function renderSolved(solution) {
   // the exact answer stays first; the decimal is what a calculator would say
   if (solution.decimal_latex) {
     const decimal = el("p", "answer-note answer-decimal");
-    decimal.dataset.plain = "about " + solution.decimal;
+    decimal.dataset.plain = t("answer.about", { value: solution.decimal });
     renderMath(decimal, solution.decimal_latex);
     answerCard.append(decimal);
   }
 
   // what the answer is only true for, such as x != -2 after cancelling (x + 2)
   if (solution.conditions && solution.conditions.length) {
-    answerCard.append(el("p", "answer-note", "for " + solution.conditions.join(", ").replaceAll("!=", "≠")));
+    const conditions = solution.conditions.join(", ").replaceAll("!=", "≠");
+    answerCard.append(el("p", "answer-note", t("answer.for", { conditions })));
   }
 
   // a letter to solve for only makes sense for an equation
   if (solution.variable && solution.letters && solution.letters.length > 1) {
-    answerCard.append(letterChips(solution.letters, solution.variable, "Solve for"));
+    answerCard.append(letterChips(solution.letters, solution.variable, t("answer.solveFor")));
   }
 
   if (solution.methods.length > 1) {
-    const verb = solution.variable || solution.unknowns ? "Solve it by" : "Method";
+    const verb = solution.variable || solution.unknowns ? t("answer.solveItBy") : t("answer.method");
     answerCard.append(
       chipGroup(
         verb,
@@ -701,7 +700,7 @@ function renderSolved(solution) {
 
   if (solution.graph) solved.append(graphSection(solution.graph));
 
-  const steps = card("steps-card", "Steps");
+  const steps = card("steps-card", t("card.steps"));
   solved.append(steps);
   renderLearningSteps(steps, solution);
   if (solution.practice && solution.practice.length) {
@@ -722,7 +721,9 @@ function fillTextbookProblems(problems) {
   for (const [index, problem] of problems.entries()) {
     const option = document.createElement("option");
     option.value = String(index);
-    option.textContent = `${problem.section} · exercise ${problem.exercise}`;
+    option.dataset.section = problem.section;
+    option.dataset.exercise = problem.exercise;
+    option.textContent = t("textbook.exercise", { section: problem.section, exercise: problem.exercise });
     textbookSelect.append(option);
   }
 
@@ -746,8 +747,8 @@ function fillTextbookProblems(problems) {
 }
 
 function practiceSection(problems) {
-  const section = card("practice-card", "Practice this skill");
-  section.append(el("p", "card-intro", "Three more problems of the same kind, generated on your device."));
+  const section = card("practice-card", t("practice.title"));
+  section.append(el("p", "card-intro", t("practice.intro")));
   const list = el("div", "practice-list");
 
   for (const problem of problems) {
@@ -761,7 +762,7 @@ function practiceSection(problems) {
       math.append(row);
     }
     button.append(math);
-    const go = el("span", "practice-go", "Solve it");
+    const go = el("span", "practice-go", t("practice.go"));
     go.append(icon("arrow"));
     button.append(go);
     button.addEventListener("click", () => {
@@ -778,7 +779,7 @@ function practiceSection(problems) {
 }
 
 function graphSection(spec) {
-  const section = card("graph-card", "Graph");
+  const section = card("graph-card", t("card.graph"));
   const graph = new Graph(spec, {
     renderMath,
     fetchSamples: async (xMin, xMax) => {
@@ -811,8 +812,10 @@ function updateOperationInput() {
   matrixBlock.hidden = calculus;
   bounds.hidden = operation !== "integrate";
   stepsKeypadSlot.hidden = !calculus;
-  targetLabel.textContent = calculus ? "Your expression" : "Your matrix";
-  targetHelp.textContent = calculus ? EXPRESSION_HELP : MATRIX_HELP;
+  targetLabel.dataset.i18n = calculus ? "workout.expression" : "workout.matrix";
+  targetLabel.textContent = t(targetLabel.dataset.i18n);
+  targetHelp.dataset.i18n = calculus ? "workout.expressionHelp" : "workout.matrixHelp";
+  targetHelp.textContent = t(targetHelp.dataset.i18n);
 }
 
 function workedStep(step, index) {
@@ -840,19 +843,19 @@ function workedStep(step, index) {
 function whyDetails(why) {
   const details = el("details", "step-why");
   const summary = document.createElement("summary");
-  summary.textContent = "Why?";
+  summary.textContent = t("steps.why");
   summary.prepend(icon("bulb"));
   details.append(summary);
 
   const entries = [
-    ["Rule", why.rule],
-    ["Example", why.example],
-    ["Common mistake", why.mistake],
+    ["rule", why.rule],
+    ["example", why.example],
+    ["mistake", why.mistake],
   ];
   const panel = el("div", "why-panel");
-  for (const [label, value] of entries) {
-    const paragraph = el("p", "why-" + label.split(" ").at(-1).toLowerCase());
-    const heading = el("strong", "", label);
+  for (const [part, value] of entries) {
+    const paragraph = el("p", "why-" + part);
+    const heading = el("strong", "", t("steps." + part));
     paragraph.append(heading, el("span", "", value));
     panel.append(paragraph);
   }
@@ -881,12 +884,12 @@ function renderLearningSteps(target, solution) {
   meter.append(progress, bar);
 
   const toolbar = el("div", "learning-toolbar");
-  const reveal = el("button", "primary learning-button", "Reveal next step");
+  const reveal = el("button", "primary learning-button", t("steps.reveal"));
   reveal.type = "button";
-  const tryNext = el("button", "tonal learning-button", "Try the next step");
+  const tryNext = el("button", "tonal learning-button", t("steps.try"));
   tryNext.type = "button";
   tryNext.prepend(icon("sparkle"));
-  const showAll = el("button", "ghost-button learning-button", "Show all steps");
+  const showAll = el("button", "ghost-button learning-button", t("steps.showAll"));
   showAll.type = "button";
   toolbar.append(reveal, tryNext, showAll);
 
@@ -896,15 +899,15 @@ function renderLearningSteps(target, solution) {
 
   const tutor = el("form", "tutor-card");
   tutor.hidden = true;
-  tutor.setAttribute("aria-label", "Try the next step yourself");
-  const tutorLabel = el("label", "", "Write a valid next line");
+  tutor.setAttribute("aria-label", t("tutor.label"));
+  const tutorLabel = el("label", "", t("tutor.prompt"));
   const tutorField = document.createElement("math-field");
-  tutorField.setAttribute("aria-label", "Your next line");
+  tutorField.setAttribute("aria-label", t("tutor.field"));
   tutorLabel.append(tutorField);
   const tutorActions = el("div", "tutor-actions");
-  const checkStep = el("button", "primary learning-button", "Check my step");
+  const checkStep = el("button", "primary learning-button", t("tutor.check"));
   checkStep.type = "submit";
-  const cancelTutor = el("button", "ghost-button learning-button", "Cancel");
+  const cancelTutor = el("button", "ghost-button learning-button", t("common.cancel"));
   cancelTutor.type = "button";
   tutorActions.append(checkStep, cancelTutor);
   const feedback = el("p", "tutor-feedback");
@@ -932,7 +935,7 @@ function renderLearningSteps(target, solution) {
 
   function update() {
     elements.forEach((element, index) => (element.hidden = index >= shown));
-    progress.textContent = `Step ${Math.min(shown, steps.length)} of ${steps.length}`;
+    progress.textContent = t("steps.progress", { shown: Math.min(shown, steps.length), total: steps.length });
     fill.style.width = `${(Math.min(shown, steps.length) / steps.length) * 100}%`;
     reveal.hidden = shown >= steps.length;
     showAll.hidden = shown >= steps.length;
@@ -962,7 +965,7 @@ function renderLearningSteps(target, solution) {
     if (tutorTarget < 0) return;
     tutor.hidden = false;
     tutor.dataset.result = "";
-    feedback.textContent = `Aim for step ${tutorTarget + 1}. Any mathematically valid next line counts.`;
+    feedback.textContent = t("tutor.aim", { step: tutorTarget + 1 });
     tutorField.value = "";
     tutorField.focus();
   });
@@ -975,12 +978,12 @@ function renderLearningSteps(target, solution) {
     const attempt = tutorText(tutorField.value.trim());
     const previous = previousMathIndex(tutorTarget);
     if (!attempt || tutorTarget < 0 || previous < 0) {
-      feedback.textContent = "Write a complete next line first.";
+      feedback.textContent = t("tutor.empty");
       return;
     }
 
     checkStep.disabled = true;
-    feedback.textContent = "Checking your step…";
+    feedback.textContent = t("tutor.checking");
     tutor.dataset.result = "";
     const outcome = await engine.call("tutor", {
       previous: steps[previous].math,
@@ -995,16 +998,16 @@ function renderLearningSteps(target, solution) {
     const checked = outcome.result;
     if (checked.accepted) {
       const note = checked.verdict === "WARNING" ? ` ${checked.message}` : "";
-      feedback.textContent = `Yes — that step works.${note}`;
+      feedback.textContent = t("tutor.yes") + note;
       revealThrough(tutorTarget);
       tutor.hidden = true;
       elements[tutorTarget].tabIndex = -1;
       elements[tutorTarget].focus();
       return;
     }
-    const hint = checked.hints && checked.hints.length ? ` Hint: ${checked.hints[0]}` : "";
+    const hint = checked.hints && checked.hints.length ? " " + t("tutor.hint", { hint: checked.hints[0] }) : "";
     tutor.dataset.result = "wrong";
-    feedback.textContent = `${checked.message || "That line does not follow yet."}${hint}`;
+    feedback.textContent = checked.message + hint;
   });
 
   update();
@@ -1031,14 +1034,14 @@ async function showSteps({ reveal = false } = {}) {
   const lower = operation === "integrate" ? lowerField.value.trim() : "";
   const upper = operation === "integrate" ? upperField.value.trim() : "";
   if (Boolean(lower) !== Boolean(upper)) {
-    renderFailure(worked, "Fill in both limits for a definite integral, or leave both empty.");
+    renderFailure(worked, t("workout.bothLimits"));
     return;
   }
   const target = calculus ? expressionField.value : matrixInput.value;
   const outcome = await run(
     "steps",
     { operation, target, lower, upper },
-    { statusLine: stepsStatus, button: stepsButton, stopButton: $("stop-steps"), label: "Working…", pane: worked }
+    { statusLine: stepsStatus, button: stepsButton, stopButton: $("stop-steps"), label: t("workout.busy"), pane: worked }
   );
   if (outcome.ok) renderSolution(outcome.result);
   else renderFailure(worked, outcome.error);
@@ -1107,6 +1110,30 @@ function applyTheme(theme) {
   }
 }
 
+function setUpLanguage() {
+  for (const input of document.querySelectorAll('input[name="language"]')) {
+    input.checked = input.value === language();
+    input.addEventListener("change", () => setLanguage(input.value));
+  }
+  onLanguageChange(() => {
+    for (const input of document.querySelectorAll('input[name="language"]')) {
+      input.checked = input.value === language();
+    }
+    for (const option of textbookSelect.options) {
+      const { section, exercise } = option.dataset;
+      option.textContent = t("textbook.exercise", { section, exercise });
+    }
+    keypad?.render();
+    solveSheet?.relabel(t("solve.line"));
+    sheet?.relabel(t("check.line"));
+    // what is on the screen is said again in the new language
+    if (!engineReady) return;
+    if (solved.childElementCount) solve();
+    if (checkedOnce) check();
+    if (workedOnce) showSteps();
+  });
+}
+
 function setUpTheme() {
   const current = document.documentElement.dataset.theme || "system";
   for (const input of document.querySelectorAll('input[name="theme"]')) {
@@ -1118,10 +1145,31 @@ function setUpTheme() {
 
 // ---------------------------------------------------------------- start-up
 
+function savedLanguage() {
+  try {
+    return localStorage.getItem(LANGUAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+// The engine pill's word for "ready": it says so when the device is offline.
+function readyKey() {
+  return navigator.onLine === false ? "engine.readyOffline" : "engine.ready";
+}
+
 async function boot() {
+  try {
+    await setLanguage(pickLanguage(savedLanguage(), navigator.languages || [navigator.language]), {
+      save: false,
+    });
+  } finally {
+    document.documentElement.classList.remove("translating");
+  }
   setUpTabs();
   setUpSheets();
   setUpTheme();
+  setUpLanguage();
   await customElements.whenDefined("math-field");
 
   for (const field of [expressionField, lowerField, upperField]) configureField(field);
@@ -1132,12 +1180,12 @@ async function boot() {
       solveVariable = null;
       schedulePreview();
     },
-    lineLabel: "An equation or expression",
+    lineLabel: t("solve.line"),
   });
   $("add-equation").addEventListener("click", () => solveSheet.addLine());
   expressionField.value = String.raw`x^2\sin x`;
 
-  sheet = new MathSheet(mathLines);
+  sheet = new MathSheet(mathLines, { lineLabel: t("check.line") });
   keypad = new Keypad(keypadRoot, {
     getTarget: keypadTarget,
     onEnter: handleEnter,
@@ -1186,7 +1234,7 @@ async function boot() {
   }
   updateOperationInput();
 
-  const stop = () => engine.stop("Stopped. The engine restarts in the background.");
+  const stop = () => engine.stop(t("engine.stopped"));
   $("stop-check").addEventListener("click", stop);
   $("stop-solve").addEventListener("click", stop);
   $("stop-steps").addEventListener("click", stop);
@@ -1194,19 +1242,27 @@ async function boot() {
   // a shared link to someone's working opens on the Check tab
   if (sharedText()) selectTab("check");
 
-  setEngineState("loading", "Loading");
+  setEngineState("loading", "engine.loading");
   engine = new Engine({
-    onStatus: (text) => {
-      status.textContent = text;
-      solveStatus.textContent = text;
-      stepsStatus.textContent = text;
+    onStatus: (key) => {
+      for (const line of [status, solveStatus, stepsStatus]) {
+        line.dataset.i18n = key;
+        line.textContent = t(key);
+      }
     },
   });
   const version = await engine.ready;
   engineReady = true;
   versionSlot.textContent = "mathlint " + version;
-  setEngineState("ready", "Ready");
-  enginePill.title = `mathlint ${version} runs on your device`;
+  setEngineState("ready", readyKey());
+  for (const event of ["online", "offline"]) {
+    window.addEventListener(event, () => {
+      if (enginePill.dataset.state === "ready") setEngineState("ready", readyKey());
+    });
+  }
+  enginePill.title = t("engine.title", { version });
+  onLanguageChange(() => (enginePill.title = t("engine.title", { version })));
+  for (const line of [status, solveStatus, stepsStatus]) delete line.dataset.i18n;
   for (const line of [status, solveStatus, stepsStatus]) line.textContent = "";
   checkButton.disabled = false;
   stepsButton.disabled = false;
@@ -1216,13 +1272,9 @@ async function boot() {
 }
 
 boot().catch((error) => {
-  setEngineState("error", "Offline");
-  const message = "The math engine could not start.";
-  for (const line of [status, solveStatus, stepsStatus]) line.textContent = message;
+  setEngineState("error", "engine.failed");
+  for (const line of [status, solveStatus, stepsStatus]) line.textContent = t("engine.cannotStart");
   for (const target of [solved, results]) {
-    renderFailure(
-      target,
-      "Loading failed: " + error.message + ". Check your connection and reload — the engine comes from a CDN."
-    );
+    renderFailure(target, t("engine.loadFailed", { error: error.message }));
   }
 });
