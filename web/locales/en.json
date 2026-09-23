@@ -237,5 +237,6 @@
   "offline.reload": "Reload",
   "offline.ready": "Works offline: everything, the math engine included, is kept on this device.",
   "offline.preparing": "Getting ready to work offline…",
-  "offline.unsupported": "This browser cannot keep mathlint for offline use."
+  "offline.unsupported": "This browser cannot keep mathlint for offline use.",
+  "about.startup": "· started in {seconds} s"
 }

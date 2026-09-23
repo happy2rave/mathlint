@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 
 import sympy as sp
 
@@ -175,6 +176,22 @@ def _preview(data: dict) -> dict:
     return {"latex": latex, "decimal_latex": result.get("decimal_latex")}
 
 
+def _warm(_: dict) -> dict:
+    """Load, while the reader is still looking, what a first request would wait for.
+
+    In the browser a module is compiled the first time it is imported, which can
+    take a second for SymPy's integration and equation solvers.
+    """
+    started = time.perf_counter()
+    from sympy.integrals import manualintegrate  # noqa: F401
+    from sympy.solvers import ode  # noqa: F401
+
+    from . import calc, solve  # noqa: F401
+
+    check_document(parse_document("2x = 4\nx = 2"))
+    return {"seconds": round(time.perf_counter() - started, 3)}
+
+
 def _only_variable(expression: sp.Expr) -> sp.Symbol:
     symbols = sorted(expression.free_symbols, key=lambda symbol: symbol.name)
     return symbols[0] if len(symbols) == 1 else sp.Symbol("x")
@@ -188,4 +205,5 @@ _HANDLERS = {
     "solve": _solve,
     "preview": _preview,
     "plot": _plot,
+    "warm": _warm,
 }

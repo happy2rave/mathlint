@@ -1470,6 +1470,12 @@ async function boot() {
   });
   const version = await engine.ready;
   engineReady = true;
+  // seconds from opening the page to a working engine, shown in About
+  const ready = performance.mark("mathlint:engine-ready");
+  const showStartup = () =>
+    ($("startup").textContent = t("about.startup", { seconds: (ready.startTime / 1000).toFixed(1) }));
+  showStartup();
+  onLanguageChange(showStartup);
   versionSlot.textContent = "mathlint " + version;
   setEngineState("ready", readyKey());
   for (const event of ["online", "offline"]) {
@@ -1484,8 +1490,19 @@ async function boot() {
   checkButton.disabled = false;
   stepsButton.disabled = false;
   solveButton.disabled = false;
-  solve({ record: false });
-  if (activeTab() === "check") check({ record: false });
+  await solve({ record: false });
+  if (activeTab() === "check") await check({ record: false });
+  warmUp();
+}
+
+// While the reader looks at the first answer, the engine loads what the other
+// kinds of problem need, so their first answer comes sooner.
+function warmUp() {
+  const idle = window.requestIdleCallback || ((callback) => setTimeout(callback, 1000));
+  idle(async () => {
+    const outcome = await engine.call("warm", {}, { quiet: true, timeLimit: 60000 });
+    if (outcome.ok) performance.mark("mathlint:warm", { detail: outcome.result });
+  });
 }
 
 boot().catch((error) => {

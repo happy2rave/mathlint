@@ -195,3 +195,13 @@ def test_a_new_version_waits_for_the_reader():
     build = (ROOT / "scripts" / "build_web.py").read_text(encoding="utf-8")
     assert '"sw.js"' not in build.split("_LOCAL_FILES = (")[1].split(")")[0]
     assert "self.skipWaiting()" in SCRIPTS["sw.js"]
+    # a new build must not precache the last build's files from the HTTP cache
+    assert 'cache: "reload"' in SCRIPTS["sw.js"]
+
+
+def test_the_budgets_count_what_blocks_the_first_paint():
+    budget = _scripts_module("budget")
+    assert budget.blocking_stylesheets(HTML) <= budget.BLOCKING_STYLESHEETS
+    page = '<head><link rel="stylesheet" href="a.css"><link rel="icon" href="x"></head>'
+    assert budget.blocking_stylesheets(page + '<body><link rel="stylesheet" href="b"></body>') == 1
+    assert budget.Measure("x", 2, 1, " s").line().startswith("OVER")

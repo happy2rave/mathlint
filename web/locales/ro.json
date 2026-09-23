@@ -237,5 +237,6 @@
   "offline.reload": "Reîncarcă",
   "offline.ready": "Funcționează offline: totul, inclusiv motorul matematic, este păstrat pe acest dispozitiv.",
   "offline.preparing": "Se pregătește pentru lucrul offline…",
-  "offline.unsupported": "Acest browser nu poate păstra mathlint pentru folosire offline."
+  "offline.unsupported": "Acest browser nu poate păstra mathlint pentru folosire offline.",
+  "about.startup": "· a pornit în {seconds} s"
 }

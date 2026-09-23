@@ -237,5 +237,6 @@
   "offline.reload": "Recargar",
   "offline.ready": "Funciona sin conexión: todo, incluido el motor matemático, se guarda en este dispositivo.",
   "offline.preparing": "Preparándose para funcionar sin conexión…",
-  "offline.unsupported": "Este navegador no puede guardar mathlint para usarlo sin conexión."
+  "offline.unsupported": "Este navegador no puede guardar mathlint para usarlo sin conexión.",
+  "about.startup": "· iniciado en {seconds} s"
 }

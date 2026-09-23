@@ -1652,3 +1652,5 @@ select {
 @media (min-width: 900px) {
   .update-toast { bottom: 1.25rem; }
 }
+
+.startup-time { color: var(--ink-soft); font-size: 0.875rem; }

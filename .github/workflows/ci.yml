@@ -44,3 +44,4 @@ jobs:
       - run: uv run python scripts/build_web.py
       - run: test -f _site/index.html && test -f _site/wheel.json
       - run: test -f _site/vendor/pyodide-314.0.7/pyodide.mjs && test -f _site/icons/icon-512.png
+      - run: uv run python scripts/budget.py
