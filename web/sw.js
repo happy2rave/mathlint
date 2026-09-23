@@ -11,7 +11,13 @@ const PRECACHE = __PRECACHE__;
 const CACHE = `mathlint-${VERSION}`;
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
+  // The page's own files are fetched past the browser's HTTP cache, which may
+  // still hold the last build's. Vendored files live in folders named for their
+  // version, never change, and can come from that cache.
+  const requests = PRECACHE.map((url) =>
+    url.startsWith("vendor/") ? url : new Request(url, { cache: "reload" })
+  );
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(requests)));
 });
 
 self.addEventListener("activate", (event) => {
