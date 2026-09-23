@@ -15,23 +15,26 @@ import sympy as sp
 from ._version import __version__
 from .check import check_document
 from .document import parse_document
-from .errors import MathlintError
+from .errors import MathlintError, error_text
 from .graph import graph_for, sample
+from .i18n import localize
 from .parse.plain import parse_expression
 from .practice import practice_for
 from .steps import differentiate_solution, integrate_solution, parse_matrix, solve_linalg
 
 
 def handle(kind: str, payload: str) -> str:
-    """Answer one request from the page."""
+    """Answer one request from the page, in the language it asks for (``lang``)."""
+    lang = "en"
     try:
         data = json.loads(payload) if payload else {}
+        lang = data.get("lang") or "en"
         handler = _HANDLERS.get(kind)
         if handler is None:
             raise ValueError(f"unknown request {kind!r}")
-        return json.dumps({"ok": True, "result": handler(data)})
+        return json.dumps({"ok": True, "result": localize(handler(data), lang)})
     except MathlintError as error:
-        return json.dumps({"ok": False, "error": str(error)})
+        return json.dumps({"ok": False, "error": localize(error_text(error), lang)})
     except Exception as error:  # the page must always get an explanation
         return json.dumps({"ok": False, "error": f"{type(error).__name__}: {error}"})
 

@@ -1,0 +1,8 @@
+{
+  "messages": {
+    "line {line}: {message}": "línea {line}: {message}",
+    "Subtract {term} from both sides": "Restamos {term} a ambos lados",
+    "Add {term} to both sides": "Sumamos {term} a ambos lados"
+  },
+  "latex": {}
+}

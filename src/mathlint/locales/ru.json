@@ -1,0 +1,8 @@
+{
+  "messages": {
+    "line {line}: {message}": "строка {line}: {message}",
+    "Subtract {term} from both sides": "Вычитаем {term} из обеих частей",
+    "Add {term} to both sides": "Прибавляем {term} к обеим частям"
+  },
+  "latex": {}
+}

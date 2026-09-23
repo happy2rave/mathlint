@@ -11,7 +11,8 @@ import sys
 from ._version import __version__
 from .check import check_document
 from .document import parse_document
-from .errors import MathlintError, UnsupportedError
+from .errors import MathlintError, UnsupportedError, error_text
+from .i18n import LANGUAGES, localize, localized_copy
 
 EXIT_OK = 0
 EXIT_FOUND_ERROR = 1
@@ -24,9 +25,16 @@ def build_parser() -> argparse.ArgumentParser:
         description="Find the first wrong step in a worked solution.",
     )
     parser.add_argument("--version", action="version", version=__version__)
+    language = argparse.ArgumentParser(add_help=False)
+    language.add_argument(
+        "--lang",
+        choices=LANGUAGES,
+        default="en",
+        help="the language mathlint explains the math in (default: en)",
+    )
     subcommands = parser.add_subparsers(dest="command", required=True)
 
-    check = subcommands.add_parser("check", help="check a written solution")
+    check = subcommands.add_parser("check", help="check a written solution", parents=[language])
     check.add_argument(
         "file",
         nargs="?",
@@ -41,7 +49,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check.add_argument("--no-color", action="store_true", help="never colour the output")
 
-    steps = subcommands.add_parser("steps", help="show a worked solution, step by step")
+    steps = subcommands.add_parser(
+        "steps", help="show a worked solution, step by step", parents=[language]
+    )
     steps.add_argument(
         "operation",
         choices=["rref", "det", "inverse", "eigen", "diff", "integrate"],
@@ -72,6 +82,7 @@ def build_parser() -> argparse.ArgumentParser:
     solve = subcommands.add_parser(
         "solve",
         help="solve an equation, or work out anything else, step by step",
+        parents=[language],
     )
     solve.add_argument(
         "equation",
@@ -114,10 +125,10 @@ def _run_steps(args) -> int:
     try:
         solution = _build_solution(args)
     except MathlintError as error:
-        print(f"mathlint: {error}", file=sys.stderr)
+        print(f"mathlint: {localize(error_text(error), args.lang)}", file=sys.stderr)
         return EXIT_BAD_INPUT
 
-    _print_solution(solution, args.format)
+    _print_solution(solution, args.format, args.lang)
     return EXIT_OK
 
 
@@ -127,16 +138,18 @@ def _run_solve(args) -> int:
     try:
         solution = solve(args.equation, method=args.method, variable=args.variable)
     except MathlintError as error:
-        print(f"mathlint: {error}", file=sys.stderr)
+        print(f"mathlint: {localize(error_text(error), args.lang)}", file=sys.stderr)
         return EXIT_BAD_INPUT
-    _print_solution(solution, args.format)
+    _print_solution(solution, args.format, args.lang)
     return EXIT_OK
 
 
-def _print_solution(solution, output_format: str) -> None:
+def _print_solution(solution, output_format: str, lang: str = "en") -> None:
     if output_format == "json":
-        print(json.dumps(solution.to_dict(), indent=2))
-    elif output_format == "markdown":
+        print(json.dumps(localize(solution.to_dict(), lang), indent=2))
+        return
+    solution = localized_copy(solution, lang)
+    if output_format == "markdown":
         print(solution.to_markdown())
     elif output_format == "latex":
         print(solution.to_latex())
@@ -190,15 +203,15 @@ def _run_check(args) -> int:
     try:
         report = check_document(parse_document(text))
     except MathlintError as error:
-        print(f"mathlint: {error}", file=sys.stderr)
+        print(f"mathlint: {localize(error_text(error), args.lang)}", file=sys.stderr)
         return EXIT_BAD_INPUT
 
     if args.format == "json":
-        print(json.dumps(report.to_dict(), indent=2))
+        print(json.dumps(localize(report.to_dict(), args.lang), indent=2))
     elif args.format == "markdown":
-        print(report.to_markdown())
+        print(localized_copy(report, args.lang).to_markdown())
     else:
-        print(report.to_text(color=_use_color(args.no_color)))
+        print(localized_copy(report, args.lang).to_text(color=_use_color(args.no_color)))
 
     return EXIT_OK if report.ok else EXIT_FOUND_ERROR
 

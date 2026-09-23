@@ -1,0 +1,8 @@
+{
+  "messages": {
+    "line {line}: {message}": "linia {line}: {message}",
+    "Subtract {term} from both sides": "Scădem {term} din ambii membri",
+    "Add {term} to both sides": "Adunăm {term} la ambii membri"
+  },
+  "latex": {}
+}

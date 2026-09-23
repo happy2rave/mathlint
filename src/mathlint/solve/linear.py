@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import msg
 from .core import Equation, Outcome, Work, show
 from .dispatch import register
 
@@ -101,8 +102,8 @@ def _common_denominator(lhs: sp.Expr, rhs: sp.Expr, variable: sp.Symbol) -> int:
 
 def _move_text(term: sp.Expr) -> str:
     if term.could_extract_minus_sign():
-        return f"Add {show(-term)} to both sides"
-    return f"Subtract {show(term)} from both sides"
+        return msg("Add {term} to both sides", term=show(-term))
+    return msg("Subtract {term} from both sides", term=show(term))
 
 
 def _operation(change: sp.Expr) -> str:
