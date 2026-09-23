@@ -28,6 +28,7 @@ real problems with known answers — runs on every commit.
 | v0.8 | Done: Inequalities and graphs | Sign charts, interval answers, interactive graphs, function analysis |
 | v0.9 | Done: Calculus, complete | Limits, implicit derivatives, harder integrals, differential equations |
 | v0.10 | Done: Premium, free | "Why?" on every step, step-by-step reveal, animated steps, tutor mode, practice |
+| v0.10.1 | Done: A new look | Phone-first app shell around the notebook, docked keypad, result cards, dark theme |
 | v0.11 | App quality | Installable, offline, history, speed, accessibility, translations |
 | v1.0 | App stores | Android and iOS apps from the same code |
 | v1.x | Camera | Photo to editable math, printed first, then handwriting — on the device |
@@ -103,6 +104,14 @@ step at a time and **trying the next step yourself**, checked by mathlint;
 animated steps that highlight what changed; practice problems generated from the
 one you solved; worked solutions for open-licensed textbooks such as OpenStax
 (CC BY), in place of paywalled textbook solutions.
+
+### v0.10.1 — A new look
+
+The whole page redesigned as an app, ahead of the app stores: tabs at the
+bottom of a phone and down the side of a wide screen, a keypad that docks like
+the phone's keyboard, results as cards, examples and settings in sheets, and a
+dark theme. The notebook — ruled lines, a red margin, one step per line — is
+kept as the heart of it, and now carries the checker's marks in its margin.
 
 ### v0.11 — App quality
 

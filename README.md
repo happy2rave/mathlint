@@ -13,9 +13,12 @@ for personal, educational and other noncommercial use, source-available, and
 runs on your own device. The plan is in [ROADMAP.md](ROADMAP.md).
 
 **[Try it in your browser](https://happy2rave.github.io/mathlint/)** — nothing to
-install, and nothing you type leaves the page. You write on a math editor with a
-calculator-style keypad, so fractions, powers, roots and integrals look like they
-do on paper while you type.
+install, and nothing you type leaves the page. You write in a notebook — ruled
+lines, a red margin, one step per line — with a calculator-style keypad, so
+fractions, powers, roots and integrals look like they do on paper while you type.
+The app is built for phones first: tabs at the bottom, a keypad that docks like
+the phone's own keyboard, marks in the notebook's margin when you check your
+working, and a light and a dark theme.
 
 ## Learn one step at a time
 
