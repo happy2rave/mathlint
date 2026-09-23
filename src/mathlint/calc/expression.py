@@ -18,7 +18,7 @@ from ..errors import UnsupportedError
 from ..i18n import msg
 from ..parse.plain import latex_of, parse_as_written, parse_expression, read_as
 from ..steps.solution import SolutionStep
-from .computation import METHOD_LABELS, Computation
+from .computation import Computation
 
 
 class Steps:
@@ -85,7 +85,7 @@ def compute_expression(text: str, method_name: str | None = None) -> Computation
 
     computation = Computation(
         operation=choice,
-        title=f"{METHOD_LABELS[choice]} {read_as(expression)}",
+        title=_title(choice, read_as(expression)),
         kind="expression",
         method=choice,
         methods=ordered,
@@ -99,7 +99,7 @@ def compute_expression(text: str, method_name: str | None = None) -> Computation
         # never show steps that do not add up
         computation.steps = computation.steps[:1]
         result = _fallback(choice, expression)
-        steps.show(METHOD_LABELS[choice], result)
+        steps.show(_instruction(choice), result)
     if len(computation.steps) == 1:
         steps.note(msg("This is already as simple as it gets"))
     computation.finish(result)
@@ -133,6 +133,25 @@ def _fallback(choice: str, expression: sp.Expr) -> sp.Expr:
 
 
 # --- what SymPy does silently while reading --------------------------------------------
+
+
+def _title(choice: str, expression: str) -> str:
+    if choice == "expand":
+        return msg("Expand {expression}", expression=expression)
+    if choice == "factor":
+        return msg("Factor {expression}", expression=expression)
+    if choice == "analyze":
+        return msg("Analyze {expression}", expression=expression)
+    return msg("Simplify {expression}", expression=expression)
+
+
+def _instruction(choice: str) -> str:
+    """The step's wording, not the method's name on its button."""
+    if choice == "expand":
+        return msg("Expand")
+    if choice == "factor":
+        return msg("Factor")
+    return msg("Simplify")
 
 
 def _start(text: str, expression: sp.Expr, steps: Steps) -> sp.Expr:

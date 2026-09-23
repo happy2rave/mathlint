@@ -20,6 +20,7 @@ from sympy.parsing.sympy_parser import (
 )
 
 from ..errors import ParseError
+from ..i18n import msg
 from .unicode_math import normalize_unicode
 
 MAX_LENGTH = 2000
@@ -166,8 +167,7 @@ class _PlainPrinter(sp.printing.str.StrPrinter):
             if len(limit) == 3:
                 variable, lower, upper = limit
                 body = (
-                    f"int from {self._print(lower)} to {self._print(upper)} "
-                    f"of {body} d{variable}"
+                    f"int from {self._print(lower)} to {self._print(upper)} of {body} d{variable}"
                 )
             else:
                 body = f"int {body} d{limit[0]}"
@@ -242,19 +242,19 @@ def _prepare(text: str) -> str:
 
 def _validate(text: str) -> None:
     if len(text) > MAX_LENGTH:
-        raise ParseError(f"this line is too long (limit {MAX_LENGTH} characters)")
+        raise ParseError(msg("this line is too long (limit {limit} characters)", limit=MAX_LENGTH))
     if "__" in text:
-        raise ParseError("'__' is not allowed")
+        raise ParseError(msg("'__' is not allowed"))
     if _ATTRIBUTE.search(text):
-        raise ParseError("attribute access (a dot before a letter) is not allowed")
+        raise ParseError(msg("attribute access (a dot before a letter) is not allowed"))
     if _BIG_FACTORIAL.search(text) or _BIG_POWER.search(text) or _POWER_TOWER.search(text):
-        raise ParseError("that number is too big to compute")
+        raise ParseError(msg("that number is too big to compute"))
     for char in text:
         if not _ALLOWED_CHARS.match(char):
-            raise ParseError(f"cannot read the character {char!r}")
+            raise ParseError(msg("cannot read the character {char!r}", char=char))
     if _EMPTY_BRACKETS.search(text):
         # what an unfilled box in the web page's editor turns into
-        raise ParseError("there is an empty box on this line — fill it in or delete it")
+        raise ParseError(msg("there is an empty box on this line — fill it in or delete it"))
     depth = 0
     for char in text:
         if char == "(":
@@ -262,9 +262,9 @@ def _validate(text: str) -> None:
         elif char == ")":
             depth -= 1
             if depth < 0:
-                raise ParseError("unbalanced bracket")
+                raise ParseError(msg("unbalanced bracket"))
     if depth:
-        raise ParseError("unbalanced bracket")
+        raise ParseError(msg("unbalanced bracket"))
 
 
 def _ambiguity_warnings(text: str) -> list[str]:
@@ -272,14 +272,27 @@ def _ambiguity_warnings(text: str) -> list[str]:
     for match in _AMBIGUOUS_SLASH.finditer(text):
         before, number, after = match.groups()
         warnings.append(
-            f"`{before}/{number}{after}` is read as ({before or '1'}/{number})*{after} — "
-            f"write {before}/({number}{after}) if you meant that"
+            msg(
+                "`{before}/{number}{after}` is read as "
+                "({value}/{number})*{after} — write "
+                "{before}/({number}{after}) if you meant that",
+                before=before,
+                number=number,
+                after=after,
+                value=before or "1",
+            )
         )
     for match in _AMBIGUOUS_POWER.finditer(text):
         base, exponent, after = match.groups()
         warnings.append(
-            f"`{base}^{exponent}{after}` is read as ({base}^{exponent})*{after} — "
-            f"write {base}^({exponent}{after}) if you meant that"
+            msg(
+                "`{base}^{exponent}{after}` is read as "
+                "({base}^{exponent})*{after} — write "
+                "{base}^({exponent}{after}) if you meant that",
+                base=base,
+                exponent=exponent,
+                after=after,
+            )
         )
     return warnings
 
@@ -305,7 +318,7 @@ def rewrite_abs(text: str) -> str:
         if not char.isspace():
             previous = char
     if open_bars:
-        raise ParseError("unbalanced | ... | bars")
+        raise ParseError(msg("unbalanced | ... | bars"))
     return "".join(out)
 
 
@@ -339,12 +352,12 @@ def _function_call(text: str, index: int) -> tuple[str, int]:
     else:
         raw, end = _read_factor_run(text, start)
         if not raw.strip():
-            raise ParseError(f"{name} needs an argument")
+            raise ParseError(msg("{name} needs an argument", name=name))
         argument = raw
     canonical = FUNCTIONS[name]
     if exponent is not None and exponent.replace(" ", "") in {"-1", "(-1)"}:
         if canonical not in INVERSE:
-            raise ParseError(f"{name}^-1 is not supported")
+            raise ParseError(msg("{name}^-1 is not supported", name=name))
         return f"{INVERSE[canonical]}({argument})", end
     if exponent is not None:
         return f"({canonical}({argument}))^({exponent})", end
@@ -365,7 +378,7 @@ def _read_exponent(text: str, index: int) -> tuple[int, str | None]:
         return end, f"{sign}({inner})"
     match = _NUMBER.match(text, start) or _IDENT.match(text, start)
     if match is None:
-        raise ParseError("a power needs an exponent")
+        raise ParseError(msg("a power needs an exponent"))
     return match.end(), f"{sign}{match.group(0)}"
 
 
@@ -429,7 +442,7 @@ def _balanced(text: str, index: int) -> tuple[str, int]:
             depth -= 1
             if depth == 0:
                 return text[index + 1 : position], position + 1
-    raise ParseError("unbalanced bracket")
+    raise ParseError(msg("unbalanced bracket"))
 
 
 def _skip_spaces(text: str, index: int) -> int:
@@ -440,7 +453,7 @@ def _skip_spaces(text: str, index: int) -> int:
 
 def _parse_sympy(text: str, evaluate: bool = True) -> sp.Expr:
     if not text.strip():
-        raise ParseError("this line has no math on it")
+        raise ParseError(msg("this line has no math on it"))
     try:
         unevaluated = parse_expr(
             text,
@@ -452,7 +465,7 @@ def _parse_sympy(text: str, evaluate: bool = True) -> sp.Expr:
     except ParseError:
         raise
     except Exception as exc:  # SyntaxError, TokenError, TypeError...
-        raise ParseError(f"cannot read this line ({type(exc).__name__})") from exc
+        raise ParseError(msg("cannot read this line ({error})", error=type(exc).__name__)) from exc
     _guard_size(unevaluated)
     if not evaluate:
         return unevaluated
@@ -464,7 +477,7 @@ def _parse_sympy(text: str, evaluate: bool = True) -> sp.Expr:
             transformations=_TRANSFORMATIONS,
         )
     except Exception as exc:
-        raise ParseError(f"cannot read this line ({type(exc).__name__})") from exc
+        raise ParseError(msg("cannot read this line ({error})", error=type(exc).__name__)) from exc
 
 
 def _guard_size(expr: sp.Basic) -> None:
@@ -472,10 +485,10 @@ def _guard_size(expr: sp.Basic) -> None:
         if isinstance(node, sp.Pow):
             exponent = node.exp
             if exponent.is_Number and abs(exponent) > 10000:
-                raise ParseError("that number is too big to compute")
+                raise ParseError(msg("that number is too big to compute"))
             if isinstance(exponent, sp.Pow) and exponent.base.is_Number and exponent.exp.is_Number:
-                raise ParseError("that number is too big to compute")
+                raise ParseError(msg("that number is too big to compute"))
         if isinstance(node, sp.factorial):
             argument = node.args[0]
             if argument.is_Number and argument > 1000:
-                raise ParseError("that number is too big to compute")
+                raise ParseError(msg("that number is too big to compute"))

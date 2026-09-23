@@ -20,6 +20,7 @@ import string
 
 import sympy as sp
 
+from ..i18n import msg
 from ..parse.plain import latex_of, read_as
 from .solution import Solution, SolutionStep
 
@@ -65,8 +66,10 @@ def partial_fractions(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
     if quotient != 0:
         _show(
             solution,
-            "The top's degree is not smaller than the bottom's, so divide first "
-            "(polynomial long division)",
+            msg(
+                "The top's degree is not smaller than the bottom's, so "
+                "divide first (polynomial long division)"
+            ),
             f"{read_as(quotient)} + ({read_as(remainder)})/({read_as(bottom)})",
             rf"{latex_of(quotient)} + \frac{{{latex_of(remainder)}}}{{{latex_of(bottom)}}}",
         )
@@ -77,7 +80,7 @@ def partial_fractions(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
     if read_as(factored) != read_as(bottom):
         _show(
             solution,
-            "Factor the bottom",
+            msg("Factor the bottom"),
             f"{_top(remainder)}/{_bottom(factored)}",
             rf"\frac{{{latex_of(remainder)}}}{{{latex_of(factored)}}}",
         )
@@ -99,7 +102,7 @@ def partial_fractions(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
     template_latex = " + ".join(rf"\frac{{{latex_of(n)}}}{{{latex_of(d)}}}" for n, d in pieces)
     _show(
         solution,
-        "Write it as a sum of simpler fractions, with unknown numbers on top",
+        msg("Write it as a sum of simpler fractions, with unknown numbers on top"),
         template_plain,
         template_latex,
     )
@@ -109,7 +112,7 @@ def partial_fractions(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
     scaled_remainder = sp.expand(remainder / constant)
     _show(
         solution,
-        "Multiply both sides by the bottom",
+        msg("Multiply both sides by the bottom"),
         f"{read_as(scaled_remainder)} = "
         + " + ".join(f"{_top(n)}*{_top(sp.factor(sp.cancel(whole / d)))}" for n, d in pieces),
         f"{latex_of(scaled_remainder)} = "
@@ -129,7 +132,11 @@ def partial_fractions(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
             cofactor = sp.cancel(term / numerator).subs(x, root)
             _show(
                 solution,
-                f"Put {x} = {read_as(root)}: every other term has a factor that is 0 there",
+                msg(
+                    "Put {x} = {root}: every other term has a factor that is 0 there",
+                    x=x,
+                    root=read_as(root),
+                ),
                 f"{read_as(at_root)} = {read_as(cofactor)}*{numerator}, so {numerator} = "
                 f"{read_as(values[numerator])}",
                 rf"{latex_of(at_root)} = {latex_of(cofactor)} {numerator} \quad\Rightarrow\quad "
@@ -138,7 +145,7 @@ def partial_fractions(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
     else:
         _show(
             solution,
-            "Compare the numbers in front of each power of x on both sides, and solve",
+            msg("Compare the numbers in front of each power of x on both sides, and solve"),
             ", ".join(f"{name} = {read_as(values[name])}" for name in unknowns),
             r",\ ".join(f"{latex_of(name)} = {latex_of(values[name])}" for name in unknowns),
         )
@@ -152,7 +159,7 @@ def partial_fractions(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
         if numerator == 0:
             continue
         total += _integrate_piece(numerator, denominator, x, solution)
-    _expr(solution, "Add the pieces", total)
+    _expr(solution, msg("Add the pieces"), total)
     return total
 
 
@@ -182,7 +189,7 @@ def _integrate_polynomial(polynomial: sp.Expr, x: sp.Symbol, solution: Solution)
     result = sp.integrate(polynomial, x)
     _eq(
         solution,
-        "The polynomial part, with the power rule",
+        msg("The polynomial part, with the power rule"),
         sp.Integral(polynomial, x),
         result,
     )
@@ -196,17 +203,24 @@ def _integrate_piece(numerator, denominator, x, solution: Solution) -> sp.Expr:
         slope = sp.Poly(base, x).LC()
         if power == 1:
             result = numerator / slope * sp.log(sp.Abs(base))
-            text = f"int c/(ax + b) dx = (c/a) ln|ax + b|, with a = {read_as(slope)}"
+            text = msg(
+                "int c/(ax + b) dx = (c/a) ln|ax + b|, with a = {slope}", slope=read_as(slope)
+            )
         else:
             result = numerator / (slope * (1 - power)) * base ** (1 - power)
-            text = "Power rule on the bracket: int c (ax + b)^(-n) dx = c (ax + b)^(1-n) / (a(1-n))"
+            text = msg(
+                "Power rule on the bracket: int c (ax + b)^(-n) dx = c (ax + b)^(1-n) / (a(1-n))"
+            )
         _eq(solution, text, integral, result)
         return result
     result = sp.integrate(numerator / denominator, x)
     _eq(
         solution,
-        "Split the top into a multiple of the bottom's derivative (which gives a logarithm) "
-        "and a number (which gives an arctangent)",
+        msg(
+            "Split the top into a multiple of the bottom's derivative "
+            "(which gives a logarithm) and a number (which gives an "
+            "arctangent)"
+        ),
         integral,
         result,
     )
@@ -257,9 +271,16 @@ def trig_substitution(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
         return None
     _show(
         solution,
-        f"The square root has the shape sqrt({pattern}) with a = {read_as(a)}, so substitute "
-        f"{x} = {read_as(x_of_t)}. Then d{x} = {read_as(dx)} d(theta), and the square root "
-        "becomes a single trigonometric function",
+        msg(
+            "The square root has the shape sqrt({pattern}) with a = {a}, "
+            "so substitute {x} = {x_of_t}. Then d{x} = {dx} d(theta), "
+            "and the square root becomes a single trigonometric function",
+            pattern=pattern,
+            a=read_as(a),
+            x=x,
+            x_of_t=read_as(x_of_t),
+            dx=read_as(dx),
+        ),
         f"sqrt({read_as(radicand)}) = {read_as(root_of_t)}",
         rf"\sqrt{{{latex_of(radicand)}}} = {latex_of(root_of_t)}",
     )
@@ -275,21 +296,21 @@ def trig_substitution(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
     if read_as(in_theta) != read_as(substituted):
         _eq(
             solution,
-            "The integral in theta, simplified",
+            msg("The integral in theta, simplified"),
             sp.Integral(substituted, THETA),
             sp.Integral(in_theta, THETA),
         )
     else:
-        _expr(solution, "The integral in theta", sp.Integral(in_theta, THETA))
+        _expr(solution, msg("The integral in theta"), sp.Integral(in_theta, THETA))
     if sp.simplify(in_theta - sp.sec(THETA)) == 0:
         antiderivative = sp.log(sp.Abs(sp.sec(THETA) + t))
-        text = "int sec(theta) dtheta = ln|sec(theta) + tan(theta)|"
+        text = msg("int sec(theta) dtheta = ln|sec(theta) + tan(theta)|")
     else:
         antiderivative = sp.integrate(in_theta, THETA)
         if antiderivative.has(sp.Integral):
             return None
         antiderivative = sp.simplify(antiderivative)
-        text = "Integrate in theta"
+        text = msg("Integrate in theta")
     _eq(solution, text, sp.Integral(in_theta, THETA), antiderivative)
     # sin(2t) = 2 sin(t) cos(t) and friends, so only sin, cos and tan of t are left
     written = sp.expand_trig(antiderivative).subs(
@@ -299,7 +320,12 @@ def trig_substitution(f: sp.Expr, x: sp.Symbol, solution: Solution) -> sp.Expr |
     relations = ", ".join(f"{read_as(key)} = {read_as(value)}" for key, value in triangle.items())
     _show(
         solution,
-        f"Back to {x} with the right triangle for theta = {read_as(back)}: {relations}",
+        msg(
+            "Back to {x} with the right triangle for theta = {back}: {relations}",
+            x=x,
+            back=read_as(back),
+            relations=relations,
+        ),
         read_as(result),
         latex_of(result),
     )

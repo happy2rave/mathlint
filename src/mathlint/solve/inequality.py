@@ -193,7 +193,7 @@ def solve_inequality(
         shown += f" {inequalities[1].op} {read_as(inequalities[1].rhs)}"
     solution = InequalitySolution(
         operation="solve",
-        title=f"Solve {shown}",
+        title=msg("Solve {inequality}", inequality=shown),
         variable=unknown,
         letters=[letter.name for letter in letters],
     )

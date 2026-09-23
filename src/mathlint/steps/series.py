@@ -15,6 +15,7 @@ import sympy as sp
 from sympy.core.parameters import distribute
 
 from ..errors import ParseError, UnsupportedError
+from ..i18n import msg
 from ..parse.plain import latex_of, parse_expression, read_as
 from .solution import Solution, SolutionStep
 
@@ -46,20 +47,20 @@ def looks_like_series(text: str) -> bool:
 def parse_series(text: str) -> SeriesProblem:
     match = _REQUEST.match(text)
     if match is None:
-        raise ParseError("write it like: taylor sin(x) at 0 order 5")
+        raise ParseError(msg("write it like: taylor sin(x) at 0 order 5"))
     function = parse_expression(match.group("f")).expr
     letters = function.free_symbols
     if len(letters) != 1:
-        raise ParseError("a series needs a function of one letter")
+        raise ParseError(msg("a series needs a function of one letter"))
     (x,) = letters
     point = sp.Integer(0)
     if match.group("kind").lower() != "maclaurin" and match.group("a"):
         point = parse_expression(match.group("a")).expr
         if point.free_symbols:
-            raise ParseError("the point of a Taylor series must be a number")
+            raise ParseError(msg("the point of a Taylor series must be a number"))
     order = int(match.group("n") or DEFAULT_ORDER)
     if order > MAX_ORDER:
-        raise UnsupportedError(f"series are worked out up to order {MAX_ORDER}")
+        raise UnsupportedError(msg("series are worked out up to order {order}", order=MAX_ORDER))
     return SeriesProblem(function, x, point, order)
 
 
@@ -86,16 +87,28 @@ def _known(function: sp.Expr, x: sp.Symbol) -> sp.Expr | None:
 
 def series_solution(problem: SeriesProblem) -> Solution:
     f, x, a, n = problem.function, problem.x, problem.point, problem.order
-    name = "Maclaurin" if a == 0 else "Taylor"
+    name = msg("Maclaurin") if a == 0 else msg("Taylor")
     solution = Solution(
         operation="series",
-        title=f"The {name} series of {read_as(f)} around {x} = {read_as(a)}, up to order {n}",
+        title=msg(
+            "The {name} series of {f} around {x} = {a}, up to order {n}",
+            name=name,
+            f=read_as(f),
+            x=x,
+            a=read_as(a),
+            n=n,
+        ),
     )
     shift = x - a
     solution.steps.append(
         SolutionStep(
-            text=f"A {name} series builds a polynomial from the derivatives at {x} = {read_as(a)}: "
-            "the k-th term is f^(k)(a)/k! times (x - a)^k",
+            text=msg(
+                "A {name} series builds a polynomial from the derivatives at "
+                "{x} = {a}: the k-th term is f^(k)(a)/k! times (x - a)^k",
+                name=name,
+                x=x,
+                a=read_as(a),
+            ),
             display=f"f(x) = sum of f^(k)({read_as(a)})/k! * {_power(shift, 'k')}",
             display_latex=rf"f(x) = \sum_{{k=0}}^{{\infty}} \frac{{f^{{(k)}}({latex_of(a)})}}{{k!}}"
             rf"\left({latex_of(shift)}\right)^k",
@@ -108,15 +121,19 @@ def series_solution(problem: SeriesProblem) -> Solution:
         value = sp.simplify(current.subs(x, a))
         if not value.is_finite:
             raise UnsupportedError(
-                f"f or one of its derivatives is not defined at {x} = {read_as(a)}, so there "
-                "is no Taylor series there"
+                msg(
+                    "f or one of its derivatives is not defined at {x} = {a}, so "
+                    "there is no Taylor series there",
+                    x=x,
+                    a=read_as(a),
+                )
             )
         derivatives.append(sp.simplify(current))
         values.append(value)
         current = sp.diff(current, x)
     solution.steps.append(
         SolutionStep(
-            text=f"The derivatives, and their values at {x} = {read_as(a)}",
+            text=msg("The derivatives, and their values at {x} = {a}", x=x, a=read_as(a)),
             display=_table_plain(derivatives, values, x, a),
             display_latex=_table_latex(derivatives, values, x, a),
         )
@@ -130,7 +147,7 @@ def series_solution(problem: SeriesProblem) -> Solution:
         solution.steps = solution.steps[:1]
         solution.steps.append(
             SolutionStep(
-                text="Series (computer algebra)",
+                text=msg("Series (computer algebra)"),
                 display=read_as(expected),
                 display_latex=latex_of(expected),
             )
@@ -151,8 +168,10 @@ def series_solution(problem: SeriesProblem) -> Solution:
         latex.append(rf"{sign}\frac{{{latex_of(size)}}}{{{k}!}}{power_latex}")
     solution.steps.append(
         SolutionStep(
-            text="Divide each value by k! and multiply by the matching power; a zero value "
-            "gives no term",
+            text=msg(
+                "Divide each value by k! and multiply by the matching power; "
+                "a zero value gives no term"
+            ),
             display="".join(plain) or "0",
             display_latex="".join(latex) or "0",
         )
@@ -161,8 +180,14 @@ def series_solution(problem: SeriesProblem) -> Solution:
     shown = _in_powers(values, shift, n)
     solution.steps.append(
         SolutionStep(
-            text=f"So, up to order {n} (the rest is smaller than a multiple of "
-            f"{_power(shift, n + 1)} near {x} = {read_as(a)})",
+            text=msg(
+                "So, up to order {n} (the rest is smaller than a multiple of "
+                "{power} near {x} = {a})",
+                n=n,
+                power=_power(shift, n + 1),
+                x=x,
+                a=read_as(a),
+            ),
             display=f"{read_as(shown)} + O({_power(shift, n + 1)})",
             display_latex=rf"{latex_of(shown)} + {latex_of(remainder)}",
         )
@@ -173,8 +198,9 @@ def series_solution(problem: SeriesProblem) -> Solution:
             term, (k, low, _) = general.function, general.limits[0]
             solution.steps.append(
                 SolutionStep(
-                    text="This is a series worth knowing by heart; its general term gives all "
-                    "of it",
+                    text=msg(
+                        "This is a series worth knowing by heart; its general term gives all of it"
+                    ),
                     display=f"sum over {k} = {low}, {low + 1}, {low + 2}, ... of {read_as(term)}",
                     display_latex=latex_of(general),
                 )

@@ -100,6 +100,7 @@ MATH_WORDS = {
     "dy",
     "dt",
     "theta",
+    "root",
 }
 WORD = re.compile(r"[A-Za-z]{3,}")
 LATEX_TEXT = re.compile(r"\\text\{([^{}]*)\}")
@@ -250,7 +251,11 @@ def _english(value, field) -> list[str]:
                 found += _english(arg, field)
         return found
     if isinstance(value, str):
-        words = [word for word in WORD.findall(value) if word.lower() not in MATH_WORDS]
+        words = [
+            word
+            for word in WORD.findall(value)
+            if word.lower() not in MATH_WORDS and not word.endswith("Error")
+        ]
         return [value] if words else []
     return []
 
@@ -258,7 +263,9 @@ def _english(value, field) -> list[str]:
 def _walk(value, field, found, latex_words):
     if isinstance(value, dict):
         for key, item in value.items():
-            _walk(item, key, found, latex_words)
+            if field == "practice" and key == "text":
+                continue  # a practice problem: math to solve, not words
+            _walk(item, "practice" if key == "practice" else key, found, latex_words)
     elif isinstance(value, (list, tuple)):
         for item in value:
             _walk(item, field, found, latex_words)

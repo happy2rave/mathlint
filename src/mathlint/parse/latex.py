@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 
 from ..errors import ParseError
+from ..i18n import msg
 
 _GREEK = {
     "alpha": "alpha",
@@ -53,8 +54,7 @@ _GREEK = {
 _FUNCTIONS = {
     name: name
     for name in (
-        "sin cos tan cot sec csc sinh cosh tanh coth "
-        "arcsin arccos arctan arccot ln log exp"
+        "sin cos tan cot sec csc sinh cosh tanh coth arcsin arccos arctan arccot ln log exp"
     ).split()
 }
 
@@ -101,7 +101,7 @@ _DROP = {"left", "right", "mleft", "mright", "displaystyle", "limits"}
 
 _COMMAND = re.compile(r"\\([A-Za-z]+|.)")
 _EMPTY_SCRIPT = re.compile(r"[\^_]\s*\{\s*\}")
-_EMPTY_BOX = "there is an empty box on this line — fill it in or delete it"
+_EMPTY_BOX = msg("there is an empty box on this line — fill it in or delete it")
 _DERIVATIVE_NUMERATOR = re.compile(r"^\s*d(\s*\^\s*\d+)?\s*$")
 _DERIVATIVE_DENOMINATOR = re.compile(r"^\s*d\s*([A-Za-z][A-Za-z0-9_]*)(\s*\^\s*\d+)?\s*$")
 
@@ -120,7 +120,7 @@ def latex_to_plain(text: str) -> str:
             continue
         match = _COMMAND.match(text, index)
         if match is None:
-            raise ParseError("a stray backslash")
+            raise ParseError(msg("a stray backslash"))
         name = match.group(1)
         index = match.end()
         rendered, index = _command(name, text, index)
@@ -192,7 +192,7 @@ def _read_group(text: str, index: int) -> tuple[str, int]:
     while index < len(text) and text[index].isspace():
         index += 1
     if index >= len(text):
-        raise ParseError("this LaTeX command is missing its argument")
+        raise ParseError(msg("this LaTeX command is missing its argument"))
     if text[index] == "{":
         depth = 0
         for position in range(index, len(text)):
@@ -202,10 +202,10 @@ def _read_group(text: str, index: int) -> tuple[str, int]:
                 depth -= 1
                 if depth == 0:
                     return text[index + 1 : position], position + 1
-        raise ParseError("unbalanced { } braces")
+        raise ParseError(msg("unbalanced {{ }} braces"))
     if text[index] == "\\":
         match = _COMMAND.match(text, index)
         if match is None:
-            raise ParseError("a stray backslash")
+            raise ParseError(msg("a stray backslash"))
         return match.group(0), match.end()
     return text[index], index + 1

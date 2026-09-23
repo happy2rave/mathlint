@@ -70,7 +70,7 @@ def analyze_function(text: str) -> Computation:
 def calculate(tree) -> Computation:
     computation = Computation(
         operation="calculate",
-        title=f"Calculate {plain(tree)}",
+        title=msg("Calculate {expression}", expression=plain(tree)),
         kind="arithmetic",
         method="calculate",
         methods=["calculate"],
