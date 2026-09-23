@@ -6,8 +6,10 @@ exist in English, and every other language must have exactly the same keys, the
 same ``{placeholders}`` and the same markup.
 """
 
+import hashlib
 import json
 import re
+import struct
 from pathlib import Path
 
 import pytest
@@ -101,3 +103,65 @@ def test_history_is_kept_on_the_device_and_only_for_what_the_reader_asked():
     assert "solve({ record: false })" in app
     assert "showSteps({ record: false })" in app
     assert '"history.js"' in (ROOT / "scripts" / "build_web.py").read_text(encoding="utf-8")
+
+
+def _scripts_module(name: str):
+    import importlib.util
+    import sys
+
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module  # dataclasses look their module up
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        sys.path.remove(str(ROOT / "scripts"))
+
+
+def test_the_page_loads_nothing_from_other_sites():
+    # links a person follows are fine; anything the page itself fetches is not
+    loaded = re.findall(r'<(?:script|link)\b[^>]*(?:src|href)="(https?://[^"]+)"', HTML)
+    assert loaded == []
+    for name, text in SCRIPTS.items():
+        assert not re.search(r'(?:import|from|fetch\()\s*\(?\s*["\']https?://', text), name
+        assert "cdn.jsdelivr" not in text and "googleapis" not in text, name
+
+
+def test_every_vendored_path_the_page_names_is_vendored():
+    vendor = _scripts_module("vendor")
+    folders = {folder for tarball in vendor.TARBALLS for folder in tarball.files.values()}
+    named = re.findall(r"vendor/([\w.-]+)/", HTML + "".join(SCRIPTS.values()))
+    assert named
+    for folder in named:
+        assert folder in folders or folder == "fonts", folder
+
+
+def test_the_app_can_be_installed():
+    manifest = json.loads((WEB / "manifest.webmanifest").read_text(encoding="utf-8"))
+    assert manifest["display"] == "standalone"
+    assert '<link rel="manifest" href="manifest.webmanifest">' in HTML
+    build = _scripts_module("build_web")
+    drawn = {name for name, _, _ in build.ICONS}
+    for icon in manifest["icons"]:
+        assert icon["src"].removeprefix("icons/") in drawn
+    assert {icon["purpose"] for icon in manifest["icons"]} == {"any", "maskable"}
+    assert "apple-touch-icon.png" in drawn and 'href="icons/apple-touch-icon.png"' in HTML
+
+
+def test_an_icon_is_a_png_of_the_right_size():
+    icons = _scripts_module("icons")
+    data = icons.draw_icon(48, maskable=True)
+    assert data.startswith(b"\x89PNG\r\n\x1a\n")
+    width, height = struct.unpack(">II", data[16:24])
+    assert (width, height) == (48, 48)
+
+
+def test_a_download_that_does_not_match_its_pin_is_refused():
+    vendor = _scripts_module("vendor")
+    with pytest.raises(SystemExit):
+        vendor._verify("x", b"data", integrity="sha512-AAAA", sha256="")
+    with pytest.raises(SystemExit):
+        vendor._verify("x", b"data", integrity="", sha256="00")
+    vendor._verify("x", b"data", integrity="", sha256=hashlib.sha256(b"data").hexdigest())

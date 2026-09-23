@@ -1,10 +1,13 @@
 """Build the static site in ``_site``: the web page plus a mathlint wheel.
 
-    python scripts/build_web.py
+    python scripts/build_web.py              # everything, for the real site
+    python scripts/build_web.py --no-vendor  # skip the downloads (tests)
     python -m http.server -d _site 8123
 
-The page installs that wheel into Pyodide with micropip, so the browser runs
-exactly the code that is in this repository.
+The page unpacks that wheel into Pyodide, so the browser runs exactly the code
+that is in this repository. Pyodide, KaTeX, MathLive and the fonts are copied
+into ``_site/vendor`` (see vendor.py), and the app icons are drawn (icons.py),
+so the site needs nothing from anywhere else.
 """
 
 from __future__ import annotations
@@ -16,6 +19,9 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+from icons import draw_icon
+from vendor import vendor
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "_site"
@@ -55,6 +61,16 @@ _LOCAL_FILES = (
     "solve-examples.json",
     "textbook-problems.json",
     "wheel.json",
+    "fonts.css",
+    "manifest.webmanifest",
+)
+
+#: (file name, size, maskable) for every icon the manifest and index.html name
+ICONS = (
+    ("icon-192.png", 192, False),
+    ("icon-512.png", 512, False),
+    ("icon-maskable-512.png", 512, True),
+    ("apple-touch-icon.png", 180, True),
 )
 
 
@@ -71,7 +87,14 @@ def stamp_references(site: Path, stamp: str) -> None:
         page.write_text(text, encoding="utf-8")
 
 
-def main() -> None:
+def write_icons(site: Path) -> None:
+    folder = site / "icons"
+    folder.mkdir(parents=True, exist_ok=True)
+    for name, size, maskable in ICONS:
+        (folder / name).write_bytes(draw_icon(size, maskable))
+
+
+def main(argv: list[str]) -> None:
     wheel = build_wheel()
     if SITE.exists():
         shutil.rmtree(SITE)
@@ -79,6 +102,9 @@ def main() -> None:
     shutil.copytree(WEB, SITE, ignore=shutil.ignore_patterns("tests"))
     shutil.copy2(wheel, SITE / wheel.name)
     (SITE / "wheel.json").write_text(json.dumps({"wheel": wheel.name}), encoding="utf-8")
+    write_icons(SITE)
+    if "--no-vendor" not in argv:
+        vendor(SITE, ROOT / ".cache" / "vendor")
 
     digest = hashlib.sha256(wheel.read_bytes())
     for source in sorted(WEB.rglob("*")):
@@ -89,4 +115,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
