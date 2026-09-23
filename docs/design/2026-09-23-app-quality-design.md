@@ -1,7 +1,7 @@
 # v0.11 "App quality" — design
 
 Date: 2026-09-23
-Status: approved
+Status: shipped in v0.11.0
 
 ## Goal
 
