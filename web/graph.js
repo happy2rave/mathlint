@@ -48,7 +48,10 @@ export class Graph {
       tabindex: "0",
       "aria-label": "Graph. Drag to move, scroll or pinch to zoom; arrow keys move, + and - zoom.",
     });
-    this.element.append(this.picture, this.#controls(), this.#legend(renderMath));
+    const stage = document.createElement("div");
+    stage.className = "graph-stage";
+    stage.append(this.picture, this.#controls());
+    this.element.append(stage, this.#legend(renderMath));
     this.#listen();
     this.draw();
   }
@@ -59,7 +62,7 @@ export class Graph {
     const button = (label, text, action) => {
       const control = document.createElement("button");
       control.type = "button";
-      control.className = "chip";
+      control.className = "graph-button";
       control.textContent = text;
       control.setAttribute("aria-label", label);
       control.addEventListener("click", action);
@@ -67,7 +70,7 @@ export class Graph {
     };
     button("Zoom in", "+", () => this.zoom(1 / 1.5));
     button("Zoom out", "−", () => this.zoom(1.5));
-    button("Back to the start", "Reset", () => this.reset());
+    button("Back to the start", "⟲", () => this.reset());
     return bar;
   }
 

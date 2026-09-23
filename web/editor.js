@@ -113,6 +113,24 @@ export class MathSheet {
     return this.fields.map((field) => field.value.trim());
   }
 
+  // The lines with something on them, in order: line n of a report is the n-th.
+  filledFields() {
+    return this.fields.filter((field) => field.value.trim());
+  }
+
+  // A teacher's mark on the margin of each line: {verdict} per filled line.
+  setMarks(verdicts) {
+    this.clearMarks();
+    this.filledFields().forEach((field, index) => {
+      const verdict = verdicts[index];
+      if (verdict) field.closest("li").dataset.mark = verdict.toLowerCase();
+    });
+  }
+
+  clearMarks() {
+    for (const row of this.list.children) delete row.dataset.mark;
+  }
+
   // What gets checked: the non-empty lines, one per line of text.
   getText() {
     return this.getLines()
@@ -147,7 +165,15 @@ export class MathSheet {
     row.className = "math-line";
     const field = document.createElement("math-field");
     field.setAttribute("aria-label", this.lineLabel);
-    row.append(field);
+    // only shown while there is more than one line
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "line-remove";
+    remove.setAttribute("aria-label", "Remove this line");
+    remove.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>';
+    remove.addEventListener("pointerdown", (event) => event.preventDefault());
+    remove.addEventListener("click", () => this.removeLine(field));
+    row.append(field, remove);
     if (afterRow) afterRow.after(row);
     else this.list.append(row);
     // a math field can only be configured once it is on the page
@@ -156,7 +182,10 @@ export class MathSheet {
       this.active = field;
       this.#markActive();
     });
-    field.addEventListener("input", () => this.onChange());
+    field.addEventListener("input", () => {
+      delete row.dataset.mark;
+      this.onChange();
+    });
     return field;
   }
 
