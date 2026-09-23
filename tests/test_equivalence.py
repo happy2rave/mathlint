@@ -30,9 +30,7 @@ def test_step_that_only_holds_for_positive_values_is_a_warning():
 
 
 def test_derivative_is_evaluated_before_comparing():
-    result = compare(
-        sp.Derivative(x**2 * sp.sin(x), x), 2 * x * sp.sin(x) + x**2 * sp.cos(x)
-    )
+    result = compare(sp.Derivative(x**2 * sp.sin(x), x), 2 * x * sp.sin(x) + x**2 * sp.cos(x))
     assert result.verdict is Verdict.OK
 
 

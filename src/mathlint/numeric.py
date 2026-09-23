@@ -74,10 +74,7 @@ def evaluate(expr: sp.Expr, point: dict[sp.Symbol, sp.Rational]) -> sp.Float | N
 
 
 def _has_indefinite_integral(expr: sp.Expr) -> bool:
-    return any(
-        len(node.limits) and len(node.limits[0]) == 1
-        for node in expr.atoms(sp.Integral)
-    )
+    return any(len(node.limits) and len(node.limits[0]) == 1 for node in expr.atoms(sp.Integral))
 
 
 def format_number(value: sp.Expr) -> str:

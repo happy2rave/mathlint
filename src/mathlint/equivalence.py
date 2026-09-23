@@ -14,6 +14,7 @@ from enum import Enum
 import sympy as sp
 
 from .hints import find_hints
+from .i18n import msg
 from .numeric import evaluate, format_number, sample_points
 
 TOLERANCE = sp.Float("1e-10")
@@ -52,17 +53,17 @@ def compare(
     if up_to_constant_in is not None:
         left_value = sp.diff(left, up_to_constant_in)
         right_value = sp.diff(right, up_to_constant_in)
-        subject = "the two antiderivatives differ by more than a constant"
+        subject = msg("the two antiderivatives differ by more than a constant")
     else:
         left_value = _resolve(left)
         right_value = _resolve(right)
-        subject = "not equal to the line above"
+        subject = msg("not equal to the line above")
 
     difference = left_value - right_value
     if _proved_zero(difference):
         return Comparison(
             verdict=Verdict.OK,
-            message="equal to the line above",
+            message=msg("equal to the line above"),
             method="exact",
         )
 
@@ -79,12 +80,12 @@ def _compare_constants(
     if value is None:
         return Comparison(
             verdict=Verdict.UNSURE,
-            message="cannot tell whether these two are equal",
+            message=msg("cannot tell whether these two are equal"),
         )
     if abs(value) <= TOLERANCE * max(sp.Integer(1), abs(value)):
         return Comparison(
             verdict=Verdict.OK,
-            message="equal to the line above",
+            message=msg("equal to the line above"),
             method="numeric",
         )
     values = _constant_values(left, right)
@@ -133,17 +134,17 @@ def _compare_with_numbers(
     if tested == 0:
         return Comparison(
             verdict=Verdict.UNSURE,
-            message="cannot tell — there are no real values to test this with",
+            message=msg("cannot tell — there are no real values to test this with"),
         )
 
     if not disagreements:
         if _proved_zero(difference, try_hard=True):
             return Comparison(
-                verdict=Verdict.OK, message="equal to the line above", method="exact"
+                verdict=Verdict.OK, message=msg("equal to the line above"), method="exact"
             )
         return Comparison(
             verdict=Verdict.OK,
-            message="equal to the line above",
+            message=msg("equal to the line above"),
             method="numeric",
         )
 
@@ -153,8 +154,10 @@ def _compare_with_numbers(
         return Comparison(
             verdict=Verdict.WARNING,
             message=(
-                "only true for positive values — it fails at "
-                f"{_render_point(point)}"
+                msg(
+                    "only true for positive values — it fails at {point}",
+                    point=_render_point(point),
+                )
             ),
             method="numeric",
         )

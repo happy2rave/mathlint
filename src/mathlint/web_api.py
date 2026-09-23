@@ -17,7 +17,7 @@ from .check import check_document
 from .document import parse_document
 from .errors import MathlintError, error_text
 from .graph import graph_for, sample
-from .i18n import localize
+from .i18n import localize, msg
 from .parse.plain import parse_expression
 from .practice import practice_for
 from .steps import differentiate_solution, integrate_solution, parse_matrix, solve_linalg
@@ -71,14 +71,14 @@ def _tutor(data: dict) -> dict:
         return {
             "accepted": True,
             "verdict": "OK",
-            "message": "matches the next worked step",
+            "message": msg("matches the next worked step"),
             "hints": [],
         }
 
     return {
         "accepted": False,
         "verdict": checked.verdict.value if checked.verdict else "UNSURE",
-        "message": checked.message or "That line does not follow yet.",
+        "message": checked.message or msg("That line does not follow yet."),
         "hints": list(checked.hints),
     }
 

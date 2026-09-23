@@ -55,9 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
     steps.add_argument(
         "operation",
         choices=["rref", "det", "inverse", "eigen", "diff", "integrate"],
-        help=(
-            "rref, det, inverse or eigen for a matrix; diff or integrate for an expression"
-        ),
+        help=("rref, det, inverse or eigen for a matrix; diff or integrate for an expression"),
     )
     steps.add_argument(
         "target",

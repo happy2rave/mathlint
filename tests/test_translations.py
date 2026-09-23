@@ -284,7 +284,6 @@ def corpus():
     return found, latex_words
 
 
-@pytest.mark.xfail(reason="calc, steps and check are wrapped in the next commits")
 def test_every_word_a_student_reads_is_translatable(corpus):
     found, _ = corpus
     english = sorted({f"{field}: {text}" for field, text in found})

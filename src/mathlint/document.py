@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 import sympy as sp
 
 from .errors import ParseError, UnsupportedError
+from .i18n import msg
 from .parse.latex import latex_to_plain
 from .parse.plain import latex_of, parse_expression, read_as
 from .parse.unicode_math import normalize_unicode
@@ -72,7 +73,7 @@ def parse_document(text: str) -> Document:
         if line.strip() and not line.strip().startswith("#")
     ]
     if not raw_lines:
-        raise ParseError("there is nothing to check — write your solution one step per line")
+        raise ParseError(msg("there is nothing to check — write your solution one step per line"))
 
     first_number, first_raw = raw_lines[0]
     first_body, _ = _split_arrow(normalize_unicode(first_raw))
@@ -257,13 +258,11 @@ def _expand_plus_minus(part: str) -> list[str]:
     return [part.replace(_PLUS_MINUS, "+"), part.replace(_PLUS_MINUS, "-")]
 
 
-def _parse_equation(
-    part: str, last_left: sp.Expr | None
-) -> tuple[sp.Expr, sp.Expr, list[str]]:
+def _parse_equation(part: str, last_left: sp.Expr | None) -> tuple[sp.Expr, sp.Expr, list[str]]:
     match = _PLAIN_EQUALS.search(part)
     if match is None:
         if last_left is None:
-            raise ParseError("this line is not an equation — it needs an '=' sign")
+            raise ParseError(msg("this line is not an equation — it needs an '=' sign"))
         # "x = 2, 3" — the second part repeats the left-hand side
         parsed = parse_expression(part)
         return last_left, parsed.expr, parsed.warnings
@@ -278,14 +277,18 @@ def _find_variable(lines: list[Line]) -> sp.Symbol:
     assert first.equation is not None
     left, right = first.equation
     unknowns = sorted(
-        (left - right).free_symbols, key=lambda symbol: symbol.name  # type: ignore[operator]
+        (left - right).free_symbols,
+        key=lambda symbol: symbol.name,  # type: ignore[operator]
     )
     if not unknowns:
-        raise ParseError("this equation has no unknown to solve for", line=first.number)
+        raise ParseError(msg("this equation has no unknown to solve for"), line=first.number)
     if len(unknowns) > 1:
         names = ", ".join(symbol.name for symbol in unknowns)
         raise UnsupportedError(
-            f"mathlint can solve for one unknown at the moment, but this has {names}",
+            msg(
+                "mathlint can solve for one unknown at the moment, but this has {names}",
+                names=names,
+            ),
             line=first.number,
         )
     return unknowns[0]

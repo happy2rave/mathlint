@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from .i18n import msg
 from .parse.plain import read_as
 
 MAX_HINTS = 3
@@ -19,14 +20,14 @@ def find_hints(left: sp.Expr, right: sp.Expr) -> list[str]:
     hints: list[str] = []
     if _is_small(left) and _is_small(right):
         if _looks_zero(left + right):
-            hints.append("the sign of the whole expression flipped")
+            hints.append(msg("the sign of the whole expression flipped"))
         else:
             difference = sp.expand(left - right)
             if difference.is_number and difference != 0:
-                hints.append(f"off by a constant: {read_as(difference)}")
+                hints.append(msg("off by a constant: {difference}", difference=read_as(difference)))
             ratio = _ratio(left, right)
             if ratio is not None:
-                hints.append(f"off by a factor of {read_as(ratio)}")
+                hints.append(msg("off by a factor of {ratio}", ratio=read_as(ratio)))
     hints.extend(_term_hints(left, right))
     return hints[:MAX_HINTS]
 
@@ -46,11 +47,11 @@ def _term_hints(left: sp.Expr, right: sp.Expr) -> list[str]:
     for term in sorted(missing, key=sp.default_sort_key):
         if -term in unmatched_extra:
             unmatched_extra.discard(-term)
-            hints.append(f"the sign of {read_as(term)} flipped")
+            hints.append(msg("the sign of {term} flipped", term=read_as(term)))
         else:
-            hints.append(f"the term {read_as(term)} disappeared")
+            hints.append(msg("the term {term} disappeared", term=read_as(term)))
     for term in sorted(unmatched_extra, key=sp.default_sort_key):
-        hints.append(f"the term {read_as(term)} appeared out of nowhere")
+        hints.append(msg("the term {term} appeared out of nowhere", term=read_as(term)))
     return hints
 
 

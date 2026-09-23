@@ -55,7 +55,7 @@ def test_checked_lines_are_marked_in_the_notebook_margin():
 
 
 def test_light_and_dark_themes_can_be_chosen():
-    assert '@media (prefers-color-scheme: dark)' in STYLE
+    assert "@media (prefers-color-scheme: dark)" in STYLE
     assert ':root:not([data-theme="light"])' in STYLE
     assert ':root[data-theme="dark"]' in STYLE
     for value in ("system", "light", "dark"):

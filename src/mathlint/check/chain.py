@@ -6,6 +6,7 @@ import sympy as sp
 
 from ..document import Document
 from ..equivalence import compare
+from ..i18n import msg
 from ..report import Report, Step
 
 
@@ -55,13 +56,19 @@ def _notes(document: Document, variable: sp.Symbol | None) -> list[str]:
     started = first.expr.atoms(sp.Derivative, sp.Integral)
     if started and last.expr.atoms(sp.Derivative, sp.Integral) and len(document.lines) > 1:
         notes.append(
-            f"line {last.number} still contains a derivative or integral — "
-            "the answer is not finished"
+            msg(
+                "line {number} still contains a derivative or integral — the "
+                "answer is not finished",
+                number=last.number,
+            )
         )
     elif variable is not None and not last.expr.atoms(sp.Integral):
         constants = {symbol for symbol in last.expr.free_symbols if symbol.name in {"C", "K"}}
         if not constants:
             notes.append(
-                f"line {last.number} is an indefinite integral without a constant — add + C"
+                msg(
+                    "line {number} is an indefinite integral without a constant — add + C",
+                    number=last.number,
+                )
             )
     return notes
