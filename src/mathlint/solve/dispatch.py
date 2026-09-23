@@ -11,6 +11,7 @@ from collections.abc import Callable
 
 import sympy as sp
 
+from ..i18n import msg
 from .classify import classify
 from .core import Equation, Outcome, Work
 
@@ -24,20 +25,20 @@ METHODS: dict[str, MethodChooser] = {}
 
 #: What the method switcher calls each method.
 METHOD_LABELS = {
-    "balance": "Balance both sides",
-    "factoring": "Factoring",
-    "formula": "Quadratic formula",
-    "completing-square": "Completing the square",
-    "square-root": "Square roots",
-    "roots": "Factor theorem",
-    "denominators": "Clear the denominators",
-    "isolate-and-square": "Isolate and square",
-    "cases": "Split into cases",
-    "same-base": "Same base",
-    "logarithms": "Take logarithms",
-    "combine-logs": "Combine the logarithms",
-    "substitution": "Substitution",
-    "sympy": "Computer algebra",
+    "balance": msg("Balance both sides"),
+    "factoring": msg("Factoring"),
+    "formula": msg("Quadratic formula"),
+    "completing-square": msg("Completing the square"),
+    "square-root": msg("Square roots"),
+    "roots": msg("Factor theorem"),
+    "denominators": msg("Clear the denominators"),
+    "isolate-and-square": msg("Isolate and square"),
+    "cases": msg("Split into cases"),
+    "same-base": msg("Same base"),
+    "logarithms": msg("Take logarithms"),
+    "combine-logs": msg("Combine the logarithms"),
+    "substitution": msg("Substitution"),
+    "sympy": msg("Computer algebra"),
 }
 
 

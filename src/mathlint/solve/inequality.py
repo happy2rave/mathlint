@@ -15,6 +15,7 @@ import sympy as sp
 from sympy.core.parameters import distribute
 
 from ..errors import ParseError, UnsupportedError
+from ..i18n import join, msg
 from ..parse.latex import latex_to_plain
 from ..parse.plain import latex_of, parse_expression, read_as
 from ..parse.unicode_math import normalize_unicode
@@ -42,19 +43,19 @@ RELATIONS = {
 }
 
 KIND_LABELS = {
-    "linear": "Linear inequality",
-    "polynomial": "Polynomial inequality",
-    "rational": "Rational inequality",
-    "absolute": "Absolute-value inequality",
-    "compound": "Double inequality",
-    "other": "Inequality",
+    "linear": msg("Linear inequality"),
+    "polynomial": msg("Polynomial inequality"),
+    "rational": msg("Rational inequality"),
+    "absolute": msg("Absolute-value inequality"),
+    "compound": msg("Double inequality"),
+    "other": msg("Inequality"),
 }
 
 METHOD_LABELS = {
-    "balance": "Balance both sides",
-    "sign-chart": "Sign chart",
-    "cases": "Split into cases",
-    "sympy": "Computer algebra",
+    "balance": msg("Balance both sides"),
+    "sign-chart": msg("Sign chart"),
+    "cases": msg("Split into cases"),
+    "sympy": msg("Computer algebra"),
 }
 
 
@@ -106,7 +107,7 @@ def parse_inequality(text: str) -> list[Inequality]:
     body = _normalize(text)
     parts = _RELATION.split(body)
     if len(parts) not in (3, 5):
-        raise ParseError("write one inequality, or two joined like 1 < 2x + 3 < 7")
+        raise ParseError(msg("write one inequality, or two joined like 1 < 2x + 3 < 7"))
     with distribute(False):
         sides = [parse_expression(part).expr for part in parts[0::2]]
     ops = parts[1::2]
@@ -132,7 +133,7 @@ class InequalitySolution(Solution):
         self.summary, self.answer_latex = as_inequality(self.variable, answer)
         self.interval_text, self.interval_latex = as_intervals(answer)
         if answer not in (sp.S.Reals, sp.S.EmptySet):
-            self.summary += f", that is {self.interval_text}"
+            self.summary += msg(", that is {interval_text}", interval_text=self.interval_text)
 
     def to_dict(self) -> dict:
         data = super().to_dict()
@@ -208,16 +209,22 @@ def solve_inequality(
         solution.methods = methods_for(solution.kind)
         if method is not None and method not in solution.methods:
             options = ", ".join(solution.methods)
-            raise UnsupportedError(f"the method '{method}' does not apply here — try {options}")
+            raise UnsupportedError(
+                msg(
+                    "the method '{method}' does not apply here — try {options}",
+                    method=method,
+                    options=options,
+                )
+            )
         solution.method = method or solution.methods[0]
-        steps.show("Start from", inequality)
+        steps.show(msg("Start from"), inequality)
         answer = SOLVERS[solution.method](inequality, unknown, steps)
 
     expected = _expected(inequalities, unknown)
     if expected is not None and not same_set(answer, expected):
         # never show steps that do not add up
         solution.steps = solution.steps[:1]
-        steps.text("Solve (computer algebra)")
+        steps.text(msg("Solve (computer algebra)"))
         answer = expected
     solution.finish(answer)
     return solution
@@ -225,15 +232,17 @@ def solve_inequality(
 
 def _unknown(letters: list[sp.Symbol], variable: str | None) -> sp.Symbol:
     if not letters:
-        raise ParseError("there is nothing to solve for — this inequality has no unknown")
+        raise ParseError(msg("there is nothing to solve for — this inequality has no unknown"))
     if variable:
         chosen = next((letter for letter in letters if letter.name == variable), None)
         if chosen is None:
-            raise ParseError(f"{variable} does not appear in this inequality")
+            raise ParseError(
+                msg("{variable} does not appear in this inequality", variable=variable)
+            )
         return chosen
     if len(letters) == 1:
         return letters[0]
-    raise UnsupportedError("inequalities with more than one letter are not solved yet")
+    raise UnsupportedError(msg("inequalities with more than one letter are not solved yet"))
 
 
 def classify(inequality: Inequality, variable: sp.Symbol) -> str:
@@ -268,14 +277,17 @@ def _balance(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.Se
     expanded = (sp.expand(lhs), sp.expand(rhs))
     if expanded != (lhs, rhs):
         lhs, rhs = expanded
-        steps.show("Expand the brackets", Inequality(lhs, op, rhs))
+        steps.show(msg("Expand the brackets"), Inequality(lhs, op, rhs))
 
     denominator = _common_denominator(lhs, rhs, variable)
     if denominator != 1:
         lhs, rhs = sp.expand(lhs * denominator), sp.expand(rhs * denominator)
         steps.show(
-            f"Multiply both sides by {denominator} to clear the fractions; "
-            f"{denominator} is positive, so the sign stays",
+            msg(
+                "Multiply both sides by {denominator} to clear the "
+                "fractions; {denominator} is positive, so the sign stays",
+                denominator=denominator,
+            ),
             Inequality(lhs, op, rhs),
             operation=f"* {denominator}",
         )
@@ -289,8 +301,11 @@ def _balance(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.Se
         op = FLIPPED[op]
         left_x, left_c, right_x, right_c = right_x, right_c, left_x, left_c
         steps.show(
-            f"Swap the sides, so the side with more {variable} is on the left; "
-            "the sign turns around with them",
+            msg(
+                "Swap the sides, so the side with more {variable} is on the "
+                "left; the sign turns around with them",
+                variable=variable,
+            ),
             Inequality(lhs, op, rhs),
         )
 
@@ -302,9 +317,16 @@ def _balance(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.Se
 
     if left_x == 0:
         true = bool(RELATIONS[op](lhs, rhs))
-        verdict = "always true" if true else "never true"
+        verdict = msg("always true") if true else msg("never true")
         steps.text(
-            f"There is no {variable} left, and {read_as(lhs)} {op} {read_as(rhs)} is {verdict}"
+            msg(
+                "There is no {variable} left, and {lhs} {op} {rhs} is {verdict}",
+                variable=variable,
+                lhs=read_as(lhs),
+                op=op,
+                rhs=read_as(rhs),
+                verdict=verdict,
+            )
         )
         return sp.S.Reals if true else sp.S.EmptySet
 
@@ -320,14 +342,20 @@ def _balance(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.Se
         if coefficient < 0:
             op = FLIPPED[op]
             steps.show(
-                f"Divide both sides by {read_as(coefficient)}. Dividing by a negative number "
-                "turns the inequality sign around",
+                msg(
+                    "Divide both sides by {coefficient}. Dividing by a negative "
+                    "number turns the inequality sign around",
+                    coefficient=read_as(coefficient),
+                ),
                 Inequality(variable, op, answer),
                 operation=f"/ ({read_as(coefficient)})",
             )
         else:
             steps.show(
-                f"Divide both sides by {read_as(coefficient)}; it is positive, so the sign stays",
+                msg(
+                    "Divide both sides by {coefficient}; it is positive, so the sign stays",
+                    coefficient=read_as(coefficient),
+                ),
                 Inequality(variable, op, answer),
                 operation=f"/ {read_as(coefficient)}",
             )
@@ -364,8 +392,8 @@ def _common_denominator(lhs: sp.Expr, rhs: sp.Expr, variable: sp.Symbol) -> int:
 
 def _move_text(term: sp.Expr) -> str:
     if term.could_extract_minus_sign():
-        return f"Add {read_as(-term)} to both sides"
-    return f"Subtract {read_as(term)} from both sides"
+        return msg("Add {term} to both sides", term=read_as(-term))
+    return msg("Subtract {term} from both sides", term=read_as(term))
 
 
 def _operation(change: sp.Expr) -> str:
@@ -388,12 +416,19 @@ def _check_points(
             return  # the check disagrees: leave it to the final comparison
         left = inequality.lhs.subs(variable, value)
         right = inequality.rhs.subs(variable, value)
-        truth = "true" if holds else "false"
+        truth = msg("true") if holds else msg("false")
         parts.append(
-            f"{variable} = {read_as(value)} gives {read_as(left)} {inequality.op} "
-            f"{read_as(right)}, {truth}"
+            msg(
+                "{variable} = {value} gives {left} {op} {right}, {truth}",
+                variable=variable,
+                value=read_as(value),
+                left=read_as(left),
+                op=inequality.op,
+                right=read_as(right),
+                truth=truth,
+            )
         )
-    steps.text("Check a number on each side: " + "; ".join(parts))
+    steps.text(msg("Check a number on each side: {checks}", checks=join("; ", parts)))
 
 
 # --- two at once -----------------------------------------------------------------------------
@@ -402,18 +437,18 @@ def _check_points(
 def _compound(inequalities: list[Inequality], variable: sp.Symbol, steps: Steps) -> sp.Set:
     first, second = inequalities
     steps.text(
-        "A double inequality is two inequalities that must both hold",
+        msg("A double inequality is two inequalities that must both hold"),
         f"{first.plain()} and {second.plain()}",
         rf"{first.latex()} \quad\text{{and}}\quad {second.latex()}",
     )
     answers = []
     for part in (first, second):
-        steps.show("Solve", part)
+        steps.show(msg("Solve"), part)
         kind = classify(part, variable)
         answers.append(SOLVERS[methods_for(kind)[0]](part, variable, steps))
     both = sp.Intersection(*answers)
     plain, latex = as_inequality(variable, both)
-    steps.text("Both must hold, so the answer is where they overlap", plain, latex)
+    steps.text(msg("Both must hold, so the answer is where they overlap"), plain, latex)
     return both
 
 
@@ -423,7 +458,7 @@ def _compound(inequalities: list[Inequality], variable: sp.Symbol, steps: Steps)
 def _computer(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.Set:
     answer = _solve_set(inequality, variable)
     plain, latex = as_inequality(variable, answer)
-    steps.text("Solve (computer algebra)", plain, latex)
+    steps.text(msg("Solve (computer algebra)"), plain, latex)
     return answer
 
 
@@ -460,7 +495,7 @@ SOLVERS = {
 }
 
 __all__ = [
-    "Inequality",
+    msg("Inequality"),
     "InequalitySolution",
     "looks_like_inequality",
     "parse_inequality",

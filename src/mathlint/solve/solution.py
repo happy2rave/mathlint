@@ -7,21 +7,22 @@ from dataclasses import dataclass, field
 import sympy as sp
 
 from ..calc.computation import approximate
+from ..i18n import msg
 from ..parse.plain import latex_of
 from ..steps.solution import Solution
 from .core import Outcome, answer_latex, answer_text, show
 from .dispatch import METHOD_LABELS
 
 KIND_LABELS = {
-    "linear": "Linear equation",
-    "quadratic": "Quadratic equation",
-    "polynomial": "Polynomial equation",
-    "rational": "Rational equation",
-    "radical": "Equation with roots",
-    "absolute": "Absolute-value equation",
-    "exponential": "Exponential equation",
-    "logarithmic": "Logarithmic equation",
-    "other": "Equation",
+    "linear": msg("Linear equation"),
+    "quadratic": msg("Quadratic equation"),
+    "polynomial": msg("Polynomial equation"),
+    "rational": msg("Rational equation"),
+    "radical": msg("Equation with roots"),
+    "absolute": msg("Absolute-value equation"),
+    "exponential": msg("Exponential equation"),
+    "logarithmic": msg("Logarithmic equation"),
+    "other": msg("Equation"),
 }
 
 
@@ -74,7 +75,7 @@ class EquationSolution(Solution):
                 latex.append(rf"{latex_of(self.variable)} \approx {number}")
         self.decimal = " or ".join(plain)
         self.decimal_latex = r" \quad\text{or}\quad ".join(latex)
-        self.summary += f" (about {self.decimal})"
+        self.summary += msg(" (about {decimal})", decimal=self.decimal)
 
     def to_text(self) -> str:
         text = super().to_text()
@@ -90,7 +91,7 @@ class EquationSolution(Solution):
             {
                 "kind": self.kind,
                 "kind_label": (
-                    f"Formula, solved for {self.variable}"
+                    msg("Formula, solved for {variable}", variable=self.variable)
                     if len(self.letters) > 1
                     else KIND_LABELS.get(self.kind, "Equation")
                 ),

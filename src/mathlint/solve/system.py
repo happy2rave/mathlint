@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 import sympy as sp
 
 from ..errors import ParseError, UnsupportedError
+from ..i18n import msg
 from ..parse.plain import latex_of
 from ..steps.linalg import reduce_rows
 from ..steps.matrix import format_matrix
@@ -30,17 +31,17 @@ from ..steps.solution import Solution
 from . import dispatch
 from .core import Equation, Work, show
 
-_ORDINALS = ["first", "second", "third", "fourth", "fifth", "sixth"]
+_ORDINALS = [msg("first"), msg("second"), msg("third"), msg("fourth"), msg("fifth"), msg("sixth")]
 _CASES = re.compile(r"\\begin\{cases\}(.*?)\\end\{cases\}", re.S)
 
 SYSTEM_METHOD_LABELS = {
-    "elimination": "Elimination",
-    "substitution": "Substitution",
-    "gaussian": "Gaussian elimination",
-    "cramer": "Cramer's rule",
-    "inverse": "Inverse matrix",
-    "squares": "Squares as unknowns",
-    "computer": "Computer algebra",
+    "elimination": msg("Elimination"),
+    "substitution": msg("Substitution"),
+    "gaussian": msg("Gaussian elimination"),
+    "cramer": msg("Cramer's rule"),
+    "inverse": msg("Inverse matrix"),
+    "squares": msg("Squares as unknowns"),
+    "computer": msg("Computer algebra"),
 }
 
 
@@ -66,7 +67,7 @@ class SystemSolution(Solution):
         self.assignments = assignments
         self.free = free
         if not assignments:
-            self.summary = "no solution"
+            self.summary = msg("no solution")
             self.answer_latex = r"\text{no solution}"
             return
         shown = [name for name in self.unknowns if name not in free]
@@ -80,8 +81,10 @@ class SystemSolution(Solution):
         )
         if free:
             names = ", ".join(str(name) for name in free)
-            verb = "can be any real number" if len(free) == 1 else "can be any real numbers"
-            text += f", where {names} {verb}"
+            verb = (
+                msg("can be any real number") if len(free) == 1 else msg("can be any real numbers")
+            )
+            text += msg(", where {names} {verb}", names=names, verb=verb)
             latex += r",\quad " + ", ".join(latex_of(name) for name in free) + r" \in \mathbb{R}"
         self.summary = text
         self.answer_latex = latex
@@ -99,9 +102,9 @@ class SystemSolution(Solution):
             {
                 "kind": self.kind,
                 "kind_label": (
-                    "System of linear equations"
+                    msg("System of linear equations")
                     if self.kind == "linear-system"
-                    else "System of equations"
+                    else msg("System of equations")
                 ),
                 "method": self.method,
                 "methods": [
@@ -130,7 +133,7 @@ def solve_system(equations: list[Equation], method: str | None = None) -> System
         key=lambda symbol: symbol.name,
     )
     if not unknowns:
-        raise ParseError("these equations have no unknowns to solve for")
+        raise ParseError(msg("these equations have no unknowns to solve for"))
     if not all(_is_linear(eq, unknowns) for eq in equations):
         from .nonlinear import solve_nonlinear
 
@@ -144,19 +147,23 @@ def solve_system(equations: list[Equation], method: str | None = None) -> System
         methods.insert(0, "substitution")
     if method is not None and method not in methods:
         raise UnsupportedError(
-            f"the method '{method}' does not apply here — try {', '.join(methods)}"
+            msg(
+                "the method '{method}' does not apply here — try {options}",
+                method=method,
+                options=", ".join(methods),
+            )
         )
     chosen = method or methods[0]
 
     solution = SystemSolution(
         operation="solve",
-        title="Solve the system",
+        title=msg("Solve the system"),
         method=chosen,
         methods=methods,
         unknowns=list(unknowns),
     )
     work = Work(solution, unknowns[0])
-    _show_system(work, "Start from", equations)
+    _show_system(work, msg("Start from"), equations)
 
     # substitution into y = 2x - 1 needs no "-2x + y = -1" detour first
     detour = not (chosen == "substitution" and any(_solved_for_one(eq) for eq in equations))
@@ -236,7 +243,7 @@ def _standard_rows(
         (sp.expand(eq.lhs), sp.expand(eq.rhs)) != (std.lhs, std.rhs)
         for eq, std in zip(equations, standard, strict=True)
     ):
-        _show_system(work, "Write each equation with the unknowns on the left", standard)
+        _show_system(work, msg("Write each equation with the unknowns on the left"), standard)
 
     cleared = []
     for row in rows:
@@ -246,7 +253,7 @@ def _standard_rows(
     if cleared != rows:
         _show_system(
             work,
-            "Clear the fractions: multiply each equation by its common denominator",
+            msg("Clear the fractions: multiply each equation by its common denominator"),
             [_row_equation(row, unknowns) for row in cleared],
         )
     return cleared
@@ -269,22 +276,22 @@ def _elimination(rows, unknowns, work):
     if m1 != 1:
         _show_system(
             work,
-            f"Multiply the first equation by {show(m1)}",
+            msg("Multiply the first equation by {m1}", m1=show(m1)),
             [_row_equation(scaled1, unknowns), _row_equation(second, unknowns)],
         )
     if m2 != 1:
         _show_system(
             work,
-            f"Multiply the second equation by {show(m2)}",
+            msg("Multiply the second equation by {m2}", m2=show(m2)),
             [_row_equation(scaled1, unknowns), _row_equation(scaled2, unknowns)],
         )
     name = unknowns[index]
     if (first[index] > 0) == (second[index] > 0):
         combined = [a - b for a, b in zip(scaled1, scaled2, strict=True)]
-        text = f"Subtract the second equation from the first, so {name} cancels"
+        text = msg("Subtract the second equation from the first, so {name} cancels", name=name)
     else:
         combined = [a + b for a, b in zip(scaled1, scaled2, strict=True)]
-        text = f"Add the two equations, so {name} cancels"
+        text = msg("Add the two equations, so {name} cancels", name=name)
     single = _row_equation(combined, unknowns)
     work.equation(text, single)
 
@@ -293,27 +300,31 @@ def _elimination(rows, unknowns, work):
         return _degenerate(combined[2], first, unknowns, work)
     found = dispatch.solve_equation(single, other, work)
     value = found.values[0]
-    return _back_substitute(first, unknowns, other, value, work, "first")
+    return _back_substitute(first, unknowns, other, value, work, _ORDINALS[0])
 
 
 def _substitution(rows, unknowns, work):
     # an unknown with coefficient 1 or -1 is the easiest to solve for
-    options = [
-        (abs(rows[r][c]) != 1, r, c) for r in range(2) for c in range(2) if rows[r][c] != 0
-    ]
+    options = [(abs(rows[r][c]) != 1, r, c) for r in range(2) for c in range(2) if rows[r][c] != 0]
     if not options:
         return _degenerate(rows[0][2], rows[0], unknowns, work)
     _, r, c = min(options)
     name, other = unknowns[c], unknowns[1 - c]
     source, target = rows[r], rows[1 - r]
     expression = sp.expand((source[2] - source[1 - c] * other) / source[c])
-    work.equation(f"Solve the {_ORDINALS[r]} equation for {name}", Equation(name, expression))
-
-    substituted = Equation(
-        sp.expand(target[c] * expression + target[1 - c] * other), target[2]
-    )
     work.equation(
-        f"Substitute {name} = {show(expression)} into the {_ORDINALS[1 - r]} equation",
+        msg("Solve the {ordinal} equation for {name}", ordinal=_ORDINALS[r], name=name),
+        Equation(name, expression),
+    )
+
+    substituted = Equation(sp.expand(target[c] * expression + target[1 - c] * other), target[2])
+    work.equation(
+        msg(
+            "Substitute {name} = {expression} into the {ordinal} equation",
+            name=name,
+            expression=show(expression),
+            ordinal=_ORDINALS[1 - r],
+        ),
         substituted,
     )
     if not substituted.lhs.has(other):
@@ -322,7 +333,14 @@ def _substitution(rows, unknowns, work):
     value = found.values[0]
     answer = sp.simplify(expression.subs(other, value))
     work.equation(
-        f"Put {other} = {show(value)} into {name} = {show(expression)}", Equation(name, answer)
+        msg(
+            "Put {other} = {value} into {name} = {expression}",
+            other=other,
+            value=show(value),
+            name=name,
+            expression=show(expression),
+        ),
+        Equation(name, answer),
     )
     found_values = {name: answer, other: value}
     return [{unknown: found_values[unknown] for unknown in unknowns}], []
@@ -332,7 +350,15 @@ def _back_substitute(row, unknowns, known, value, work, which):
     unknown = unknowns[0] if known == unknowns[1] else unknowns[1]
     equation = _row_equation(row, unknowns)
     placed = Equation(equation.lhs.subs(known, value), equation.rhs)
-    work.equation(f"Put {known} = {show(value)} into the {which} equation", placed)
+    work.equation(
+        msg(
+            "Put {known} = {value} into the {which} equation",
+            known=known,
+            value=show(value),
+            which=which,
+        ),
+        placed,
+    )
     found = dispatch.solve_equation(placed, unknown, work)
     answer = {known: value, unknown: found.values[0]}
     return [{name: answer[name] for name in unknowns}], []
@@ -342,13 +368,20 @@ def _degenerate(constant, row, unknowns, work):
     """After eliminating, ``0 = constant``: no solution, or infinitely many."""
     if constant != 0:
         work.note(
-            f"This says 0 = {show(constant)}, which is impossible: the equations "
-            "contradict each other (for two unknowns: parallel lines), so there is no solution"
+            msg(
+                "This says 0 = {constant}, which is impossible: the "
+                "equations contradict each other (for two unknowns: parallel "
+                "lines), so there is no solution",
+                constant=show(constant),
+            )
         )
         return [], []
     work.note(
-        "This says 0 = 0, which is always true: one equation is a multiple of the "
-        "other (for two unknowns: the same line), so there are infinitely many solutions"
+        msg(
+            "This says 0 = 0, which is always true: one equation is a "
+            "multiple of the other (for two unknowns: the same line), so "
+            "there are infinitely many solutions"
+        )
     )
     return _parametric([row], unknowns, work)
 
@@ -362,7 +395,8 @@ def _parametric(rows, unknowns, work):
     rest = sum(row[i] * unknowns[i] for i in range(len(unknowns)) if i != index)
     expression = sp.expand((row[-1] - rest) / row[index])
     work.equation(
-        f"Solve for {name}; {', '.join(map(str, free))} can be anything", Equation(name, expression)
+        msg("Solve for {name}; {free} can be anything", name=name, free=", ".join(map(str, free))),
+        Equation(name, expression),
     )
     assignment = {other: other for other in unknowns}
     assignment[name] = expression
@@ -375,7 +409,7 @@ def _parametric(rows, unknowns, work):
 def _gaussian(rows, unknowns, work):
     augmented = sp.Matrix(rows)
     work.solution.add(
-        "Write the augmented matrix [A | b]: the coefficients, then the right-hand sides",
+        msg("Write the augmented matrix [A | b]: the coefficients, then the right-hand sides"),
         matrix=augmented,
     )
     reduced, pivots = reduce_rows(sp.Matrix(augmented), work.solution)
@@ -383,8 +417,11 @@ def _gaussian(rows, unknowns, work):
     if width in pivots:
         row = pivots.index(width)
         work.note(
-            f"Row {row + 1} now says 0 = {show(reduced[row, width])}, which is impossible, "
-            "so there is no solution"
+            msg(
+                "Row {row} now says 0 = {reduced}, which is impossible, so there is no solution",
+                row=row + 1,
+                reduced=show(reduced[row, width]),
+            )
         )
         return [], []
 
@@ -393,9 +430,9 @@ def _gaussian(rows, unknowns, work):
     for row, column in enumerate(pivots):
         others = sum(reduced[row, k] * unknowns[k] for k in range(width) if k not in pivots)
         assignment[unknowns[column]] = sp.expand(reduced[row, width] - others)
-    text = "Read the solution off the reduced matrix"
+    text = msg("Read the solution off the reduced matrix")
     if free:
-        text += f" ({', '.join(map(str, free))} can be anything)"
+        text += msg(" ({free} can be anything)", free=", ".join(map(str, free)))
     pinned = [name for name in unknowns if name not in free]
     work.show(
         text,
@@ -410,7 +447,7 @@ def _matrix_form(rows, unknowns, work):
     right = sp.Matrix([row[-1] for row in rows])
     vector = sp.Matrix(unknowns)
     work.show(
-        "Write the system as a matrix equation A x = b",
+        msg("Write the system as a matrix equation A x = b"),
         f"A =\n{format_matrix(matrix)}\nb =\n{format_matrix(right)}",
         f"{latex_of(matrix)} {latex_of(vector)} = {latex_of(right)}",
     )
@@ -421,7 +458,7 @@ def _cramer(rows, unknowns, work):
     matrix, right = _matrix_form(rows, unknowns, work)
     determinant = matrix.det()
     work.show(
-        "Work out the determinant of A",
+        msg("Work out the determinant of A"),
         f"D = {show(determinant)}",
         rf"D = \det {latex_of(matrix)} = {latex_of(determinant)}",
     )
@@ -431,13 +468,13 @@ def _cramer(rows, unknowns, work):
         replaced[:, column] = right
         value = replaced.det()
         work.show(
-            f"Replace the {name} column with b and take the determinant",
+            msg("Replace the {name} column with b and take the determinant", name=name),
             f"D_{name} = {show(value)}",
             rf"D_{{{latex_of(name)}}} = \det {latex_of(replaced)} = {latex_of(value)}",
         )
         assignment[name] = sp.simplify(value / determinant)
     work.show(
-        "Divide each by D",
+        msg("Divide each by D"),
         ", ".join(f"{name} = D_{name} / D = {show(assignment[name])}" for name in unknowns),
         r",\quad ".join(
             rf"{latex_of(name)} = \frac{{D_{{{latex_of(name)}}}}}{{D}} "
@@ -451,9 +488,9 @@ def _cramer(rows, unknowns, work):
 def _inverse(rows, unknowns, work):
     matrix, right = _matrix_form(rows, unknowns, work)
     inverse = matrix.inv()
-    work.solution.add("A is invertible, so x = A^-1 b; the inverse of A is", matrix=inverse)
+    work.solution.add(msg("A is invertible, so x = A^-1 b; the inverse of A is"), matrix=inverse)
     result = inverse * right
-    work.solution.add("Multiply A^-1 by b", matrix=result)
+    work.solution.add(msg("Multiply A^-1 by b"), matrix=result)
     return [{name: sp.simplify(result[i]) for i, name in enumerate(unknowns)}], []
 
 
@@ -466,11 +503,19 @@ def _check(equations: list[Equation], assignment: dict, work: Work) -> None:
     for index, equation in enumerate(equations, start=1):
         left = sp.simplify(equation.lhs.subs(assignment))
         right = sp.simplify(equation.rhs.subs(assignment))
-        mark = "OK" if sp.simplify(left - right) == 0 else "does not hold"
-        parts.append(f"equation {index}: {show(left)} = {show(right)} {mark}")
+        mark = "OK" if sp.simplify(left - right) == 0 else msg("does not hold")
+        parts.append(
+            msg(
+                "equation {index}: {left} = {right} {mark}",
+                index=index,
+                left=show(left),
+                right=show(right),
+                mark=mark,
+            )
+        )
         parts_latex.append(rf"{latex_of(left)} = {latex_of(right)}")
     work.show(
-        "Check: put the solution into every original equation",
+        msg("Check: put the solution into every original equation"),
         "\n".join(parts),
         r"\begin{cases} " + r" \\ ".join(parts_latex) + r" \end{cases}",
     )

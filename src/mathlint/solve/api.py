@@ -10,6 +10,7 @@ from sympy.core.parameters import distribute
 from ..calc.computation import Computation
 from ..document import _PLAIN_EQUALS
 from ..errors import ParseError, UnsupportedError
+from ..i18n import msg
 from ..parse.latex import latex_to_plain
 from ..parse.plain import parse_expression
 from ..parse.unicode_math import normalize_unicode
@@ -77,9 +78,10 @@ def solve(
     )
     unknown = _unknown(letters, variable, text)
 
-    title = f"Solve {show(equation.lhs)} = {show(equation.rhs)}"
+    lhs, rhs = show(equation.lhs), show(equation.rhs)
+    title = msg("Solve {lhs} = {rhs}", lhs=lhs, rhs=rhs)
     if len(letters) > 1:
-        title += f" for {unknown}"
+        title = msg("Solve {lhs} = {rhs} for {unknown}", lhs=lhs, rhs=rhs, unknown=unknown)
     solution = EquationSolution(
         operation="solve",
         title=title,
@@ -87,19 +89,25 @@ def solve(
         letters=[letter.name for letter in letters],
     )
     work = Work(solution, unknown)
-    work.equation("Start from", equation)
+    work.equation(msg("Start from"), equation)
 
     if equation.lhs.has(sp.Float) or equation.rhs.has(sp.Float):
         equation = Equation(
             sp.nsimplify(equation.lhs, rational=True), sp.nsimplify(equation.rhs, rational=True)
         )
-        work.equation("Write the decimals as fractions, so the answer stays exact", equation)
+        work.equation(msg("Write the decimals as fractions, so the answer stays exact"), equation)
 
     solution.kind = classify(equation, unknown)
     solution.methods = dispatch.methods_for(solution.kind, equation, unknown)
     if method is not None and method not in solution.methods:
         options = ", ".join(solution.methods)
-        raise UnsupportedError(f"the method '{method}' does not apply here — try {options}")
+        raise UnsupportedError(
+            msg(
+                "the method '{method}' does not apply here — try {options}",
+                method=method,
+                options=options,
+            )
+        )
     solution.method = method or solution.methods[0]
 
     outcome = dispatch.solve_equation(equation, unknown, work, method=solution.method)
@@ -113,9 +121,9 @@ def parse_equation(text: str) -> Equation:
         body = latex_to_plain(body).strip()
     sides = _PLAIN_EQUALS.split(body)
     if len(sides) == 1:
-        raise ParseError("an equation needs an '=' sign — for example 2x + 3 = 7")
+        raise ParseError(msg("an equation needs an '=' sign — for example 2x + 3 = 7"))
     if len(sides) > 2:
-        raise ParseError("write one equation at a time (this line has more than one '=')")
+        raise ParseError(msg("write one equation at a time (this line has more than one '=')"))
     # keep 3(x - 1) as written, so "Expand the brackets" is a step the student sees
     with distribute(False):
         left, right = (parse_expression(side).expr for side in sides)
@@ -124,11 +132,11 @@ def parse_equation(text: str) -> Equation:
 
 def _unknown(letters: list[sp.Symbol], variable: str | None, text: str) -> sp.Symbol:
     if not letters:
-        raise ParseError("there is nothing to solve for — this equation has no unknown")
+        raise ParseError(msg("there is nothing to solve for — this equation has no unknown"))
     if variable:
         chosen = next((letter for letter in letters if letter.name == variable), None)
         if chosen is None:
-            raise ParseError(f"{variable} does not appear in this equation")
+            raise ParseError(msg("{variable} does not appear in this equation", variable=variable))
         return chosen
     if len(letters) == 1:
         return letters[0]
@@ -137,6 +145,10 @@ def _unknown(letters: list[sp.Symbol], variable: str | None, text: str) -> sp.Sy
         return x
     names = ", ".join(letter.name for letter in letters)
     raise UnsupportedError(
-        f"this equation has several letters ({names}) — say which one to solve for by "
-        f"adding 'for {letters[-1].name}' at the end"
+        msg(
+            "this equation has several letters ({names}) — say which one "
+            "to solve for by adding 'for {name}' at the end",
+            names=names,
+            name=letters[-1].name,
+        )
     )

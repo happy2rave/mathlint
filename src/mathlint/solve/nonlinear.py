@@ -19,6 +19,7 @@ import itertools
 import sympy as sp
 
 from ..errors import UnsupportedError
+from ..i18n import msg
 from ..parse.plain import latex_of
 from . import dispatch
 from .core import Equation, Work, show
@@ -32,25 +33,31 @@ def solve_nonlinear(
 ) -> SystemSolution:
     if len(unknowns) != 2 or len(equations) != 2:
         raise UnsupportedError(
-            "systems with squares, products or functions of the unknowns are solved "
-            "for two equations in two unknowns for now"
+            msg(
+                "systems with squares, products or functions of the unknowns "
+                "are solved for two equations in two unknowns for now"
+            )
         )
     methods = _methods(equations, unknowns)
     if method is not None and method not in methods:
         raise UnsupportedError(
-            f"the method '{method}' does not apply here — try {', '.join(methods)}"
+            msg(
+                "the method '{method}' does not apply here — try {options}",
+                method=method,
+                options=", ".join(methods),
+            )
         )
     chosen = method or methods[0]
     solution = SystemSolution(
         operation="solve",
-        title="Solve the system",
+        title=msg("Solve the system"),
         kind="nonlinear-system",
         method=chosen,
         methods=methods,
         unknowns=list(unknowns),
     )
     work = Work(solution, unknowns[0])
-    _show_system(work, "Start from", equations)
+    _show_system(work, msg("Start from"), equations)
 
     solver = {
         "substitution": _by_substitution,
@@ -104,16 +111,21 @@ def _by_substitution(equations, unknowns, work):
     other = unknowns[0] if name == unknowns[1] else unknowns[1]
     source, target = equations[index], equations[1 - index]
 
-    text = f"Solve the {_ORDINALS[index]} equation for {name}"
+    text = msg("Solve the {ordinal} equation for {name}", ordinal=_ORDINALS[index], name=name)
     denominator = sp.fraction(sp.together(value))[1]
     if denominator.has(other):
-        text += f" ({show(denominator)} must not be 0)"
+        text += msg(" ({denominator} must not be 0)", denominator=show(denominator))
     if not (source.lhs == name and not source.rhs.has(name)):
         work.equation(text, Equation(name, value))
 
     substituted = Equation(target.lhs.subs(name, value), target.rhs.subs(name, value))
     work.equation(
-        f"Substitute {name} = {show(value)} into the {_ORDINALS[1 - index]} equation",
+        msg(
+            "Substitute {name} = {value} into the {ordinal} equation",
+            name=name,
+            value=show(value),
+            ordinal=_ORDINALS[1 - index],
+        ),
         substituted,
     )
     found = dispatch.solve_equation(substituted, other, work)
@@ -125,7 +137,7 @@ def _by_substitution(equations, unknowns, work):
         pairs.append({other: other_value, name: sp.simplify(value.subs(other, other_value))})
     if pairs:
         work.show(
-            f"Put each value back into {name} = {show(value)}",
+            msg("Put each value back into {name} = {value}", name=name, value=show(value)),
             "\n".join(f"{other} = {show(p[other])}: {name} = {show(p[name])}" for p in pairs),
             r"\begin{cases} "
             + r" \\ ".join(
@@ -163,8 +175,15 @@ def _by_squares(equations, unknowns, work):
     ]
     _show_system(
         work,
-        f"Both unknowns only appear squared, so write {first} = {unknowns[0]}^2 and "
-        f"{second} = {unknowns[1]}^2: that is a linear system",
+        msg(
+            "Both unknowns only appear squared, so write {first} = "
+            "{unknowns}^2 and {second} = {unknowns2}^2: that is a linear "
+            "system",
+            first=first,
+            unknowns=unknowns[0],
+            second=second,
+            unknowns2=unknowns[1],
+        ),
         rewritten,
     )
     matrix, right = sp.linear_eq_to_matrix([eq.lhs - eq.rhs for eq in rewritten], [first, second])
@@ -179,34 +198,34 @@ def _by_squares(equations, unknowns, work):
         value = values[square]
         if value.is_negative:
             work.note(
-                f"{name}^2 = {show(value)} is impossible, because a square is never negative, "
-                "so there is no real solution"
+                msg(
+                    "{name}^2 = {value} is impossible, because a square is never "
+                    "negative, so there is no real solution",
+                    name=name,
+                    value=show(value),
+                )
             )
             return []
         root = sp.sqrt(value)
         roots.append([root] if root == 0 else [-root, root])
     work.show(
-        "Take square roots (each can be positive or negative)",
+        msg("Take square roots (each can be positive or negative)"),
         f"{unknowns[0]} = +/-{show(roots[0][-1])}, {unknowns[1]} = +/-{show(roots[1][-1])}",
         rf"{latex_of(unknowns[0])} = \pm {latex_of(roots[0][-1])},\quad "
         rf"{latex_of(unknowns[1])} = \pm {latex_of(roots[1][-1])}",
     )
-    return [
-        {unknowns[0]: a, unknowns[1]: b} for a, b in itertools.product(roots[0], roots[1])
-    ]
+    return [{unknowns[0]: a, unknowns[1]: b} for a, b in itertools.product(roots[0], roots[1])]
 
 
 # ---------------------------------------------------------------- fallback and check
 
 
 def _by_computer(equations, unknowns, work):
-    work.note(
-        "mathlint has no by-hand method for this system yet, so SymPy solves it"
-    )
+    work.note(msg("mathlint has no by-hand method for this system yet, so SymPy solves it"))
     try:
         found = sp.solve([sp.Eq(eq.lhs, eq.rhs) for eq in equations], unknowns, dict=True)
     except Exception:
-        work.note("SymPy could not solve it either")
+        work.note(msg("SymPy could not solve it either"))
         return []
     pairs = []
     for candidate in found:
@@ -224,13 +243,15 @@ def _check_all(equations, unknowns, candidates, work):
         if any(all(sp.simplify(candidate[u] - other[u]) == 0 for u in unknowns) for other in seen):
             continue
         seen.append(candidate)
-        label = "Check " + ", ".join(f"{u} = {show(candidate[u])}" for u in unknowns)
+        label = msg(
+            "Check {values}", values=", ".join(f"{u} = {show(candidate[u])}" for u in unknowns)
+        )
         reason = _problem(equations, candidate)
         if reason is None:
-            work.note(f"{label}: both equations hold")
+            work.note(msg("{label}: both equations hold", label=label))
             kept.append(candidate)
         else:
-            work.note(f"{label}: {reason}, so it is not a solution")
+            work.note(msg("{label}: {reason}, so it is not a solution", label=label, reason=reason))
     try:
         return sorted(kept, key=lambda pair: tuple(float(pair[u]) for u in unknowns))
     except TypeError:
@@ -242,12 +263,16 @@ def _problem(equations, candidate) -> str | None:
         left = sp.simplify(equation.lhs.subs(candidate))
         right = sp.simplify(equation.rhs.subs(candidate))
         if left.has(sp.zoo, sp.nan) or right.has(sp.zoo, sp.nan):
-            return f"equation {index} would divide by zero"
+            return msg("equation {index} would divide by zero", index=index)
         if sp.simplify(left - right) == 0:
             continue
         difference = sp.N(left - right, 30)
         if difference.is_number and abs(difference) < _TOLERANCE:
             continue
-        return f"equation {index} gives {show(left)} on the left but {show(right)} on the right"
+        return msg(
+            "equation {index} gives {left} on the left but {right} on the right",
+            index=index,
+            left=show(left),
+            right=show(right),
+        )
     return None
-

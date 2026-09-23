@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import msg
 from ..parse.plain import latex_of
 from .core import Equation, Outcome, Work, show
 from .dispatch import register
@@ -91,12 +92,10 @@ def _bracket_squared(equation: Equation, variable: sp.Symbol) -> tuple[sp.Expr, 
 def _by_square_root(a: sp.Expr, c: sp.Expr, variable: sp.Symbol, work: Work) -> Outcome:
     right = -c
     if c != 0:
-        work.equation(
-            "Move the constant to the right side", Equation(a * variable**2, right)
-        )
+        work.equation(msg("Move the constant to the right side"), Equation(a * variable**2, right))
     if a != 1:
         right = right / a
-        work.equation(f"Divide both sides by {show(a)}", Equation(variable**2, right))
+        work.equation(msg("Divide both sides by {a}", a=show(a)), Equation(variable**2, right))
     return _take_root(variable, right, variable, work)
 
 
@@ -104,21 +103,24 @@ def _take_root(inner: sp.Expr, value: sp.Expr, variable: sp.Symbol, work: Work) 
     value = sp.simplify(value)
     if value.is_negative:
         work.note(
-            f"A square is never negative, and here it would equal {show(value)}, "
-            "so there is no real solution"
+            msg(
+                "A square is never negative, and here it would equal "
+                "{value}, so there is no real solution",
+                value=show(value),
+            )
         )
         return Outcome.none()
     if value == 0:
-        work.equation("Take the square root of both sides", Equation(inner, 0))
+        work.equation(msg("Take the square root of both sides"), Equation(inner, 0))
         return Outcome.of([_solve_linear(inner, 0, variable)])
     root = sp.sqrt(value)
     work.alternatives(
-        "Take the square root of both sides (a square root can be positive or negative)",
+        msg("Take the square root of both sides (a square root can be positive or negative)"),
         [Equation(inner, -root), Equation(inner, root)],
     )
     roots = [_solve_linear(inner, -root, variable), _solve_linear(inner, root, variable)]
     if inner != variable:
-        work.alternatives("Solve each one", [Equation(variable, root) for root in roots])
+        work.alternatives(msg("Solve each one"), [Equation(variable, root) for root in roots])
     return Outcome.of(roots)
 
 
@@ -136,47 +138,53 @@ def _rational_roots(a: sp.Expr, b: sp.Expr, c: sp.Expr) -> bool:
     return bool(discriminant >= 0) and sp.sqrt(discriminant).is_rational
 
 
-def _by_factoring(
-    a: sp.Expr, b: sp.Expr, c: sp.Expr, variable: sp.Symbol, work: Work
-) -> Outcome:
+def _by_factoring(a: sp.Expr, b: sp.Expr, c: sp.Expr, variable: sp.Symbol, work: Work) -> Outcome:
     polynomial = _quadratic(a, b, c, variable)
     factored = sp.factor(polynomial)
     discriminant = b**2 - 4 * a * c
     roots = sorted(sp.roots(sp.Poly(polynomial, variable)).keys(), key=lambda root: float(root))
 
     if c == 0:
-        text = f"Factor out the common factor {variable}"
+        text = msg("Factor out the common factor {variable}", variable=variable)
     elif b == 0:
-        text = "Factor the difference of two squares: a^2 - b^2 = (a - b)(a + b)"
+        text = msg("Factor the difference of two squares: a^2 - b^2 = (a - b)(a + b)")
     elif discriminant == 0:
-        text = "Factor the perfect square: a^2 + 2ab + b^2 = (a + b)^2"
+        text = msg("Factor the perfect square: a^2 + 2ab + b^2 = (a + b)^2")
     else:
         first, second = roots
         if a == 1:
-            text = (
-                f"Factor: find two numbers that multiply to {show(c)} and add up to "
-                f"{show(b)}: {show(-first)} and {show(-second)}"
+            text = msg(
+                "Factor: find two numbers that multiply to {c} and add up to "
+                "{b}: {first} and {second}",
+                c=show(c),
+                b=show(b),
+                first=show(-first),
+                second=show(-second),
             )
         else:
-            text = (
-                f"Factor: find two numbers that multiply to a*c = {show(a * c)} and add up "
-                f"to {show(b)}: {show(-a * first)} and {show(-a * second)}"
+            text = msg(
+                "Factor: find two numbers that multiply to a*c = {a} and add "
+                "up to {b}: {first} and {second}",
+                a=show(a * c),
+                b=show(b),
+                first=show(-a * first),
+                second=show(-a * second),
             )
     work.equation(text, Equation(factored, 0))
 
     factors = [factor for factor, _ in sp.factor_list(polynomial)[1] if factor.has(variable)]
     if len(factors) == 1:
         work.equation(
-            "A square is zero only when the bracket is zero", Equation(factors[0], 0)
+            msg("A square is zero only when the bracket is zero"), Equation(factors[0], 0)
         )
     else:
         work.alternatives(
-            "A product is zero exactly when one of its factors is zero",
+            msg("A product is zero exactly when one of its factors is zero"),
             [Equation(factor, 0) for factor in factors],
         )
     values = sorted({_solve_linear(factor, 0, variable) for factor in factors}, key=float)
     if any(factor != variable for factor in factors):
-        work.alternatives("Solve each one", [Equation(variable, value) for value in values])
+        work.alternatives(msg("Solve each one"), [Equation(variable, value) for value in values])
     return Outcome.of(values)
 
 
@@ -199,13 +207,13 @@ def _paren_latex(value: sp.Expr) -> str:
 
 def _by_formula(a: sp.Expr, b: sp.Expr, c: sp.Expr, variable: sp.Symbol, work: Work) -> Outcome:
     work.show(
-        "Read off the coefficients of a x^2 + b x + c = 0",
+        msg("Read off the coefficients of a x^2 + b x + c = 0"),
         f"a = {show(a)}, b = {show(b)}, c = {show(c)}",
         rf"a = {latex_of(a)},\quad b = {latex_of(b)},\quad c = {latex_of(c)}",
     )
     discriminant = sp.simplify(b**2 - 4 * a * c)
     work.show(
-        "Work out the discriminant D = b^2 - 4ac",
+        msg("Work out the discriminant D = b^2 - 4ac"),
         f"D = {_paren(b)}^2 - 4*{_paren(a)}*{_paren(c)} = {show(discriminant)}",
         rf"D = {_paren_latex(b)}^2 - 4 \cdot {_paren_latex(a)} \cdot {_paren_latex(c)} "
         rf"= {latex_of(discriminant)}",
@@ -216,29 +224,38 @@ def _by_formula(a: sp.Expr, b: sp.Expr, c: sp.Expr, variable: sp.Symbol, work: W
         low = sp.simplify((-b - sp.sqrt(discriminant)) / (2 * a))
         high = sp.simplify((-b + sp.sqrt(discriminant)) / (2 * a))
         work.note(
-            "D is negative, so there is no real solution "
-            f"(in the complex numbers: {variable} = {show(low)} or {variable} = {show(high)})"
+            msg(
+                "D is negative, so there is no real solution (in the complex "
+                "numbers: {variable} = {low} or {variable} = {high})",
+                variable=variable,
+                low=show(low),
+                high=show(high),
+            )
         )
         return Outcome.none()
 
     if discriminant == 0:
         root = sp.simplify(-b / (2 * a))
         work.show(
-            f"D = 0, so there is exactly one solution: {variable} = -b / (2a)",
+            msg(
+                "D = 0, so there is exactly one solution: {variable} = -b / (2a)", variable=variable
+            ),
             f"{variable} = {show(root)}",
             rf"{v} = {latex_of(root)}",
         )
         return Outcome.of([root])
 
     work.show(
-        f"Use the quadratic formula {variable} = (-b +/- sqrt(D)) / (2a)",
+        msg("Use the quadratic formula {variable} = (-b +/- sqrt(D)) / (2a)", variable=variable),
         f"{variable} = (-{_paren(b)} +/- sqrt({show(discriminant)})) / (2*{_paren(a)})",
         rf"{v} = \frac{{-{_paren_latex(b)} \pm \sqrt{{{latex_of(discriminant)}}}}}"
         rf"{{2 \cdot {_paren_latex(a)}}}",
     )
     low = sp.simplify((-b - sp.sqrt(discriminant)) / (2 * a))
     high = sp.simplify((-b + sp.sqrt(discriminant)) / (2 * a))
-    work.alternatives("Work out both signs", [Equation(variable, low), Equation(variable, high)])
+    work.alternatives(
+        msg("Work out both signs"), [Equation(variable, low), Equation(variable, high)]
+    )
     return Outcome.of([low, high])
 
 
@@ -251,26 +268,31 @@ def _by_completing_square(
     p, q = sp.simplify(b / a), sp.simplify(c / a)
     if a != 1:
         work.equation(
-            f"Divide both sides by {show(a)}",
+            msg("Divide both sides by {a}", a=show(a)),
             Equation(variable**2 + p * variable + q, 0),
             operation=f"/ {show(a)}",
         )
     if q != 0:
         work.equation(
-            "Move the constant to the right side", Equation(variable**2 + p * variable, -q)
+            msg("Move the constant to the right side"), Equation(variable**2 + p * variable, -q)
         )
     half = p / 2
     added = sp.simplify(half**2)
     work.equation(
-        f"Add (half of the {variable} coefficient)^2 = ({show(half)})^2 = {show(added)} "
-        "to both sides to complete the square",
+        msg(
+            "Add (half of the {variable} coefficient)^2 = ({half})^2 = "
+            "{added} to both sides to complete the square",
+            variable=variable,
+            half=show(half),
+            added=show(added),
+        ),
         Equation(variable**2 + p * variable + added, sp.simplify(-q + added)),
         operation=f"+ {show(added)}",
     )
     value = sp.simplify(-q + added)
     inner = variable + half
     work.equation(
-        "The left side is now a perfect square",
+        msg("The left side is now a perfect square"),
         Equation(sp.Pow(inner, 2, evaluate=False), value),
     )
     return _take_root(inner, value, variable, work)

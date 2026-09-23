@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import msg
 from ..parse.plain import latex_of
 from . import dispatch
 from .core import Equation, Outcome, Work, show
@@ -31,7 +32,7 @@ def solve_logarithmic(
     logs = _logs(equation.expr, variable)
     arguments = [log.args[0] for log in logs]
     work.show(
-        "A logarithm is only defined for positive numbers, so",
+        msg("A logarithm is only defined for positive numbers, so"),
         ", ".join(f"{show(argument)} > 0" for argument in arguments),
         r",\quad ".join(f"{latex_of(argument)} > 0" for argument in arguments),
     )
@@ -43,14 +44,14 @@ def solve_logarithmic(
         )
         if (combined.lhs, combined.rhs) != (equation.lhs, equation.rhs):
             work.equation(
-                "Combine the logarithms: ln a + ln b = ln(ab), ln a - ln b = ln(a/b)",
+                msg("Combine the logarithms: ln a + ln b = ln(ab), ln a - ln b = ln(a/b)"),
                 combined,
             )
             current = combined
 
     if isinstance(current.lhs, sp.log) and isinstance(current.rhs, sp.log):
         inside = Equation(current.lhs.args[0], current.rhs.args[0])
-        work.equation("Equal logarithms have equal insides: ln(u) = ln(v) means u = v", inside)
+        work.equation(msg("Equal logarithms have equal insides: ln(u) = ln(v) means u = v"), inside)
         return dispatch.solve_equation(inside, variable, work, depth=depth + 1)
 
     remaining = _logs(current.expr, variable)
@@ -59,9 +60,9 @@ def solve_logarithmic(
         isolated = isolate(current, log)
         if isolated is not None and not isolated.rhs.has(variable):
             if not already_isolated(current, log):
-                work.equation("Isolate the logarithm on one side", isolated)
+                work.equation(msg("Isolate the logarithm on one side"), isolated)
             undone = Equation(log.args[0], sp.exp(isolated.rhs))
-            work.equation("Undo the logarithm: ln(u) = k means u = e^k", undone)
+            work.equation(msg("Undo the logarithm: ln(u) = k means u = e^k"), undone)
             return dispatch.solve_equation(undone, variable, work, depth=depth + 1)
 
     return dispatch.SOLVERS["other"](current, variable, work, None, depth)

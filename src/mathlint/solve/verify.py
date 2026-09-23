@@ -10,6 +10,7 @@ from __future__ import annotations
 import sympy as sp
 
 from ..equivalence import Verdict, compare
+from ..i18n import msg
 from .core import Equation, Outcome, Work, show, sort_values
 
 _TOLERANCE = sp.Float("1e-12")
@@ -22,13 +23,21 @@ def verify(original: Equation, variable: sp.Symbol, outcome: Outcome, work: Work
     kept = []
     for value in sort_values(outcome.values):
         verdict = _check(original, variable, value)
-        label = f"Check {variable} = {show(value)}"
+        label = msg("Check {variable} = {value}", variable=variable, value=show(value))
         if verdict is None:
             left = _simplify(original.lhs.subs(variable, value))
-            work.note(f"{label}: both sides equal {show(left)}")
+            work.note(msg("{label}: both sides equal {left}", label=label, left=show(left)))
             kept.append(value)
         else:
-            work.note(f"{label}: {verdict}, so {variable} = {show(value)} is not a solution")
+            work.note(
+                msg(
+                    "{label}: {verdict}, so {variable} = {value} is not a solution",
+                    label=label,
+                    verdict=verdict,
+                    variable=variable,
+                    value=show(value),
+                )
+            )
     return Outcome.of(kept)
 
 
@@ -38,18 +47,18 @@ def _check(original: Equation, variable: sp.Symbol, value: sp.Expr) -> str | Non
     if letters - {variable}:
         return _check_formula(original, variable, value)
     if not _is_real(value):
-        return "it is not a real number"
+        return msg("it is not a real number")
     for side in (original.lhs, original.rhs):
         _, denominator = sp.fraction(sp.together(side))
         if denominator.has(variable) and _simplify(denominator.subs(variable, value)) == 0:
-            return "it makes a denominator zero"
+            return msg("it makes a denominator zero")
     left = _simplify(original.lhs.subs(variable, value))
     right = _simplify(original.rhs.subs(variable, value))
     for side in (left, right):
         if side.has(sp.zoo, sp.nan, sp.oo, -sp.oo):
-            return "it makes a denominator zero"
+            return msg("it makes a denominator zero")
         if not _is_real(side):
-            return "it takes the root or the logarithm of a negative number"
+            return msg("it takes the root or the logarithm of a negative number")
     if _simplify(left - right) == 0:
         return None
     difference = sp.N(left - right, 30)
@@ -58,7 +67,9 @@ def _check(original: Equation, variable: sp.Symbol, value: sp.Expr) -> str | Non
     scale = max(sp.Integer(1), abs(sp.N(left, 30)), abs(sp.N(right, 30)))
     if difference.is_number and abs(difference) < tolerance * scale:
         return None
-    return f"the left side is {show(left)} but the right side is {show(right)}"
+    return msg(
+        "the left side is {left} but the right side is {right}", left=show(left), right=show(right)
+    )
 
 
 def _check_formula(original: Equation, variable: sp.Symbol, value: sp.Expr) -> str | None:
@@ -70,7 +81,11 @@ def _check_formula(original: Equation, variable: sp.Symbol, value: sp.Expr) -> s
         return None
     point = result.counterexample or {}
     where = ", ".join(f"{name} = {number}" for name, number in point.items())
-    return f"the two sides differ (for example at {where})" if where else "the two sides differ"
+    return (
+        msg("the two sides differ (for example at {where})", where=where)
+        if where
+        else msg("the two sides differ")
+    )
 
 
 def _is_real(value: sp.Expr) -> bool:

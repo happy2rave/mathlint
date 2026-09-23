@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import msg
 from .core import Equation, Work
 
 
@@ -21,9 +22,9 @@ def standard_form(equation: Equation, variable: sp.Symbol, work: Work) -> sp.Exp
             equation.rhs,
         )
         text = (
-            "Expand the brackets and move every term to the left side"
+            msg("Expand the brackets and move every term to the left side")
             if expanded
-            else "Move every term to the left side"
+            else msg("Move every term to the left side")
         )
         work.equation(text, Equation(polynomial, 0))
 
@@ -33,7 +34,10 @@ def standard_form(equation: Equation, variable: sp.Symbol, work: Work) -> sp.Exp
         if denominator != 1:
             polynomial = sp.expand(polynomial * denominator)
             work.equation(
-                f"Multiply both sides by {denominator} to clear the fractions",
+                msg(
+                    "Multiply both sides by {denominator} to clear the fractions",
+                    denominator=denominator,
+                ),
                 Equation(polynomial, 0),
                 operation=f"* {denominator}",
             )
@@ -42,7 +46,11 @@ def standard_form(equation: Equation, variable: sp.Symbol, work: Work) -> sp.Exp
     if leading.LC().is_negative:
         polynomial = sp.expand(-polynomial)
         work.equation(
-            f"Multiply both sides by -1 so the {variable}^{leading.degree()} term is positive",
+            msg(
+                "Multiply both sides by -1 so the {variable}^{degree} term is positive",
+                variable=variable,
+                degree=leading.degree(),
+            ),
             Equation(polynomial, 0),
             operation="* (-1)",
         )
@@ -53,6 +61,8 @@ def standard_form(equation: Equation, variable: sp.Symbol, work: Work) -> sp.Exp
         if divisor > 1:
             polynomial = sp.expand(polynomial / divisor)
             work.equation(
-                f"Divide both sides by {divisor}", Equation(polynomial, 0), operation=f"/ {divisor}"
+                msg("Divide both sides by {divisor}", divisor=divisor),
+                Equation(polynomial, 0),
+                operation=f"/ {divisor}",
             )
     return polynomial

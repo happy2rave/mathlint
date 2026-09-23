@@ -26,13 +26,16 @@ def solve_linear(
     expanded = (sp.expand(lhs), sp.expand(rhs))
     if expanded != (lhs, rhs):
         lhs, rhs = expanded
-        work.equation("Expand the brackets", Equation(lhs, rhs))
+        work.equation(msg("Expand the brackets"), Equation(lhs, rhs))
 
     denominator = _common_denominator(lhs, rhs, variable)
     if denominator != 1:
         lhs, rhs = sp.expand(lhs * denominator), sp.expand(rhs * denominator)
         work.equation(
-            f"Multiply both sides by {denominator} to clear the fractions",
+            msg(
+                "Multiply both sides by {denominator} to clear the fractions",
+                denominator=denominator,
+            ),
             Equation(lhs, rhs),
             operation=f"* {denominator}",
         )
@@ -46,7 +49,9 @@ def solve_linear(
         lhs, rhs = rhs, lhs
         left_x, left_c, right_x, right_c = right_x, right_c, left_x, left_c
         work.equation(
-            f"Swap the sides, so the side with more {variable} is on the left",
+            msg(
+                "Swap the sides, so the side with more {variable} is on the left", variable=variable
+            ),
             Equation(lhs, rhs),
         )
 
@@ -65,16 +70,16 @@ def solve_linear(
 
     if coefficient == 0:
         if value == 0:
-            work.note(f"Both sides are equal for every {variable}")
+            work.note(msg("Both sides are equal for every {variable}", variable=variable))
             return Outcome.all()
-        work.note(f"This says 0 = {show(value)}, which is never true")
+        work.note(msg("This says 0 = {value}, which is never true", value=show(value)))
         return Outcome.none()
 
     answer = sp.simplify(value / coefficient)
     if coefficient != 1:
-        divide = f"Divide both sides by {show(coefficient)}"
+        divide = msg("Divide both sides by {coefficient}", coefficient=show(coefficient))
         if coefficient.free_symbols:
-            divide += f" ({show(coefficient)} must not be 0)"
+            divide += msg(" ({denominator} must not be 0)", denominator=show(coefficient))
         work.equation(
             divide,
             Equation(variable, answer),

@@ -72,8 +72,11 @@ def test_join_keeps_the_translatable_parts(fake_catalog):
 
 def test_localize_walks_a_reply(fake_catalog):
     reply = {"steps": [{"text": msg("numerator"), "math": "x"}], "n": 3, "none": None}
-    assert localize(reply, "xx") == {"steps": [{"text": "numărător", "math": "x"}], "n": 3,
-                                      "none": None}
+    assert localize(reply, "xx") == {
+        "steps": [{"text": "numărător", "math": "x"}],
+        "n": 3,
+        "none": None,
+    }
 
 
 def test_words_inside_latex_are_translated(fake_catalog):

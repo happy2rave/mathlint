@@ -89,6 +89,16 @@ def join(separator: str, parts: Iterable[Any]) -> Message:
     return _joined(items)
 
 
+def either(parts: Iterable[Any]) -> Message:
+    """``a or b or c``."""
+    return join(" " + msg("or") + " ", parts)
+
+
+def both(parts: Iterable[Any]) -> Message:
+    """``a and b and c``."""
+    return join(" " + msg("and") + " ", parts)
+
+
 def _joined(parts: list[Any]) -> Message:
     flat: list[Any] = []
     for part in parts:
