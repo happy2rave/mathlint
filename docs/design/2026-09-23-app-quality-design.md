@@ -15,7 +15,7 @@ as English — steps included.
 Every sentence a student reads is written in Python as an English f-string. The
 catalog keeps English as the source of truth and translates at the edge.
 
-- `mathlint/i18n.py` defines `_(template, **args)`. It returns a `Message`, a
+- `mathlint/i18n.py` defines `msg(template, **args)` (not `_`, which the code already uses as a throwaway name). It returns a `Message`, a
   `str` subclass holding the English rendering, the template and the arguments.
   Everywhere in Python it *is* the English string, so the command line, the
   tests and `explain.py`'s word matching are unchanged.
@@ -28,7 +28,7 @@ catalog keeps English as the source of truth and translates at the edge.
   command line.
 - A string that is concatenated or re-formatted loses its template and falls
   back to English; the catalog tests below catch the ones that matter.
-- `scripts/extract_messages.py` collects every `_("...")` template with the
+- `scripts/extract_messages.py` collects every `msg("...")` template with the
   `ast` module and adds new ones to each catalog (value `null` = untranslated).
 - Tests: every catalog has every template, no stale templates, the same
   `{placeholders}` as the English, and the problem bank solved in each language
