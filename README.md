@@ -20,11 +20,30 @@ The app is built for phones first: tabs at the bottom, a keypad that docks like
 the phone's own keyboard, marks in the notebook's margin when you check your
 working, and a light and a dark theme.
 
+**Photograph** a problem — printed or handwritten — or **write it by hand** on
+the screen, and it lands in the notebook as math you can edit. The recognizer
+runs on your device and works offline; photos never leave it.
+
 It speaks **English, Romanian, Russian and Spanish** — the interface and every
 step, hint and explanation. Add it to your home screen and it works
 **offline**: everything, the math engine included, is kept on your device, along
 with a **history** of what you solved and the problems you starred. Screen
 readers hear the math in words, in your language.
+
+## Photograph it, or write it by hand
+
+The camera button in the notebook opens the camera with a faint outline of the
+notebook over it: line your working up inside the page and take the photo.
+Each line of writing is read and written into the notebook, where you can fix
+anything before you solve or check it; symbols the recognizer was unsure of are
+named under the notebook. **Adjust** reads the same photo again with a
+different crop, and **Choose a photo** takes one from the gallery. The pen
+button opens a ruled line to write on with a finger, a stylus or the mouse.
+
+The recognizer is mathlint's own: a small image-to-LaTeX network (3.7 million
+weights, 3.9 MB) that runs in plain JavaScript in the browser, downloaded the
+first time you use it and kept for offline use. How it was trained, and on
+what, is in [training/](training/README.md).
 
 ## Learn one step at a time
 
@@ -407,7 +426,10 @@ reads your line differently than you meant it, that's a bug. See
 [SymPy](https://www.sympy.org) for the math; in the browser,
 [Pyodide](https://pyodide.org), [MathLive](https://mathlive.io) for the editor and
 [KaTeX](https://katex.org) for the results, all served from the site itself so
-the page asks nothing of any other server.
+the page asks nothing of any other server. The handwriting recognizer learned
+from the [Detexify](https://detexify.kirelabs.org) and
+[HASYv2](https://doi.org/10.5281/zenodo.259444) collections (Open Database
+License) and from open fonts.
 
 The open-textbook problem library adapts exercises from OpenStax's
 *College Algebra with Corequisite Support 2e* under CC BY 4.0; see

@@ -33,3 +33,21 @@ one.
 
 The PolyForm Noncommercial license covers mathlint's own code only; it does not
 replace or restrict the licenses above.
+
+## Data the recognizer learned from
+
+The handwriting recognizer (since v0.12, `recognizer.bin`) was trained on
+formulas generated in `training/`, drawn with symbols from these sources. None
+of them is served with the app; the trained model is a Produced Work of the two
+databases.
+
+| Source | Used for | License |
+| --- | --- | --- |
+| [Detexify](https://detexify.kirelabs.org) training data by Daniel Kirsch | Handwritten math symbols, as strokes | [Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/) |
+| [HASYv2](https://doi.org/10.5281/zenodo.259444) by Martin Thoma | Handwritten symbols, digits and letters | [Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/) |
+| 29 handwriting fonts from [Google Fonts](https://github.com/google/fonts) (listed in `training/mathrec/fonts.py`) | Letters, digits and punctuation | SIL Open Font License 1.1 or Apache 2.0 |
+| STIX Two Math, Noto Sans Math, Libertinus Math, Noto Serif, Noto Sans | Printed formulas | SIL Open Font License 1.1 |
+| Latin Modern Math | Printed formulas | GUST Font License |
+
+Contains information from the Detexify and HASYv2 databases, which are made
+available under the Open Database License (ODbL).

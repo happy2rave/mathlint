@@ -62,6 +62,10 @@ _LOCAL_FILES = (
     "i18n.js",
     "history.js",
     "speech.js",
+    "camera.js",
+    "pad.js",
+    "reading.js",
+    "writing.js",
     "examples.json",
     "solve-examples.json",
     "textbook-problems.json",
@@ -107,8 +111,9 @@ def write_service_worker(site: Path, version: str) -> list[str]:
     return files
 
 
-#: files the app never loads: licenses, source maps
-_NOT_CACHED = re.compile(r"(^|/)(LICENSE[^/]*|[^/]+\.map)$")
+#: files kept out of the install-time cache: licenses and source maps (never
+#: loaded), and the recognizer (kept by sw.js the first time it is used)
+_NOT_CACHED = re.compile(r"(^|/)(LICENSE[^/]*|[^/]+\.map)$|^recognizer/")
 
 
 def write_icons(site: Path) -> None:

@@ -9,3 +9,8 @@ _site/
 .ruff_cache/
 .coverage
 .cache/
+
+# the recognizer's training: generated data, downloads and checkpoints
+training/data/
+training/runs/
+training/.venv/

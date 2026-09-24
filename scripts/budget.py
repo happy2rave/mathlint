@@ -27,6 +27,10 @@ BLOCKING_STYLESHEETS = 3
 SITE_MB = 25
 #: importing the engine in CPython (the browser's is slower, but moves with it)
 IMPORT_SECONDS = 2.0
+#: the recognizer's model, downloaded the first time the camera or the pad opens
+MODEL_MB = 4.0
+#: the recognizer's code, gzipped
+RECOGNIZER_KB = 60
 
 
 @dataclass
@@ -55,13 +59,26 @@ def own_code_kb(site: Path) -> float:
 _OWN = {".html", ".js", ".css", ".json", ".webmanifest"}
 
 
+def recognizer_kb(site: Path) -> float:
+    files = sorted((site / "recognizer").glob("*.js"))
+    return sum(len(gzip.compress(path.read_bytes(), 9)) for path in files) / 1024
+
+
+def model_mb(site: Path) -> float:
+    model = site / "recognizer" / "recognizer.bin"
+    return model.stat().st_size / 1e6 if model.exists() else 0.0
+
+
 def blocking_stylesheets(html: str) -> int:
     head = html.split("</head>", 1)[0]
     return len(re.findall(r'<link\b[^>]*rel="stylesheet"', head))
 
 
 def site_mb(site: Path) -> float:
-    return sum(path.stat().st_size for path in site.rglob("*") if path.is_file()) / 1e6
+    """Everything but the recognizer, which only a visit that uses it downloads."""
+    files = [path for path in site.rglob("*") if path.is_file()]
+    kept = [path for path in files if "recognizer" not in path.relative_to(site).parts[:1]]
+    return sum(path.stat().st_size for path in kept) / 1e6
 
 
 def import_seconds() -> float:
@@ -82,6 +99,8 @@ def measures(site: Path = SITE) -> list[Measure]:
             "stylesheets before first paint", blocking_stylesheets(html), BLOCKING_STYLESHEETS, ""
         ),
         Measure("whole site", site_mb(site), SITE_MB, " MB"),
+        Measure("recognizer model", model_mb(site), MODEL_MB, " MB"),
+        Measure("recognizer code (gzip)", recognizer_kb(site), RECOGNIZER_KB, " KB"),
         Measure("engine import", import_seconds(), IMPORT_SECONDS, " s"),
     ]
 

@@ -6,6 +6,55 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-09-24
+
+Camera and handwriting: photograph a problem, or write it by hand, and it
+lands in the notebook as math you can edit — read on the device, offline.
+
+### Added
+
+- **Photograph a problem,** printed or handwritten. The camera button in the
+  notebook of Solve and Check fades the app away. Over the live picture only a
+  faint outline of the notebook stays, with its ruled lines and red margin,
+  plus the capture button. What is inside the outline is split into lines of
+  writing and read while the photo dims. The lines are then written into the
+  notebook behind a soft pen point; with reduced motion they simply appear.
+  **Adjust** reads the same photo with a different crop, and **Choose a photo**
+  takes one from the gallery (the way in without a camera).
+- **Write it by hand.** The pen button opens one ruled line to write on with a
+  finger, a stylus or the mouse. It reads by itself after a pause and shows
+  what it read. In Solve the line replaces the one being written; in Check it
+  adds the next line of working.
+- What is read is never solved or checked before you have seen it. Symbols the
+  recognizer was unsure of are named under the notebook ("Check the 3 on
+  line 1"). Of the readings it considers, the first one the notebook can read
+  is chosen.
+- **mathlint's own recognizer:** a small image-to-LaTeX network (3.7 million
+  weights, 3.9 MB). It runs in the browser in plain JavaScript, in its own
+  thread, with no machine-learning runtime. It is downloaded the first time the
+  camera or the pad opens, then kept for offline use; offline before that, the
+  page says so. On generated held-out sets it reads 99.8% of printed lines,
+  98.4% of handwritten lines and 95.9% of photographed handwritten lines
+  exactly. A set of real photos is still to be collected, so the real-world
+  rate is not yet measured. About shows how long a photo took to read.
+- It learned only from data that may be used commercially: formulas generated
+  from the math mathlint solves, typeset in open fonts and written with
+  handwritten symbols from Detexify and HASYv2 (Open Database License) and
+  handwriting fonts. Everything that trains and exports it is in `training/`.
+- Photos and strokes never leave the device and are not kept.
+
+### Changed
+
+- The whole-site budget no longer counts the recognizer, which has budgets of
+  its own (the model at most 4 MB, its code at most 60 KB gzipped).
+- The red of wrong marks is a shade darker in the light theme, for contrast on
+  its tinted background.
+
+### Fixed
+
+- The keypad's **f(x)** and **∫ d/dx** tabs were empty: a function key such as
+  `sin` broke the words a screen reader hears, and with them the whole tab.
+
 ## [0.11.0] — 2026-09-24
 
 App quality: your language, offline, your history, and math a screen reader
@@ -423,7 +472,11 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.12.0
+[0.11.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.11.0
+[0.10.1]: https://github.com/happy2rave/mathlint/releases/tag/v0.10.1
+[0.10.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.10.0
 [0.9.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.9.0
 [0.8.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.8.0
 [0.7.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.7.0

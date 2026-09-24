@@ -21,6 +21,7 @@ from .graph import graph_for, sample
 from .i18n import localize, msg
 from .parse.plain import parse_expression
 from .practice import practice_for
+from .readable import readable
 from .steps import differentiate_solution, integrate_solution, parse_matrix, solve_linalg
 
 
@@ -176,6 +177,14 @@ def _preview(data: dict) -> dict:
     return {"latex": latex, "decimal_latex": result.get("decimal_latex")}
 
 
+def _readable(data: dict) -> dict:
+    """The first of a photo's readings (``latex``: best first) the notebook can read."""
+    for index, latex in enumerate(data.get("latex", [])):
+        if readable(latex):
+            return {"index": index}
+    return {"index": None}
+
+
 def _warm(_: dict) -> dict:
     """Load, while the reader is still looking, what a first request would wait for.
 
@@ -206,4 +215,5 @@ _HANDLERS = {
     "preview": _preview,
     "plot": _plot,
     "warm": _warm,
+    "readable": _readable,
 }

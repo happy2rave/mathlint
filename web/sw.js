@@ -2,6 +2,10 @@
 // in a cache named for this build. Requests are answered from that cache first,
 // so after one visit mathlint works without a connection.
 //
+// The recognizer (recognizer/: the model, about 4 MB, and its code) is the
+// exception: it is kept the first time the camera or the pad asks for it, not
+// at install, so a visit that never uses them never downloads it.
+//
 // scripts/build_web.py fills in VERSION and PRECACHE. A new build installs
 // alongside the old one and waits; the page offers "Reload", and only then does
 // it take over (see setUpOffline in app.js). Old caches are removed then.
@@ -51,6 +55,7 @@ async function answer(request) {
       ? await cache.match("./", { ignoreSearch: true })
       : await cache.match(request, { ignoreSearch: true });
   if (cached) return cached;
+  if (new URL(request.url).pathname.includes("/recognizer/")) return keep(cache, request);
   try {
     return await fetch(request);
   } catch (error) {
@@ -60,4 +65,12 @@ async function answer(request) {
     }
     throw error;
   }
+}
+
+// Fetched past the HTTP cache (which may hold the last build's model), then
+// kept in this build's cache for offline use.
+async function keep(cache, request) {
+  const response = await fetch(new Request(request, { cache: "no-cache" }));
+  if (response.ok) await cache.put(request, response.clone());
+  return response;
 }

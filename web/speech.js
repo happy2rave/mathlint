@@ -282,6 +282,8 @@ class Reader {
       const exponent = this.rawArgument();
       spoken = exponent.join("") === "-1" ? this.w("inverse", { f: name }) : this.power(name, exponent);
     }
+    // a function on its own, as on a keypad key: just its name
+    if (this.peek() === undefined) return spoken;
     return this.w("of", { f: spoken, x: this.argument() });
   }
 

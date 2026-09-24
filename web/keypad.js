@@ -213,7 +213,12 @@ export class Keypad {
       window.katex.render((tall ? r`\displaystyle ` : "") + key.label, button, { throwOnError: false });
       // a key without a name of its own says its symbol in words: "the square root of"...
       if (!key.title) {
-        const words = speak(key.label, (name, args) => t("speech." + name, args));
+        let words = "";
+        try {
+          words = speak(key.label, (name, args) => t("speech." + name, args));
+        } catch {
+          // a key without words is still a key: never lose the whole tab over one
+        }
         button.setAttribute("aria-label", words || key.label);
       }
     } else {
