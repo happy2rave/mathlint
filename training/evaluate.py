@@ -36,14 +36,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    state = torch.load(args.checkpoint, map_location=device)
-    settings = state["config"]
-    settings["channels"], settings["blocks"] = (
-        tuple(settings["channels"]),
-        tuple(settings["blocks"]),
-    )
-    model = Recognizer(Config(**settings)).to(device).eval()
-    model.load_state_dict(state["model"])
+    if args.checkpoint.suffix == ".bin":  # what the browser runs: int8, exported
+        import export
+
+        model = export.load(args.checkpoint).to(device).eval()
+        state = {"step": "exported"}
+    else:
+        state = torch.load(args.checkpoint, map_location=device)
+        settings = state["config"]
+        settings["channels"], settings["blocks"] = (
+            tuple(settings["channels"]),
+            tuple(settings["blocks"]),
+        )
+        model = Recognizer(Config(**settings)).to(device).eval()
+        model.load_state_dict(state["model"])
 
     sets = {kind: load_eval(kind) for kind in KINDS}
     if (REALSET / "labels.tsv").exists():

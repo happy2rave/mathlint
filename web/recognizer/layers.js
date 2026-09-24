@@ -72,12 +72,25 @@ export function addInto(target, values) {
 export function linear(x, length, weight, bias, outputs) {
   const inputs = x.length / length;
   const result = new Float32Array(length * outputs);
+  const whole = inputs - (inputs % 4);
   for (let n = 0; n < length; n++) {
     const offset = n * inputs;
     for (let o = 0; o < outputs; o++) {
       const w = o * inputs;
-      let sum = bias ? bias[o] : 0;
-      for (let i = 0; i < inputs; i++) sum += x[offset + i] * weight[w + i];
+      // four running sums: the additions do not wait on each other
+      let a = 0;
+      let b = 0;
+      let c = 0;
+      let d = 0;
+      let i = 0;
+      for (; i < whole; i += 4) {
+        a += x[offset + i] * weight[w + i];
+        b += x[offset + i + 1] * weight[w + i + 1];
+        c += x[offset + i + 2] * weight[w + i + 2];
+        d += x[offset + i + 3] * weight[w + i + 3];
+      }
+      let sum = (bias ? bias[o] : 0) + (a + b) + (c + d);
+      for (; i < inputs; i++) sum += x[offset + i] * weight[w + i];
       result[n * outputs + o] = sum;
     }
   }
