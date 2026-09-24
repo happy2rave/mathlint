@@ -166,8 +166,8 @@ export function resize(pixels, width, height, newWidth, newHeight) {
   return Uint8Array.from(data, (v) => clip(roundEven(v)));
 }
 
-// Grayscale pixels (any size) → { pixels, width }, 96 rows, ready to read.
-export function prepare(gray, width, height) {
+// Steps 1–3: shrink big photos, even out the light, stretch the contrast.
+function normalize(gray, width, height) {
   let pixels = gray;
   // 1. shrink by a whole factor, averaging blocks
   const factor = Math.ceil(height / WORKING_HEIGHT);
@@ -207,7 +207,11 @@ export function prepare(gray, width, height) {
   if (darkest < PAPER) {
     even = Uint8Array.from(even, (v) => clip(roundEven(((v - darkest) * 255) / (PAPER - darkest))));
   }
-  // 4. find the ink, ignoring ruled lines and specks
+  return { even, width, height, factor };
+}
+
+// Step 4: the ink, without ruled lines; with how much of it each row and column has.
+function inkOf(even, width, height) {
   const ink = new Uint8Array(width * height);
   for (let i = 0; i < ink.length; i++) ink[i] = even[i] < DARK ? 1 : 0;
   for (let y = 0; y < height; y++) {
@@ -215,21 +219,31 @@ export function prepare(gray, width, height) {
     for (let x = 0; x < width; x++) count += ink[y * width + x];
     if (count / width > RULED) ink.fill(0, y * width, (y + 1) * width);
   }
-  const columnCounts = new Array(width).fill(0);
-  const rowCounts = new Array(height).fill(0);
   for (let x = 0; x < width; x++) {
     let count = 0;
     for (let y = 0; y < height; y++) count += ink[y * width + x];
     if (count / height > RULED) for (let y = 0; y < height; y++) ink[y * width + x] = 0;
   }
+  const rows = new Array(height).fill(0);
+  const columns = new Array(width).fill(0);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      rowCounts[y] += ink[y * width + x];
-      columnCounts[x] += ink[y * width + x];
+      rows[y] += ink[y * width + x];
+      columns[x] += ink[y * width + x];
     }
   }
-  const rows = inkSpan(rowCounts, TRIM);
-  const columns = inkSpan(columnCounts, TRIM);
+  return { rows, columns };
+}
+
+// Grayscale pixels (any size) → { pixels, width }, 96 rows, ready to read.
+export function prepare(gray, width, height) {
+  const normal = normalize(gray, width, height);
+  ({ width, height } = normal);
+  const { even } = normal;
+  // 4. find the ink, ignoring ruled lines and specks
+  const counts = inkOf(even, width, height);
+  const rows = inkSpan(counts.rows, TRIM);
+  const columns = inkSpan(counts.columns, TRIM);
   if (!rows || !columns) return { pixels: new Uint8Array(HEIGHT * MIN_WIDTH).fill(255), width: MIN_WIDTH };
   const [top, bottom] = rows;
   const [left, right] = columns;
@@ -247,6 +261,43 @@ export function prepare(gray, width, height) {
     }
   }
   return fitted(crop, cropW, cropH);
+}
+
+// The lines of writing in a photo, top to bottom, as [top, bottom) rows of
+// ``gray``. Bands of ink with paper between them are lines; a band close
+// enough to the next (a fraction's numerator, its bar, its denominator) is
+// the same line. Specks too small to be writing are left out.
+export function splitLines(gray, width, height) {
+  const normal = normalize(gray, width, height);
+  const { rows } = inkOf(normal.even, normal.width, normal.height);
+  const blank = Math.max(1, normal.width * 0.002);
+  let bands = [];
+  let start = -1;
+  rows.forEach((count, y) => {
+    if (count > blank && start < 0) start = y;
+    if (count <= blank && start >= 0) {
+      bands.push([start, y]);
+      start = -1;
+    }
+  });
+  if (start >= 0) bands.push([start, rows.length]);
+  if (bands.length <= 1) return [[0, height]];
+  const heights = bands.map(([a, b]) => b - a).sort((a, b) => a - b);
+  const typical = heights[Math.floor(heights.length / 2)];
+  const merged = [bands[0]];
+  for (const band of bands.slice(1)) {
+    const last = merged[merged.length - 1];
+    if (band[0] - last[1] < 0.35 * typical) last[1] = band[1];
+    else merged.push([...band]);
+  }
+  bands = merged.filter(([a, b]) => b - a >= 0.3 * typical);
+  if (bands.length <= 1) return [[0, height]];
+  // halfway through the paper between lines, back in the photo's own rows
+  return bands.map(([a, b], i) => {
+    const above = i === 0 ? 0 : Math.floor((bands[i - 1][1] + a) / 2);
+    const below = i === bands.length - 1 ? normal.height : Math.ceil((b + bands[i + 1][0]) / 2);
+    return [above * normal.factor, Math.min(height, below * normal.factor)];
+  });
 }
 
 function fitted(crop, width, height) {

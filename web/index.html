@@ -63,6 +63,10 @@
   <symbol id="i-history" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 7.5V12l3 2"/></symbol>
   <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M10 7V4.5h4V7M6.5 7l1 13h9l1-13"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3.5 8.5A2 2 0 0 1 5.5 6.5h2l1.5-2h6l1.5 2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M13.5 7l3 3M4 20h16"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M8.5 5.5L4 10l4.5 4.5"/><path d="M4 10h10a6 6 0 0 1 0 12h-3"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8.5 8.5"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
 </svg>
 
@@ -111,9 +115,19 @@
         <article class="notebook">
           <header class="notebook-bar">
             <span class="notebook-title" id="equation-label" data-i18n="solve.notebook">Your problem</span>
-            <button type="button" class="pill-button" id="open-solve-examples" aria-haspopup="dialog">
-              <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg><span data-i18n="common.examples">Examples</span>
-            </button>
+            <div class="notebook-tools">
+              <button type="button" class="pill-button icon-pill" id="open-camera-solve" aria-haspopup="dialog"
+                aria-label="Photograph a problem" title="Photograph a problem" data-i18n-aria-label="camera.open" data-i18n-title="camera.open">
+                <svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>
+              </button>
+              <button type="button" class="pill-button icon-pill" id="open-pad-solve" aria-haspopup="dialog"
+                aria-label="Write it by hand" title="Write it by hand" data-i18n-aria-label="pad.open" data-i18n-title="pad.open">
+                <svg class="icon" aria-hidden="true"><use href="#i-pen"/></svg>
+              </button>
+              <button type="button" class="pill-button" id="open-solve-examples" aria-haspopup="dialog">
+                <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg><span data-i18n="common.examples">Examples</span>
+              </button>
+            </div>
           </header>
           <ol class="math-lines equation-lines" id="equation-lines" aria-labelledby="equation-label"
             aria-describedby="solve-help"></ol>
@@ -124,6 +138,14 @@
             </button>
           </footer>
         </article>
+        <div class="read-note" id="read-note-solve" hidden>
+          <svg class="icon" aria-hidden="true"><use href="#i-sparkle"/></svg>
+          <p aria-live="polite"><span class="read-note-text"></span> <span class="read-note-unsure"></span></p>
+          <button type="button" class="ghost-button read-adjust" data-i18n="camera.adjust">Adjust</button>
+          <button type="button" class="icon-button read-dismiss" aria-label="Dismiss" data-i18n-aria-label="read.dismiss">
+            <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+          </button>
+        </div>
 
         <div class="action-row">
           <p class="status" id="solve-status" role="status" aria-live="polite" data-i18n="engine.status.starting">Starting the math engine…</p>
@@ -165,6 +187,14 @@
           <header class="notebook-bar">
             <span class="notebook-title" id="sheet-label" data-i18n="check.notebook">Your working</span>
             <div class="notebook-tools">
+              <button type="button" class="pill-button icon-pill" id="open-camera-check" aria-haspopup="dialog"
+                aria-label="Photograph a problem" title="Photograph a problem" data-i18n-aria-label="camera.open" data-i18n-title="camera.open">
+                <svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>
+              </button>
+              <button type="button" class="pill-button icon-pill" id="open-pad-check" aria-haspopup="dialog"
+                aria-label="Write it by hand" title="Write it by hand" data-i18n-aria-label="pad.open" data-i18n-title="pad.open">
+                <svg class="icon" aria-hidden="true"><use href="#i-pen"/></svg>
+              </button>
               <button type="button" class="pill-button" id="mode-toggle" aria-pressed="false" data-i18n="check.typeAsText">Type as text</button>
               <button type="button" class="pill-button" id="open-check-examples" aria-haspopup="dialog">
                 <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg><span data-i18n="common.examples">Examples</span>
@@ -180,6 +210,14 @@
               aria-labelledby="sheet-label" aria-describedby="syntax-help"></textarea>
           </div>
         </article>
+        <div class="read-note" id="read-note-check" hidden>
+          <svg class="icon" aria-hidden="true"><use href="#i-sparkle"/></svg>
+          <p aria-live="polite"><span class="read-note-text"></span> <span class="read-note-unsure"></span></p>
+          <button type="button" class="ghost-button read-adjust" data-i18n="camera.adjust">Adjust</button>
+          <button type="button" class="icon-button read-dismiss" aria-label="Dismiss" data-i18n-aria-label="read.dismiss">
+            <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+          </button>
+        </div>
 
         <div class="action-row">
           <p class="status" id="status" role="status" aria-live="polite" data-i18n="engine.status.starting">Starting the math engine…</p>
@@ -317,6 +355,68 @@
   </div>
 </dialog>
 
+<!-- The pad: one ruled line to write on. -->
+<dialog class="sheet pad-sheet" id="pad-sheet" aria-labelledby="pad-title">
+  <div class="sheet-grip" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <h2 id="pad-title" data-i18n="pad.title">Write it</h2>
+    <button type="button" class="icon-button" data-close aria-label="Close" data-i18n-aria-label="common.close">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body">
+    <p class="sheet-note" id="pad-hint" data-i18n="pad.hint">Write one line with your finger, a stylus or the mouse.</p>
+    <div class="pad-paper">
+      <canvas class="pad-canvas" id="pad-canvas" role="img" aria-label="Writing area" data-i18n-aria-label="pad.area"
+        aria-describedby="pad-hint"></canvas>
+    </div>
+    <p class="pad-reading empty" id="pad-reading" aria-live="polite">
+      <span class="pad-reading-label" data-i18n="pad.readsAs">Reads as</span>
+      <span class="pad-reading-math" id="pad-reading-math"></span>
+    </p>
+    <progress class="read-progress" id="pad-progress" max="1" hidden></progress>
+    <p class="pad-status" id="pad-status" role="status"></p>
+    <div class="pad-actions">
+      <button type="button" class="ghost-button" id="pad-undo">
+        <svg class="icon" aria-hidden="true"><use href="#i-undo"/></svg><span data-i18n="pad.undo">Undo</span>
+      </button>
+      <button type="button" class="ghost-button" id="pad-clear" data-i18n="pad.clear">Clear</button>
+      <button type="button" class="primary" id="pad-use" disabled data-i18n="pad.use">Put it in the notebook</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- The camera: the app fades away; a faint outline of the notebook stays. -->
+<dialog class="camera" id="camera" aria-label="Photograph a problem" data-i18n-aria-label="camera.open" data-mode="starting">
+  <video class="camera-video" playsinline muted aria-hidden="true"></video>
+  <canvas class="camera-still" aria-hidden="true"></canvas>
+  <div class="camera-guide" aria-hidden="true"></div>
+  <p class="camera-hint" data-i18n="camera.hint">Line your working up inside the page</p>
+  <div class="crop-box" role="group" aria-label="The part that is read" data-i18n-aria-label="camera.cropArea">
+    <button type="button" class="crop-handle" data-part="top-left" aria-label="Top-left corner" data-i18n-aria-label="camera.topLeft"></button>
+    <button type="button" class="crop-handle" data-part="top-right" aria-label="Top-right corner" data-i18n-aria-label="camera.topRight"></button>
+    <button type="button" class="crop-handle" data-part="bottom-left" aria-label="Bottom-left corner" data-i18n-aria-label="camera.bottomLeft"></button>
+    <button type="button" class="crop-handle" data-part="bottom-right" aria-label="Bottom-right corner" data-i18n-aria-label="camera.bottomRight"></button>
+  </div>
+  <div class="camera-panel">
+    <p class="camera-status" role="status" aria-live="polite"></p>
+    <progress class="read-progress camera-progress" max="1" hidden></progress>
+    <p class="crop-hint" data-i18n="camera.adjustHint">Drag the box or its corners around the math, then read it.</p>
+    <div class="camera-bar">
+      <label class="pill-button camera-choose">
+        <input class="camera-file" type="file" accept="image/*">
+        <svg class="icon" aria-hidden="true"><use href="#i-photo"/></svg><span data-i18n="camera.choose">Choose a photo</span>
+      </label>
+      <button type="button" class="camera-shutter" aria-label="Take the photo" data-i18n-aria-label="camera.capture"></button>
+      <button type="button" class="ghost-button crop-cancel" data-i18n="camera.cancel">Cancel</button>
+      <button type="button" class="primary crop-read" data-i18n="camera.read">Read</button>
+      <button type="button" class="icon-button camera-close" aria-label="Close" data-i18n-aria-label="common.close">
+        <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+  </div>
+</dialog>
+
 <dialog class="sheet" id="history-sheet" aria-labelledby="history-title">
   <div class="sheet-grip" aria-hidden="true"></div>
   <div class="sheet-head">
@@ -367,7 +467,7 @@
       <li>
         <svg class="icon" aria-hidden="true"><use href="#i-code"/></svg>
         <span><a href="https://github.com/happy2rave/mathlint" data-i18n="about.source">Source and bug reports</a> ·
-          <span id="version">mathlint</span> <span id="startup" class="startup-time"></span></span>
+          <span id="version">mathlint</span> <span id="startup" class="startup-time"></span> <span id="read-time" class="startup-time"></span></span>
       </li>
     </ul>
 

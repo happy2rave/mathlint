@@ -1,10 +1,14 @@
-import { MathSheet, configureField, displayLatex, nameField, toLatex } from "./editor.js";
+import { MathSheet, configureField, displayLatex, nameField, setFieldValue, toLatex } from "./editor.js";
 import { Engine } from "./engine.js";
 import { Keypad } from "./keypad.js";
 import { numberLine } from "./numberline.js";
 import { Graph } from "./graph.js";
 import { History } from "./history.js";
 import { speak } from "./speech.js";
+import { Camera } from "./camera.js";
+import { Pad } from "./pad.js";
+import { recognizer, unsureText } from "./reading.js";
+import { writeLines } from "./writing.js";
 import { LANGUAGE_KEY, language, onLanguageChange, pickLanguage, setLanguage, t } from "./i18n.js";
 
 const STORAGE_KEY = "mathlint:last-solution";
@@ -494,6 +498,236 @@ async function check({ reveal = false, record = true } = {}) {
   if (reveal) revealResults(results);
 }
 
+// ---------------------------------------------------------------- photos and handwriting
+
+// The camera and the pad share one recognizer, downloaded the first time either
+// opens. What it reads goes into the notebook of the tab in use, is written in
+// as if by hand, and is never solved or checked before the student has seen it.
+
+let camera = null;
+let pad = null;
+let padTimer = null;
+let padRound = 0;
+let padReading = null; // what is on the pad now, once read
+let padContext = "solve";
+let readTimeMs = null;
+const PAD_PAUSE_MS = 900;
+
+function readContext() {
+  return activeTab() === "check" ? "check" : "solve";
+}
+
+// The index of the first reading the notebook can read (the engine decides),
+// or null: then the likeliest reading is taken.
+async function firstReadable(latex) {
+  if (!engineReady || latex.length < 2) return null;
+  const reply = await engine.call("readable", { latex }, { quiet: true, timeLimit: 5000 });
+  return reply.ok ? reply.result.index : null;
+}
+
+// The recognizer, its first download shown with ``progress`` and ``say``.
+async function loadRecognizer(progress, say) {
+  try {
+    const loaded = await recognizer((fraction) => {
+      progress(fraction ?? 0);
+      say(t("read.downloading"));
+    });
+    progress(null);
+    return loaded;
+  } catch (error) {
+    progress(null);
+    say(navigator.onLine ? t("read.failed", { error: error.message }) : t("read.offline"));
+    return null;
+  }
+}
+
+function showReadTime(ms) {
+  readTimeMs = ms;
+  $("read-time").textContent = t("about.readTime", { seconds: (ms / 1000).toFixed(1) });
+}
+
+function readNote(context) {
+  return $(`read-note-${context}`);
+}
+
+function showReadNote(context, lines, source) {
+  const note = readNote(context);
+  const words = source === "photo" ? t("read.fromPhoto") : t("read.fromPad");
+  const list = unsureText(lines, source === "pad" ? Number(note.dataset.line) || 1 : 1);
+  note.querySelector(".read-note-text").textContent = words;
+  note.querySelector(".read-note-unsure").textContent = list ? t("read.unsure", { list }) : "";
+  note.querySelector(".read-adjust").hidden = source !== "photo";
+  note.hidden = false;
+}
+
+// A photo replaces what was in the notebook. The pad fills the line being
+// written, when it is empty; otherwise it replaces it in Solve (one problem)
+// and adds the next line of working in Check. Then the lines are written in,
+// one after another.
+async function putInNotebook(context, lines, source) {
+  if (context === "check") setTextMode(false);
+  const target = context === "check" ? sheet : solveSheet;
+  let fields;
+  if (source === "photo") {
+    target.setLines(lines.map((line) => line.latex));
+    fields = target.fields;
+  } else {
+    // the line the student last wrote in, or else the last line
+    const current = target.contains(lastField) ? lastField : target.fields.at(-1);
+    const keep = !current || (current.value.trim() && context === "check");
+    const field = keep ? target.newLineAfter(current) : current;
+    setFieldValue(field, lines[0].latex);
+    fields = [field];
+    readNote(context).dataset.line = String(target.fields.indexOf(field) + 1);
+  }
+  if (context === "solve") {
+    solveVariable = null;
+    schedulePreview();
+  }
+  showReadNote(context, lines, source);
+  fields[0]?.scrollIntoView({ block: "center", behavior: "smooth" });
+  announce(source === "photo" ? t("read.fromPhoto") : t("read.fromPad"));
+  await writeLines(fields);
+}
+
+// A crop of a photo as RGBA pixels, no bigger than reading needs.
+function cropPixels(canvas, crop) {
+  const scale = Math.min(1, 1600 / Math.max(crop.width, crop.height));
+  const width = Math.max(1, Math.round(crop.width * scale));
+  const height = Math.max(1, Math.round(crop.height * scale));
+  const piece = document.createElement("canvas");
+  piece.width = width;
+  piece.height = height;
+  const context = piece.getContext("2d", { willReadFrequently: true });
+  context.drawImage(canvas, crop.x, crop.y, crop.width, crop.height, 0, 0, width, height);
+  return { rgba: context.getImageData(0, 0, width, height).data, width, height };
+}
+
+function openCamera(context) {
+  camera.context = context;
+  camera.open();
+  // the download starts while the student lines the page up; its message goes
+  // when it is done, and any other message (no camera, say) stays
+  const downloading = t("read.downloading");
+  loadRecognizer(
+    (fraction) => camera.showProgress(fraction),
+    (text) => camera.dialog.dataset.mode !== "no-camera" && camera.setStatus(text)
+  ).then((loaded) => {
+    if (loaded && camera.status.textContent === downloading) camera.setStatus("");
+  });
+}
+
+async function readPhoto({ canvas, crop }) {
+  camera.setStatus(t("read.reading"));
+  const loaded = await loadRecognizer(
+    (fraction) => camera.showProgress(fraction),
+    (text) => camera.setStatus(text)
+  );
+  if (!loaded) {
+    const why = camera.status.textContent; // offline, most likely
+    camera.adjust();
+    camera.setStatus(why);
+    return;
+  }
+  camera.setStatus(t("read.reading"));
+  let result;
+  try {
+    result = await loaded.reader.read({ ...cropPixels(canvas, crop), lines: true });
+  } catch (error) {
+    camera.adjust();
+    camera.setStatus(t("read.failed", { error: error.message }));
+    return;
+  }
+  showReadTime(result.ms);
+  const lines = (await Promise.all(result.lines.map((readings) => loaded.choose(readings, firstReadable))))
+    .filter((line) => line?.latex);
+  if (!lines.length) {
+    camera.adjust();
+    camera.setStatus(t("read.nothing"));
+    return;
+  }
+  await camera.close({ keepPhoto: true });
+  await putInNotebook(camera.context, lines, "photo");
+}
+
+function padSay(text) {
+  $("pad-status").textContent = text;
+}
+
+function padProgress(fraction) {
+  $("pad-progress").hidden = fraction === null;
+  if (fraction !== null) $("pad-progress").value = fraction;
+}
+
+function showPadReading(line) {
+  const shown = $("pad-reading");
+  shown.classList.toggle("empty", !line?.latex);
+  if (line?.latex) renderMath($("pad-reading-math"), displayLatex(line.latex));
+}
+
+function openPad(context) {
+  padContext = context;
+  pad.clear();
+  padSay("");
+  openSheet($("pad-sheet"));
+  loadRecognizer(padProgress, padSay).then((loaded) => loaded && padSay(""));
+}
+
+function padChanged() {
+  clearTimeout(padTimer);
+  padRound++;
+  padReading = null;
+  showPadReading(null);
+  $("pad-use").disabled = pad.empty;
+  if (!pad.empty) padTimer = setTimeout(readPad, PAD_PAUSE_MS);
+}
+
+// What is on the pad, read (after a pause in the writing, or when asked).
+async function readPad() {
+  const round = padRound;
+  const loaded = await loadRecognizer(padProgress, padSay);
+  if (!loaded || round !== padRound || pad.empty) return null;
+  const result = await loaded.reader.read(pad.image()).catch((error) => {
+    padSay(t("read.failed", { error: error.message }));
+    return null;
+  });
+  if (!result || round !== padRound) return null;
+  showReadTime(result.ms);
+  const line = await loaded.choose(result.lines[0], firstReadable);
+  if (round !== padRound) return null;
+  padReading = line;
+  showPadReading(line);
+  return line;
+}
+
+async function usePad() {
+  if (pad.empty) return;
+  clearTimeout(padTimer);
+  const line = padReading ?? (await readPad());
+  if (!line?.latex) return;
+  closeSheet($("pad-sheet"));
+  await putInNotebook(padContext, [line], "pad");
+}
+
+function setUpReading() {
+  camera = new Camera($("camera"), { onPhoto: readPhoto });
+  pad = new Pad($("pad-canvas"), { onStroke: padChanged });
+  for (const context of ["solve", "check"]) {
+    $(`open-camera-${context}`).addEventListener("click", () => openCamera(context));
+    $(`open-pad-${context}`).addEventListener("click", () => openPad(context));
+    const note = readNote(context);
+    note.querySelector(".read-dismiss").addEventListener("click", () => (note.hidden = true));
+    note.querySelector(".read-adjust").addEventListener("click", () => {
+      camera.context = context;
+      camera.adjust();
+    });
+  }
+  $("pad-undo").addEventListener("click", () => pad.undo());
+  $("pad-clear").addEventListener("click", () => pad.clear());
+  $("pad-use").addEventListener("click", usePad);
+  onLanguageChange(() => readTimeMs !== null && showReadTime(readTimeMs));
+}
+
 // ---------------------------------------------------------------- examples
 
 function openSheet(dialog) {
@@ -508,7 +742,7 @@ function closeSheet(dialog) {
 }
 
 function setUpSheets() {
-  for (const dialog of [examplesSheet, aboutSheet, historySheet]) {
+  for (const dialog of [examplesSheet, aboutSheet, historySheet, $("pad-sheet")]) {
     dialog.addEventListener("click", (event) => {
       // a tap on the backdrop, or on a close button
       if (event.target === dialog || event.target.closest("[data-close]")) closeSheet(dialog);
@@ -1471,6 +1705,7 @@ async function boot() {
   });
   solveKeypadSlot.append(keypadRoot);
   watchKeypadFocus();
+  setUpReading();
 
   window.addEventListener(
     "keydown",

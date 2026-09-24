@@ -22,7 +22,7 @@
   --on-pen: #ffffff;
 
   --mark-ok: #177a47;
-  --mark-wrong: #c93a2f;
+  --mark-wrong: #c4382d;
   --mark-warning: #8f6000;
   --mark-unsure: #5d6472;
 
@@ -1666,4 +1666,234 @@ select {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ------------------------------------------------------------------ photos and handwriting */
+
+.icon-pill { width: 2.25rem; padding: 0; justify-content: center; }
+.icon-pill .icon { width: 1.15rem; height: 1.15rem; }
+
+/* what was read, and what to look at, under the notebook */
+.read-note {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.45rem 0.45rem 0.85rem;
+  border-radius: 14px;
+  background: var(--pen-soft);
+  font-size: 0.875rem;
+}
+.read-note[hidden] { display: none; }
+.read-note > .icon { flex: none; width: 1.1rem; height: 1.1rem; color: var(--pen); }
+.read-note p { flex: 1; margin: 0; }
+.read-note-unsure { font-weight: 700; }
+.read-note .ghost-button { min-height: 2.25rem; font-size: 0.875rem; }
+.read-note .ghost-button[hidden] { display: none; }
+.read-note .icon-button { width: 2.25rem; height: 2.25rem; }
+
+/* the pad: one ruled line of the notebook, with its red margin */
+.pad-paper {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    linear-gradient(to right,
+      transparent calc(var(--gutter-width) - 1px),
+      var(--margin-rule) calc(var(--gutter-width) - 1px),
+      var(--margin-rule) var(--gutter-width),
+      transparent var(--gutter-width)),
+    linear-gradient(to bottom,
+      transparent calc(72% - 1px),
+      var(--rule) calc(72% - 1px),
+      var(--rule) calc(72% + 1px),
+      transparent calc(72% + 1px)),
+    var(--paper);
+}
+.pad-canvas {
+  display: block;
+  width: 100%;
+  height: 9.5rem;
+  color: var(--ink);
+  cursor: crosshair;
+  touch-action: none;
+}
+.pad-reading { display: flex; align-items: baseline; gap: 0.75rem; min-height: 2.5rem; margin: 0.75rem 0 0; }
+/* the line keeps its place while empty, so the pad never moves under the pen */
+.pad-reading.empty { visibility: hidden; }
+.pad-reading-label { color: var(--ink-soft); font-size: 0.8125rem; font-weight: 700; }
+.pad-reading-math { font-size: 1.2rem; overflow-x: auto; }
+.pad-status { min-height: 1.25rem; margin: 0.4rem 0 0; color: var(--ink-soft); font-size: 0.875rem; }
+.pad-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.pad-actions .primary { margin-left: auto; }
+.read-progress { width: 100%; height: 0.4rem; margin-top: 0.5rem; accent-color: var(--pen); }
+.read-progress[hidden] { display: none; }
+
+/* the camera: the app fades away, a faint outline of the notebook stays */
+dialog.camera {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background: #07080a;
+  color: #fff;
+}
+dialog.camera[open] { display: block; }
+dialog.camera::backdrop { background: var(--bg); }
+
+.camera-video,
+.camera-still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.camera-video { object-fit: cover; }
+.camera-still { object-fit: contain; }
+
+.camera-guide {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: min(92vw, 46rem);
+  height: min(44dvh, 24rem);
+  border: 1.5px solid rgb(255 255 255 / 60%);
+  border-radius: var(--radius);
+  transform: translate(-50%, -50%);
+  /* everything outside the page is dimmed; inside, faint ruled lines and the red margin */
+  box-shadow: 0 0 0 100vmax rgb(7 8 10 / 45%);
+  background:
+    linear-gradient(to right,
+      transparent calc(var(--gutter-width) - 1px),
+      rgb(235 166 157 / 70%) calc(var(--gutter-width) - 1px),
+      rgb(235 166 157 / 70%) var(--gutter-width),
+      transparent var(--gutter-width)),
+    repeating-linear-gradient(to bottom,
+      transparent 0,
+      transparent calc(var(--line-height) - 1px),
+      rgb(255 255 255 / 28%) calc(var(--line-height) - 1px),
+      rgb(255 255 255 / 28%) var(--line-height));
+}
+
+.camera-hint {
+  position: absolute;
+  top: calc(var(--safe-top) + 1.25rem);
+  left: 1rem;
+  right: 1rem;
+  margin: 0;
+  text-align: center;
+  font-weight: 600;
+  text-shadow: 0 1px 6px rgb(0 0 0 / 70%);
+}
+
+.camera-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem calc(1.25rem + var(--safe-bottom));
+  background: linear-gradient(to top, rgb(7 8 10 / 75%), transparent);
+}
+.camera-status { min-height: 1.3rem; margin: 0; text-align: center; font-weight: 600; text-shadow: 0 1px 6px rgb(0 0 0 / 70%); }
+.camera-progress { width: min(100%, 24rem); margin: 0; }
+.crop-hint { margin: 0; text-align: center; font-size: 0.875rem; }
+
+.camera-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: min(100%, 36rem);
+}
+.camera-choose { position: relative; min-height: 2.75rem; cursor: pointer; }
+.camera-choose:focus-within { outline: 3px solid var(--pen); outline-offset: 2px; }
+.camera-file { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.camera-shutter {
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 5px solid rgb(255 255 255 / 45%);
+  border-radius: 50%;
+  background: #fff;
+  background-clip: padding-box;
+}
+.camera-shutter:active { transform: scale(0.94); }
+.camera-close { background: rgb(255 255 255 / 14%); color: #fff; }
+.camera-close:hover { background: rgb(255 255 255 / 24%); }
+.camera .ghost-button { color: #fff; }
+.camera .ghost-button:hover { background: rgb(255 255 255 / 14%); }
+
+/* what shows in each moment: live, no camera, reading (the photo dims), adjust */
+.camera .crop-box,
+.camera .crop-hint,
+.camera .crop-cancel,
+.camera .crop-read { display: none; }
+.camera[data-mode="starting"] .camera-shutter { opacity: 0.4; pointer-events: none; }
+.camera:is([data-mode="starting"], [data-mode="live"]) .camera-still { display: none; }
+.camera[data-mode="no-camera"] :is(.camera-video, .camera-still, .camera-shutter, .camera-guide, .camera-hint) { display: none; }
+.camera:is([data-mode="reading"], [data-mode="adjust"]) :is(.camera-video, .camera-guide, .camera-hint, .camera-shutter, .camera-choose) { display: none; }
+.camera[data-mode="reading"] .camera-still { filter: brightness(0.4) saturate(0.6); }
+.camera[data-mode="adjust"] :is(.crop-box, .crop-hint) { display: block; }
+.camera[data-mode="adjust"] :is(.crop-cancel, .crop-read) { display: inline-flex; }
+.camera[data-mode="adjust"] .camera-close { display: none; }
+
+.crop-box {
+  position: absolute;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 100vmax rgb(7 8 10 / 55%);
+  cursor: move;
+  touch-action: none;
+}
+.crop-handle {
+  position: absolute;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+}
+.crop-handle::after {
+  content: "";
+  position: absolute;
+  inset: 0.6rem;
+  border: 0 solid #fff;
+}
+.crop-handle:focus-visible { outline: 3px solid var(--pen); outline-offset: -0.4rem; border-radius: 10px; }
+.crop-handle[data-part="top-left"] { left: -1.375rem; top: -1.375rem; cursor: nwse-resize; }
+.crop-handle[data-part="top-right"] { right: -1.375rem; top: -1.375rem; cursor: nesw-resize; }
+.crop-handle[data-part="bottom-left"] { left: -1.375rem; bottom: -1.375rem; cursor: nesw-resize; }
+.crop-handle[data-part="bottom-right"] { right: -1.375rem; bottom: -1.375rem; cursor: nwse-resize; }
+.crop-handle[data-part="top-left"]::after { border-top-width: 4px; border-left-width: 4px; }
+.crop-handle[data-part="top-right"]::after { border-top-width: 4px; border-right-width: 4px; }
+.crop-handle[data-part="bottom-left"]::after { border-bottom-width: 4px; border-left-width: 4px; }
+.crop-handle[data-part="bottom-right"]::after { border-bottom-width: 4px; border-right-width: 4px; }
+
+/* the pen point that follows the math as it is written in */
+.pen-trace {
+  position: absolute;
+  top: 50%;
+  width: 1rem;
+  height: 1rem;
+  margin: -0.5rem 0 0 -0.5rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--pen) 75%, transparent) 0, transparent 70%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.camera[open] { animation: camera-in 320ms ease both; }
+  dialog.camera[open]::backdrop { animation: fade-in 260ms ease both; }
+  dialog.camera.leaving { animation: camera-out 260ms ease both; }
+  .camera-still { transition: filter 400ms ease; }
+  @keyframes camera-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes camera-out { from { opacity: 1; } to { opacity: 0; } }
 }

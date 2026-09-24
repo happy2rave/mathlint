@@ -75,7 +75,10 @@ def blocking_stylesheets(html: str) -> int:
 
 
 def site_mb(site: Path) -> float:
-    return sum(path.stat().st_size for path in site.rglob("*") if path.is_file()) / 1e6
+    """Everything but the recognizer, which only a visit that uses it downloads."""
+    files = [path for path in site.rglob("*") if path.is_file()]
+    kept = [path for path in files if "recognizer" not in path.relative_to(site).parts[:1]]
+    return sum(path.stat().st_size for path in kept) / 1e6
 
 
 def import_seconds() -> float:
