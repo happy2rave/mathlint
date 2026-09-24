@@ -73,14 +73,17 @@ release (v1.0), which moves to after it on the roadmap.
   2. *Layout*: one layout engine places every symbol of a formula in a box —
      fractions, powers, subscripts, roots, integrals, limits, matrices.
   3. *Printed*: each box filled with a glyph from open math fonts (Latin Modern
-     Math, STIX Two, DejaVu and a few text fonts), at random sizes.
+     Math, STIX Two, Libertinus Math, Noto Sans Math and two text fonts), at
+     random sizes.
   4. *Handwritten*: each box filled with a real handwritten sample of that
-     symbol — Detexify's strokes (ODbL) and HASYv2's drawings (CC BY 4.0), and
-     digits and letters from EMNIST if its terms allow — with random pen width,
-     slant, jitter and spacing.
-  5. *Photographed*: printed and handwritten samples on paper textures with
-     ruled lines, shadows, perspective, blur, JPEG noise and uneven light. The
-     pad's images are clean strokes; the camera's are these.
+     symbol — Detexify's strokes and HASYv2's drawings (both ODbL), 29
+     handwriting fonts (OFL, Apache 2.0), and simple shapes drawn as strokes for
+     what the datasets lack — with random pen width, slant, jitter and spacing.
+     EMNIST and MNIST are not used: NIST's terms do not clearly allow it.
+  5. *Photographed*: printed and handwritten samples on plain, ruled and squared
+     paper, with shadows, perspective, blur, JPEG noise and uneven light. The
+     pad's images are clean strokes; the camera's are these. Every training
+     image then goes through the browser's own preparation, mirrored in Python.
 - **Training** is PyTorch on a local GPU, in its own project (`training/`, with
   its own dependencies so the package's lock file is untouched). Generated data
   and checkpoints stay out of git; only the exported model ships with the site.

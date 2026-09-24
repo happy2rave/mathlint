@@ -147,6 +147,11 @@ def draw(parts: list, metrics: PrintedMetrics, rng: random.Random, ink: int = 0)
 
 def render(latex: str, rng: random.Random) -> Image.Image:
     """``latex`` typeset in a random open font, as the recognizer sees it."""
+    return finish(draw_formula(latex, rng)[0], rng)
+
+
+def draw_formula(latex: str, rng: random.Random) -> tuple[Image.Image, float]:
+    """``latex`` typeset on white, uncropped, and its font size in pixels."""
     math = rng.choice(MATH_FONTS)
     text = rng.choice(TEXT_FONTS) if rng.random() < 0.3 else None
     metrics = PrintedMetrics(math, text, italic=rng.random() < 0.85)
@@ -156,5 +161,6 @@ def render(latex: str, rng: random.Random) -> Image.Image:
         gap=rng.uniform(0.7, 1.4),
         rule=rng.uniform(0.04, 0.08),
     )
-    parts = layout.place(layout.parse(latex), rng.uniform(40, 64), metrics, style)
-    return finish(draw(parts, metrics, rng, ink=rng.randint(0, 60)), rng)
+    size = rng.uniform(40, 64)
+    parts = layout.place(layout.parse(latex), size, metrics, style)
+    return draw(parts, metrics, rng, ink=rng.randint(0, 60)), size

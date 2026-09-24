@@ -327,6 +327,11 @@ def _slanted(image: Image.Image, slant: float, tilt: float) -> Image.Image:
 
 def render(latex: str, rng: random.Random) -> Image.Image:
     """``latex`` written by a random hand, as the recognizer sees it."""
+    return finish(draw_formula(latex, rng)[0], rng)
+
+
+def draw_formula(latex: str, rng: random.Random) -> tuple[Image.Image, float]:
+    """``latex`` written on white, uncropped, and the writing's size in pixels."""
     size = rng.uniform(40, 64)
     metrics = HandMetrics(rng, bearing=rng.uniform(0.04, 0.14))
     style = layout.Style(
@@ -339,5 +344,4 @@ def render(latex: str, rng: random.Random) -> Image.Image:
     pen_width = size * rng.uniform(0.04, 0.085)
     ink = rng.randint(0, 90)
     canvas = draw(parts, metrics, rng, pen_width, ink)
-    canvas = _slanted(canvas, rng.gauss(0, 0.12), rng.gauss(0, 1.2))
-    return finish(canvas, rng)
+    return _slanted(canvas, rng.gauss(0, 0.12), rng.gauss(0, 1.2)), size

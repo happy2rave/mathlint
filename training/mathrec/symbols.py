@@ -7,6 +7,8 @@ Three sources, all usable commercially:
 - HASYv2 (ODbL 1.0): 168,000 drawings of symbols, digits and letters, 32×32.
 - Handwriting fonts (OFL, Apache 2.0): letters, digits and punctuation in 29
   hands, distorted differently every time they are drawn.
+- Simple shapes drawn here, as strokes, for what neither dataset has: t, =,
+  brackets, and the punctuation.
 
 The first run reads the two datasets once into ``training/data/symbols``;
 after that ``bank()`` loads in a second.
@@ -18,6 +20,7 @@ import csv
 import io
 import json
 import pickle
+import random
 import tarfile
 from collections import defaultdict
 from dataclasses import dataclass
@@ -219,11 +222,75 @@ def _fonts() -> dict[str, list[Sample]]:
     return dict(found)
 
 
+def _curve(rng: random.Random, points: list[tuple[float, float]], steps: int = 8) -> np.ndarray:
+    """A wobbly stroke through ``points`` (a quadratic curve when there are three)."""
+    wobble = [(x + rng.gauss(0, 0.03), y + rng.gauss(0, 0.03)) for x, y in points]
+    at = np.linspace(0, 1, steps)[:, None]
+    if len(wobble) == 2:
+        a, b = (np.array(p) for p in wobble)
+        return (1 - at) * a + at * b
+    a, b, c = (np.array(p) for p in wobble)
+    return (1 - at) ** 2 * a + 2 * (1 - at) * at * b + at**2 * c
+
+
+def _dot(rng: random.Random, x: float, y: float) -> np.ndarray:
+    """A small loop, as a pen makes a dot."""
+    r = rng.uniform(0.02, 0.05)
+    turns = np.linspace(0, 2 * np.pi * rng.uniform(0.8, 1.3), 7)[:, None]
+    return np.hstack([x + r * np.cos(turns), y + r * np.sin(turns) * rng.uniform(0.6, 1.0)])
+
+
+def _drawn_strokes(token: str, rng: random.Random) -> list[np.ndarray]:
+    u = rng.uniform
+    if token == "t":
+        bottom = [(0.5 + u(-0.05, 0.05), 0.0), (0.45, 0.85), (0.8, 1.0)]
+        stem = _curve(rng, bottom if rng.random() < 0.6 else bottom[:2])
+        bar_y = u(0.25, 0.4)
+        return [stem, _curve(rng, [(u(0.05, 0.25), bar_y), (u(0.8, 1.0), bar_y + u(-0.08, 0.08))])]
+    if token == "=":
+        gap = u(0.3, 0.7)
+        return [
+            _curve(rng, [(0, 0), (u(0.85, 1.15), u(-0.1, 0.1))]),
+            _curve(rng, [(u(-0.1, 0.1), gap), (u(0.85, 1.15), gap + u(-0.1, 0.1))]),
+        ]
+    if token in "()":  # an arc of a circle, opening right or left
+        reach = u(0.5, 1.0)
+        turns = np.linspace(-reach, reach, 14)
+        side = -1 if token == "(" else 1
+        arc = np.stack([side * np.cos(turns), np.sin(turns)], axis=1)
+        return [arc + np.array([[rng.gauss(0, 0.01), rng.gauss(0, 0.01)] for _ in turns])]
+    if token == ".":
+        return [_dot(rng, 0.5, 0.5)]
+    if token == ",":
+        return [_curve(rng, [(0.55, 0.0), (0.55, 0.45), (0.3, 1.0)])]
+    if token == ";":
+        return [_dot(rng, 0.55, 0.0), _curve(rng, [(0.55, 0.55), (0.55, 0.8), (0.35, 1.0)])]
+    if token == "!":
+        return [_curve(rng, [(0.5, 0.0), (0.5 + u(-0.08, 0.08), 0.72)]), _dot(rng, 0.5, 1.0)]
+    if token == "'":
+        return [_curve(rng, [(u(0.55, 0.9), 0.0), (u(0.2, 0.45), 1.0)])]
+    raise KeyError(token)
+
+
+def _drawn() -> dict[str, list[Sample]]:
+    rng = random.Random("drawn")
+    found: dict[str, list[Sample]] = {}
+    for token in "t=(),.;!'":
+        samples = []
+        for _ in range(300):
+            strokes = [[(float(x), float(y), 0) for x, y in s] for s in _drawn_strokes(token, rng)]
+            normalized = _normalized([[(x * 100, y * 100, t) for x, y, t in s] for s in strokes])
+            samples.append(Sample("strokes", strokes=normalized))
+        found[token] = samples
+    found[r"\prime"] = found["'"]
+    return found
+
+
 @cache
 def bank() -> dict[str, list[Sample]]:
-    """Every symbol's handwritten samples, from all three sources."""
+    """Every symbol's handwritten samples, from all four sources."""
     merged: dict[str, list[Sample]] = defaultdict(list)
-    for source in (_detexify(), _hasy(), _fonts()):
+    for source in (_detexify(), _hasy(), _fonts(), _drawn()):
         for token, samples in source.items():
             merged[token] += samples
     return dict(merged)

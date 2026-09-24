@@ -24,15 +24,14 @@ def test_every_symbol_has_at_least_20_handwritten_samples():
     assert {token: count for token, count in few.items() if count < 20} == {}
 
 
-def test_most_symbols_have_samples_written_by_people_not_only_fonts():
+def test_every_symbol_has_samples_drawn_as_strokes_or_by_people_not_only_fonts():
     bank = symbols.bank()
     only_fonts = [
         token
         for token in symbols.symbol_tokens()
         if all(sample.kind == "font" for sample in bank.get(token, []))
     ]
-    # the punctuation neither dataset has (= ( ) , ; . ! '), and HASYv2 has no t
-    assert set(only_fonts) <= set("=(),;.!'t")
+    assert only_fonts == []
 
 
 def test_a_writer_puts_descenders_below_the_line_and_operators_on_the_axis():
