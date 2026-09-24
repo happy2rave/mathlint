@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import msg
 from .core import Equation, Outcome, Work
 from .dispatch import register
 
@@ -13,13 +14,15 @@ def solve_other(
     equation: Equation, variable: sp.Symbol, work: Work, method: str | None, depth: int
 ) -> Outcome:
     work.note(
-        "mathlint has no by-hand method for this kind of equation yet, "
-        "so this answer comes straight from SymPy"
+        msg(
+            "mathlint has no by-hand method for this kind of equation "
+            "yet, so this answer comes straight from SymPy"
+        )
     )
     try:
         result = sp.solveset(sp.Eq(equation.lhs, equation.rhs), variable, domain=sp.S.Reals)
     except Exception:
-        work.note("SymPy could not solve it either")
+        work.note(msg("SymPy could not solve it either"))
         return Outcome.none()
     if result == sp.S.Reals:
         return Outcome.all()

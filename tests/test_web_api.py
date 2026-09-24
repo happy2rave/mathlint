@@ -175,3 +175,9 @@ def test_unknown_request():
     reply = call("nonsense")
     assert reply["ok"] is False
     assert "nonsense" in reply["error"]
+
+
+def test_warming_up_loads_the_solvers_and_says_how_long_it_took():
+    reply = json.loads(handle("warm", "{}"))
+    assert reply["ok"]
+    assert reply["result"]["seconds"] >= 0

@@ -10,11 +10,16 @@ from __future__ import annotations
 import sympy as sp
 
 from ..errors import UnsupportedError
+from ..i18n import join, msg
 from ..parse.plain import read_as
 from .solution import Solution
 
 LAMBDA = sp.Symbol("lambda")
-_TIMES = {1: "once", 2: "twice", 3: "three times", 4: "four times"}
+_TIMES = {1: msg("once"), 2: msg("twice"), 3: msg("three times"), 4: msg("four times")}
+
+
+def _times(count: int) -> str:
+    return _TIMES.get(count) or msg("{count} times", count=count)
 
 
 def solve_linalg(operation: str, matrix: sp.Matrix) -> Solution:
@@ -26,51 +31,55 @@ def solve_linalg(operation: str, matrix: sp.Matrix) -> Solution:
         "eigen": eigen_solution,
     }
     if operation not in solvers:
-        raise UnsupportedError(f"mathlint cannot do '{operation}' yet")
+        raise UnsupportedError(msg("mathlint cannot do '{operation}' yet", operation=operation))
     return solvers[operation](matrix)
 
 
 def rref_solution(matrix: sp.Matrix) -> Solution:
     solution = Solution(
         operation="rref",
-        title="Row reduction to reduced row echelon form",
+        title=msg("Row reduction to reduced row echelon form"),
     )
-    solution.add("Start from this matrix", matrix=matrix)
+    solution.add(msg("Start from this matrix"), matrix=matrix)
     work, pivots = _reduce(sp.Matrix(matrix), solution)
     solution.result = work
 
     rank = len(pivots)
     zero_rows = work.rows - rank
     if zero_rows:
-        solution.summary = (
-            f"Rank {rank}: {zero_rows} row(s) of zeros, so those rows were "
-            "combinations of the others."
+        solution.summary = msg(
+            "Rank {rank}: {zero_rows} row(s) of zeros, so those rows "
+            "were combinations of the others.",
+            rank=rank,
+            zero_rows=zero_rows,
         )
     else:
-        solution.summary = f"Rank {rank}: every row has a pivot."
+        solution.summary = msg("Rank {rank}: every row has a pivot.", rank=rank)
     return solution
 
 
 def determinant_solution(matrix: sp.Matrix) -> Solution:
-    _require_square(matrix, "a determinant")
+    _require_square(matrix, msg("a determinant"))
     size = matrix.rows
-    solution = Solution(operation="det", title=f"Determinant of a {size}x{size} matrix")
-    solution.add("Start from this matrix", matrix=matrix)
+    solution = Solution(
+        operation="det", title=msg("Determinant of a {size}x{size} matrix", size=size)
+    )
+    solution.add(msg("Start from this matrix"), matrix=matrix)
 
     if size == 1:
         solution.result = matrix[0, 0]
-        solution.summary = f"det = {_show(matrix[0, 0])}"
+        solution.summary = msg("det = {result}", result=_show(matrix[0, 0]))
         return solution
 
     if size == 2:
         a, b, c, d = matrix[0, 0], matrix[0, 1], matrix[1, 0], matrix[1, 1]
-        solution.add("For a 2x2 matrix the determinant is ad - bc")
+        solution.add(msg("For a 2x2 matrix the determinant is ad - bc"))
         solution.add(
             f"ad - bc = ({_show(a)})({_show(d)}) - ({_show(b)})({_show(c)})",
             expression=sp.simplify(a * d - b * c),
         )
         solution.result = sp.simplify(a * d - b * c)
-        solution.summary = f"det = {_show(solution.result)}"
+        solution.summary = msg("det = {result}", result=_show(solution.result))
         return solution
 
     work = sp.Matrix(matrix)
@@ -79,17 +88,20 @@ def determinant_solution(matrix: sp.Matrix) -> Solution:
         pivot = next((row for row in range(column, size) if work[row, column] != 0), None)
         if pivot is None:
             solution.add(
-                f"Column {column + 1} is all zeros from row {column + 1} down, so the "
-                "rows are dependent"
+                msg(
+                    "Column {column} is all zeros from row {column} down, so the "
+                    "rows are dependent",
+                    column=column + 1,
+                )
             )
             solution.result = sp.Integer(0)
-            solution.summary = "det = 0, so this matrix is singular."
+            solution.summary = msg("det = 0, so this matrix is singular.")
             return solution
         if pivot != column:
             work.row_swap(pivot, column)
             sign = -sign
             solution.add(
-                "Swap rows to get a non-zero pivot — a swap flips the sign of the determinant",
+                msg("Swap rows to get a non-zero pivot — a swap flips the sign of the determinant"),
                 operation=f"R{column + 1} <-> R{pivot + 1}",
                 matrix=sp.Matrix(work),
             )
@@ -99,7 +111,7 @@ def determinant_solution(matrix: sp.Matrix) -> Solution:
             factor = sp.simplify(work[row, column] / work[column, column])
             work[row, :] = sp.simplify(work[row, :] - factor * work[column, :])
             solution.add(
-                "Adding a multiple of one row to another leaves the determinant unchanged",
+                msg("Adding a multiple of one row to another leaves the determinant unchanged"),
                 operation=f"R{row + 1} -> R{row + 1} - ({_show(factor)}) R{column + 1}",
                 matrix=sp.Matrix(work),
             )
@@ -107,88 +119,111 @@ def determinant_solution(matrix: sp.Matrix) -> Solution:
     diagonal = [work[index, index] for index in range(size)]
     product = sp.simplify(sp.prod(diagonal))
     shown = " * ".join(_show(entry) for entry in diagonal)
-    note = " and flip the sign for the row swap" if sign < 0 else ""
+    note = msg(" and flip the sign for the row swap") if sign < 0 else ""
     solution.add(
-        f"The matrix is upper triangular now, so multiply the diagonal{note}: {shown}",
+        msg(
+            "The matrix is upper triangular now, so multiply the diagonal{note}: {shown}",
+            note=note,
+            shown=shown,
+        ),
         expression=sp.simplify(sign * product),
     )
     solution.result = sp.simplify(sign * product)
-    solution.summary = f"det = {_show(solution.result)}"
+    solution.summary = msg("det = {result}", result=_show(solution.result))
     return solution
 
 
 def inverse_solution(matrix: sp.Matrix) -> Solution:
-    _require_square(matrix, "an inverse")
+    _require_square(matrix, msg("an inverse"))
     size = matrix.rows
-    solution = Solution(operation="inverse", title=f"Inverse of a {size}x{size} matrix")
-    solution.add("Start from this matrix", matrix=matrix)
+    solution = Solution(
+        operation="inverse", title=msg("Inverse of a {size}x{size} matrix", size=size)
+    )
+    solution.add(msg("Start from this matrix"), matrix=matrix)
 
     determinant = sp.simplify(matrix.det())
     if determinant == 0:
-        solution.add("Check the determinant first", expression=determinant)
+        solution.add(msg("Check the determinant first"), expression=determinant)
         solution.result = None
-        solution.summary = "det = 0, so this matrix has no inverse."
+        solution.summary = msg("det = 0, so this matrix has no inverse.")
         return solution
 
     augmented = sp.Matrix(matrix).row_join(sp.eye(size))
     solution.add(
-        "Write the identity beside it and row reduce until the left half is the identity",
+        msg("Write the identity beside it and row reduce until the left half is the identity"),
         matrix=augmented,
     )
     work, _ = _reduce(augmented, solution)
     inverse = work[:, size:]
-    solution.add("The left half is the identity, so the right half is the inverse", matrix=inverse)
+    solution.add(
+        msg("The left half is the identity, so the right half is the inverse"), matrix=inverse
+    )
     solution.result = inverse
-    solution.summary = f"det = {_show(determinant)}, so the inverse exists."
+    solution.summary = msg(
+        "det = {determinant}, so the inverse exists.", determinant=_show(determinant)
+    )
     return solution
 
 
 def eigen_solution(matrix: sp.Matrix) -> Solution:
     _require_square(matrix, "eigenvalues")
     size = matrix.rows
-    solution = Solution(operation="eigen", title=f"Eigenvalues and eigenvectors ({size}x{size})")
-    solution.add("Start from this matrix", matrix=matrix)
+    solution = Solution(
+        operation="eigen", title=msg("Eigenvalues and eigenvectors ({size}x{size})", size=size)
+    )
+    solution.add(msg("Start from this matrix"), matrix=matrix)
 
     shifted = matrix - LAMBDA * sp.eye(size)
-    solution.add("Subtract lambda from the diagonal: A - lambda*I", matrix=shifted)
+    solution.add(msg("Subtract lambda from the diagonal: A - lambda*I"), matrix=shifted)
     characteristic = sp.expand(shifted.det())
     solution.add(
-        "The characteristic polynomial is det(A - lambda*I) = 0",
+        msg("The characteristic polynomial is det(A - lambda*I) = 0"),
         expression=sp.Eq(characteristic, 0),
     )
     factored = sp.factor(characteristic)
     if factored != characteristic:
-        solution.add("Factor it", expression=sp.Eq(factored, 0))
+        solution.add(msg("Factor it"), expression=sp.Eq(factored, 0))
 
     roots = sp.roots(sp.Poly(characteristic, LAMBDA))
     if not roots:
-        solution.summary = "This polynomial has no roots mathlint can write down exactly."
+        solution.summary = msg("This polynomial has no roots mathlint can write down exactly.")
         return solution
 
     for value, multiplicity in sorted(roots.items(), key=lambda pair: sp.default_sort_key(pair[0])):
-        times = _TIMES.get(multiplicity, f"{multiplicity} times")
-        solution.add(f"lambda = {_show(value)} is a root of the polynomial, {times}")
+        times = _times(multiplicity)
+        solution.add(
+            msg(
+                "lambda = {value} is a root of the polynomial, {times}",
+                value=_show(value),
+                times=times,
+            )
+        )
         block = sp.simplify(matrix - value * sp.eye(size))
         solution.add(
-            f"Solve (A - lambda*I)v = 0 for lambda = {_show(value)}",
+            msg("Solve (A - lambda*I)v = 0 for lambda = {value}", value=_show(value)),
             matrix=block,
         )
-        solution.add("Row reduce it", matrix=block.rref()[0])
+        solution.add(msg("Row reduce it"), matrix=block.rref()[0])
         vectors = block.nullspace()
         if not vectors:
-            solution.add("No eigenvector could be found for this root")
+            solution.add(msg("No eigenvector could be found for this root"))
             continue
         for vector in vectors:
             scaled = _clear_fractions(vector)
-            solution.add(f"An eigenvector for lambda = {_show(value)}", matrix=scaled)
+            solution.add(
+                msg("An eigenvector for lambda = {value}", value=_show(value)), matrix=scaled
+            )
 
-    listed = ", ".join(
-        f"{_show(value)} ({_TIMES.get(multiplicity, f'{multiplicity} times')})"
-        for value, multiplicity in sorted(
-            roots.items(), key=lambda pair: sp.default_sort_key(pair[0])
-        )
+    listed = join(
+        ", ",
+        (
+            _show(value) + " (" + _times(multiplicity) + ")"
+            for value, multiplicity in sorted(
+                roots.items(), key=lambda pair: sp.default_sort_key(pair[0])
+            )
+        ),
     )
-    solution.summary = f"Eigenvalues: {listed}."
+    solution.summary = msg("Eigenvalues: {listed}.", listed=listed)
     solution.result = sp.Matrix(sorted(roots, key=sp.default_sort_key))
     return solution
 
@@ -206,7 +241,7 @@ def _reduce(work: sp.Matrix, solution: Solution) -> tuple[sp.Matrix, list[int]]:
         if pivot != pivot_row:
             work.row_swap(pivot, pivot_row)
             solution.add(
-                f"Column {column + 1} needs a pivot, so swap the rows",
+                msg("Column {column} needs a pivot, so swap the rows", column=column + 1),
                 operation=f"R{pivot_row + 1} <-> R{pivot + 1}",
                 matrix=sp.Matrix(work),
             )
@@ -214,7 +249,7 @@ def _reduce(work: sp.Matrix, solution: Solution) -> tuple[sp.Matrix, list[int]]:
         if value != 1:
             work[pivot_row, :] = sp.simplify(work[pivot_row, :] / value)
             solution.add(
-                "Divide the pivot row so the pivot becomes 1",
+                msg("Divide the pivot row so the pivot becomes 1"),
                 operation=f"R{pivot_row + 1} -> ({_show(sp.simplify(1 / value))}) R{pivot_row + 1}",
                 matrix=sp.Matrix(work),
             )
@@ -224,7 +259,7 @@ def _reduce(work: sp.Matrix, solution: Solution) -> tuple[sp.Matrix, list[int]]:
             factor = work[row, column]
             work[row, :] = sp.simplify(work[row, :] - factor * work[pivot_row, :])
             solution.add(
-                f"Clear the rest of column {column + 1}",
+                msg("Clear the rest of column {column}", column=column + 1),
                 operation=f"R{row + 1} -> R{row + 1} - ({_show(factor)}) R{pivot_row + 1}",
                 matrix=sp.Matrix(work),
             )
@@ -245,7 +280,12 @@ def _clear_fractions(vector: sp.Matrix) -> sp.Matrix:
 def _require_square(matrix: sp.Matrix, what: str) -> None:
     if matrix.rows != matrix.cols:
         raise UnsupportedError(
-            f"only square matrices have {what}, and this one is {matrix.rows}x{matrix.cols}"
+            msg(
+                "only square matrices have {what}, and this one is {rows}x{cols}",
+                what=what,
+                rows=matrix.rows,
+                cols=matrix.cols,
+            )
         )
 
 

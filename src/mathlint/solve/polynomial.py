@@ -18,6 +18,7 @@ import math
 
 import sympy as sp
 
+from ..i18n import msg
 from ..parse.plain import latex_of
 from . import dispatch
 from .core import Equation, Outcome, Work, show, sort_values
@@ -57,10 +58,11 @@ def _common_factor(
     factor = variable**power
     rest = sp.expand(polynomial / factor)
     work.equation(
-        f"Factor out {show(factor)}", Equation(sp.Mul(factor, rest, evaluate=False), 0)
+        msg("Factor out {factor}", factor=show(factor)),
+        Equation(sp.Mul(factor, rest, evaluate=False), 0),
     )
     work.alternatives(
-        "A product is zero exactly when one of its factors is zero",
+        msg("A product is zero exactly when one of its factors is zero"),
         [Equation(variable, 0), Equation(rest, 0)],
     )
     return Outcome.of([0]).merge(
@@ -74,7 +76,12 @@ def _substitute(
     power = variable**step
     reduced = sp.expand(polynomial.subs(power, _U))
     work.equation(
-        f"Every power of {variable} is a multiple of {step}, so substitute u = {show(power)}",
+        msg(
+            "Every power of {variable} is a multiple of {step}, so substitute u = {power}",
+            variable=variable,
+            step=step,
+            power=show(power),
+        ),
         Equation(reduced, 0),
     )
     found = dispatch.solve_equation(Equation(reduced, 0), _U, work, depth=depth + 1)
@@ -94,24 +101,32 @@ def _substitute(
             values.extend([-root, root])
     values = sort_values(values)
     if back:
-        work.alternatives(f"Put {show(power)} back in place of u", back)
+        work.alternatives(msg("Put {power} back in place of u", power=show(power)), back)
     if values:
-        roots_word = "square root" if step == 2 else f"{step}th root"
+        roots_word = msg("square root") if step == 2 else msg("{step}th root", step=step)
         work.alternatives(
-            f"Take the {roots_word} (a negative u gives no real {variable})",
+            msg(
+                "Take the {roots_word} (a negative u gives no real {variable})",
+                roots_word=roots_word,
+                variable=variable,
+            ),
             [Equation(variable, value) for value in values],
         )
     else:
-        work.note(f"None of these values of {show(power)} gives a real {variable}")
+        work.note(
+            msg(
+                "None of these values of {power} gives a real {variable}",
+                power=show(power),
+                variable=variable,
+            )
+        )
     return Outcome.of(values)
 
 
 def _candidates(poly: sp.Poly) -> list[sp.Rational]:
     constant = abs(int(poly.all_coeffs()[-1]))
     leading = abs(int(poly.LC()))
-    found = {
-        sp.Rational(p, q) for p in sp.divisors(constant) for q in sp.divisors(leading)
-    }
+    found = {sp.Rational(p, q) for p in sp.divisors(constant) for q in sp.divisors(leading)}
     ordered = sorted(found, key=lambda value: (abs(value), value))
     return [value for candidate in ordered for value in (candidate, -candidate)]
 
@@ -129,22 +144,30 @@ def _rational_root(poly: sp.Poly, variable: sp.Symbol, work: Work, depth: int) -
         if poly.eval(candidate) != 0:
             continue
         work.show(
-            "By the rational root theorem, a root that is a whole number or a fraction "
-            "must divide the constant term by the leading coefficient",
+            msg(
+                "By the rational root theorem, a root that is a whole number "
+                "or a fraction must divide the constant term by the leading "
+                "coefficient"
+            ),
             listed,
             listed_latex,
         )
         factor = candidate.q * variable - candidate.p
         work.note(
-            f"Try {variable} = {show(candidate)}: it gives 0, so ({show(factor)}) is a factor"
+            msg(
+                "Try {variable} = {candidate}: it gives 0, so ({factor}) is a factor",
+                variable=variable,
+                candidate=show(candidate),
+                factor=show(factor),
+            )
         )
         quotient, _ = sp.div(poly.as_expr(), factor, variable)
         work.equation(
-            f"Divide by ({show(factor)}) (synthetic division)",
+            msg("Divide by ({factor}) (synthetic division)", factor=show(factor)),
             Equation(sp.Mul(factor, quotient, evaluate=False), 0),
         )
         work.alternatives(
-            "A product is zero exactly when one of its factors is zero",
+            msg("A product is zero exactly when one of its factors is zero"),
             [Equation(factor, 0), Equation(quotient, 0)],
         )
         return Outcome.of([candidate]).merge(
@@ -156,11 +179,12 @@ def _rational_root(poly: sp.Poly, variable: sp.Symbol, work: Work, depth: int) -
 def _approximate(poly: sp.Poly, variable: sp.Symbol, work: Work) -> Outcome:
     roots = [sp.Float(sp.N(root, 20), 12) for root in sp.real_roots(poly)]
     work.note(
-        "This polynomial has no rational root and cannot be factored by hand, so its real "
-        "roots are found numerically (to about 10 digits)"
+        msg(
+            "This polynomial has no rational root and cannot be factored "
+            "by hand, so its real roots are found numerically (to about "
+            "10 digits)"
+        )
     )
     if roots:
-        work.alternatives(
-            "The real roots", [Equation(variable, root) for root in roots]
-        )
+        work.alternatives(msg("The real roots"), [Equation(variable, root) for root in roots])
     return Outcome.of(roots)

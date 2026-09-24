@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import both, either, msg
 from ..parse.plain import latex_of, read_as
 
 INFINITY_PLAIN = "inf"
@@ -49,12 +50,12 @@ def as_inequality(variable: sp.Symbol, solution: sp.Set) -> tuple[str, str]:
     """``x < -2 or x >= 3`` in plain text and in LaTeX."""
     name, name_latex = str(variable), latex_of(variable)
     if solution == sp.S.Reals:
-        return "every real number", rf"{name_latex} \in \mathbb{{R}}"
+        return msg("every real number"), rf"{name_latex} \in \mathbb{{R}}"
     if solution == sp.S.EmptySet:
-        return "no real solution", r"\text{no real solution}"
+        return msg("no real solution"), r"\text{no real solution}"
     missing = _missing_points(solution)
     if missing:
-        plain = " and ".join(f"{name} != {read_as(point)}" for point in missing)
+        plain = both(f"{name} != {read_as(point)}" for point in missing)
         latex = r" \text{ and } ".join(rf"{name_latex} \neq {latex_of(point)}" for point in missing)
         return plain, latex
     plain_parts, latex_parts = [], []
@@ -67,7 +68,7 @@ def as_inequality(variable: sp.Symbol, solution: sp.Set) -> tuple[str, str]:
         left = None if part.start == -sp.oo else part.start
         right = None if part.end == sp.oo else part.end
         if left is None and right is None:
-            plain_parts.append("every real number")
+            plain_parts.append(msg("every real number"))
             latex_parts.append(rf"{name_latex} \in \mathbb{{R}}")
         elif left is None:
             op = "<" if part.right_open else "<="
@@ -85,7 +86,7 @@ def as_inequality(variable: sp.Symbol, solution: sp.Set) -> tuple[str, str]:
                 f"{latex_of(left)} {_LATEX[left_op]} {name_latex} "
                 f"{_LATEX[right_op]} {latex_of(right)}"
             )
-    return " or ".join(plain_parts), r" \quad\text{or}\quad ".join(latex_parts)
+    return either(plain_parts), r" \quad\text{or}\quad ".join(latex_parts)
 
 
 def as_intervals(solution: sp.Set) -> tuple[str, str]:

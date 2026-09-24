@@ -12,6 +12,7 @@ import re
 import sympy as sp
 
 from ..errors import ParseError
+from ..i18n import msg
 from ..parse.latex import latex_to_plain
 from ..parse.unicode_math import normalize_unicode
 from .tree import Call, Frac, Neg, Num, Percent, Power, Product, Sum, fraction, integer, number
@@ -76,15 +77,15 @@ def read_arithmetic(text: str):
         raise NotArithmetic
     body = prepare(text).strip()
     if not body:
-        raise ParseError("there is nothing to calculate")
+        raise ParseError(msg("there is nothing to calculate"))
     if len(body) > MAX_LENGTH:
-        raise ParseError(f"this is too long (limit {MAX_LENGTH} characters)")
+        raise ParseError(msg("this is too long (limit {limit} characters)", limit=MAX_LENGTH))
     tokens = _tokens(body)
     reader = _Reader(tokens)
     tree = reader.sum()
     if reader.position < len(tokens):
         kind, value = tokens[reader.position]
-        raise ParseError(f"cannot read the {value!r} here")
+        raise ParseError(msg("cannot read the {value!r} here", value=value))
     return tree
 
 
@@ -94,13 +95,13 @@ def _tokens(text: str) -> list[tuple[str, str]]:
         number_text, name, other = match.groups()
         if number_text is not None:
             if len(number_text.replace(".", "")) > MAX_DIGITS:
-                raise ParseError("that number is too long to work with")
+                raise ParseError(msg("that number is too long to work with"))
             tokens.append(("num", number_text))
         elif name is not None:
             tokens.extend(("name", word) for word in _split_name(name))
         elif other is not None:
             if other == ",":
-                raise ParseError("write decimals with a point, like 2.5")
+                raise ParseError(msg("write decimals with a point, like 2.5"))
             if other not in "+-*/:^()!%|":
                 raise NotArithmetic
             tokens.append(("op", other))
@@ -134,7 +135,7 @@ class _Reader:
     def take(self) -> tuple[str, str]:
         token = self.peek()
         if token is None:
-            raise ParseError("this calculation stops too early")
+            raise ParseError(msg("this calculation stops too early"))
         self.position += 1
         return token
 
@@ -229,7 +230,7 @@ class _Reader:
                 return Call(value, self._argument())
             if value in FUNCTIONS:
                 return self._function(FUNCTIONS[value])
-            raise ParseError(f"cannot read {value!r} here")
+            raise ParseError(msg("cannot read {value!r} here", value=value))
         if value == "(":
             inner = self.sum()
             self.expect(")")
@@ -240,7 +241,7 @@ class _Reader:
             self.expect("|")
             self.bars -= 1
             return Call("abs", inner)
-        raise ParseError(f"cannot read the {value!r} here")
+        raise ParseError(msg("cannot read the {value!r} here", value=value))
 
     def _function(self, name: str):
         exponent = None
@@ -257,7 +258,7 @@ class _Reader:
             self.expect(")")
             return inner
         if self.peek() is None:
-            raise ParseError("a function needs something to work on")
+            raise ParseError(msg("a function needs something to work on"))
         return self.power()
 
 
@@ -272,6 +273,6 @@ def settle_fraction(node: Frac):
     top, bottom = node.top, node.bottom
     if isinstance(top, Num) and isinstance(bottom, Num) and {top.style, bottom.style} == {"int"}:
         if bottom.value == 0:
-            raise ParseError("this divides by zero, so it has no value")
+            raise ParseError(msg("this divides by zero, so it has no value"))
         return fraction(int(top.value), int(bottom.value))
     return node

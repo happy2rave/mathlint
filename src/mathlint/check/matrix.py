@@ -20,6 +20,7 @@ import sympy as sp
 
 from ..document import Document
 from ..equivalence import Verdict
+from ..i18n import msg
 from ..parse.plain import read_as
 from ..report import Report, Step
 
@@ -51,15 +52,19 @@ def check_matrix(document: Document) -> Report:
 def _judge(step: Step, before: sp.Matrix, after: sp.Matrix, arrow: str) -> None:
     if before.shape != after.shape:
         step.verdict = Verdict.WRONG
-        step.message = (
-            f"the size changed: {before.rows}x{before.cols} became {after.rows}x{after.cols}"
+        step.message = msg(
+            "the size changed: {rows}x{cols} became {rows2}x{cols2}",
+            rows=before.rows,
+            cols=before.cols,
+            rows2=after.rows,
+            cols2=after.cols,
         )
-        step.hints = ["row operations never add or remove rows or columns"]
+        step.hints = [msg("row operations never add or remove rows or columns")]
         return
 
     if sp.simplify(before - after) == sp.zeros(*before.shape):
         step.verdict = Verdict.OK
-        step.message = "same matrix as the line above"
+        step.message = msg("same matrix as the line above")
         return
 
     coefficients = _coefficients(before, after)
@@ -70,43 +75,48 @@ def _judge(step: Step, before: sp.Matrix, after: sp.Matrix, arrow: str) -> None:
 
     if sp.simplify(coefficients.det()) == 0:
         step.verdict = Verdict.WRONG
-        step.message = (
-            "this step cannot be undone — a row was replaced by something that loses "
-            "information, so the solutions change"
+        step.message = msg(
+            "this step cannot be undone — a row was replaced by "
+            "something that loses information, so the solutions change"
         )
-        step.hints = ["multiplying a row by 0, or overwriting a row with a copy of another"]
+        step.hints = [msg("multiplying a row by 0, or overwriting a row with a copy of another")]
         return
 
     stray = _row_with_too_many_sources(coefficients)
     if stray is not None:
         step.verdict = Verdict.WRONG
-        step.message = (
-            f"row {stray} is not one row operation applied to line above — it mixes "
-            f"{MAX_SOURCE_ROWS + 1} or more rows together"
+        step.message = msg(
+            "row {stray} is not one row operation applied to line above "
+            "— it mixes {count} or more rows together",
+            stray=stray,
+            count=MAX_SOURCE_ROWS + 1,
         )
-        step.hints = [f"check the arithmetic in row {stray}"]
+        step.hints = [msg("check the arithmetic in row {stray}", stray=stray)]
         return
 
     operations = _describe(coefficients)
-    performed = ", ".join(operations) if operations else "the rows were reordered"
+    performed = ", ".join(operations) if operations else msg("the rows were reordered")
 
     odd = _rescaled_and_mixed(coefficients)
     if odd is not None:
         step.verdict = Verdict.WARNING
-        step.message = (
-            f"this line only works out as {performed} — if you meant to keep row {odd} "
-            "as it was, the arithmetic in that row is off"
+        step.message = msg(
+            "this line only works out as {performed} — if you meant to "
+            "keep row {odd} as it was, the arithmetic in that row is off",
+            performed=performed,
+            odd=odd,
         )
         return
 
     if arrow == "~" or arrow == "":
         step.verdict = Verdict.OK
-        step.message = f"row operation checks out: {performed}"
+        step.message = msg("row operation checks out: {performed}", performed=performed)
         return
 
     step.verdict = Verdict.WARNING
-    step.message = (
-        f"{performed} — this is a row operation, not an equality, so write ~ instead of ="
+    step.message = msg(
+        "{performed} — this is a row operation, not an equality, so write ~ instead of =",
+        performed=performed,
     )
 
 
@@ -115,21 +125,23 @@ def _judge_by_reduced_form(step: Step, before: sp.Matrix, after: sp.Matrix, arro
     stray = _stray_row(before, after)
     if stray is not None:
         step.verdict = Verdict.WRONG
-        step.message = f"row {stray} is not a combination of the rows in the line above"
-        step.hints = [f"check the arithmetic in row {stray}"]
+        step.message = msg(
+            "row {stray} is not a combination of the rows in the line above", stray=stray
+        )
+        step.hints = [msg("check the arithmetic in row {stray}", stray=stray)]
         return
     if before.rref()[0] != after.rref()[0]:
         step.verdict = Verdict.WRONG
-        step.message = "not row-equivalent to the line above — this step changes the solutions"
+        step.message = msg("not row-equivalent to the line above — this step changes the solutions")
         return
     if arrow == "=":
         step.verdict = Verdict.WARNING
-        step.message = (
+        step.message = msg(
             "row-equivalent to the line above, but not equal to it — write ~ instead of ="
         )
         return
     step.verdict = Verdict.OK
-    step.message = "row-equivalent to the line above (same reduced form)"
+    step.message = msg("row-equivalent to the line above (same reduced form)")
 
 
 def _coefficients(before: sp.Matrix, after: sp.Matrix) -> sp.Matrix | None:

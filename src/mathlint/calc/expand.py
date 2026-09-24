@@ -9,18 +9,19 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import msg
 from .expression import Steps, method, show, sum_of, terms_of
 
 MAX_ROUNDS = 30
 MAX_TERMS = 40
 
-SQUARE_PLUS = "Use (a + b)^2 = a^2 + 2ab + b^2"
-SQUARE_MINUS = "Use (a - b)^2 = a^2 - 2ab + b^2"
-CUBE_PLUS = "Use (a + b)^3 = a^3 + 3a^2 b + 3a b^2 + b^3"
-CUBE_MINUS = "Use (a - b)^3 = a^3 - 3a^2 b + 3a b^2 - b^3"
-CONJUGATES = "Use (a + b)(a - b) = a^2 - b^2"
-TWO_BRACKETS = "Multiply every term in the first bracket by every term in the second"
-MINUS_SIGN = "A minus sign in front of a bracket changes the sign of every term inside"
+SQUARE_PLUS = msg("Use (a + b)^2 = a^2 + 2ab + b^2")
+SQUARE_MINUS = msg("Use (a - b)^2 = a^2 - 2ab + b^2")
+CUBE_PLUS = msg("Use (a + b)^3 = a^3 + 3a^2 b + 3a b^2 + b^3")
+CUBE_MINUS = msg("Use (a - b)^3 = a^3 - 3a^2 b + 3a b^2 - b^3")
+CONJUGATES = msg("Use (a + b)(a - b) = a^2 - b^2")
+TWO_BRACKETS = msg("Multiply every term in the first bracket by every term in the second")
+MINUS_SIGN = msg("A minus sign in front of a bracket changes the sign of every term inside")
 
 
 def has_brackets(expression: sp.Expr) -> bool:
@@ -45,7 +46,7 @@ def expand_steps(expression: sp.Expr, steps: Steps) -> sp.Expr:
             terms = [
                 new if new is not None else old for new, old in zip(collected, terms, strict=True)
             ]
-            steps.show("Collect like terms inside the brackets", sum_of(terms))
+            steps.show(msg("Collect like terms inside the brackets"), sum_of(terms))
             continue
         opened: list[sp.Expr] = []
         texts: list[str] = []
@@ -63,13 +64,13 @@ def expand_steps(expression: sp.Expr, steps: Steps) -> sp.Expr:
         if len(opened) > MAX_TERMS:
             # too many to be worth reading: the result at once
             result = sp.expand(expression)
-            steps.show("Multiply out the remaining brackets and collect like terms", result)
+            steps.show(msg("Multiply out the remaining brackets and collect like terms"), result)
             return result
         terms = opened
-        steps.show(texts[0] if len(texts) == 1 else "Multiply out the brackets", sum_of(terms))
+        steps.show(texts[0] if len(texts) == 1 else msg("Multiply out the brackets"), sum_of(terms))
     result = sp.expand(expression)
     if len(terms_of(result)) < len(terms) or show(result) != show(sum_of(terms)):
-        steps.show("Collect like terms", result)
+        steps.show(msg("Collect like terms"), result)
     return result
 
 
@@ -119,7 +120,7 @@ def _open_term(term: sp.Expr) -> tuple[list[sp.Expr], str] | None:
         pieces = [rest * piece for piece in _ordered(factors[index])]
         if rest == -1:
             return pieces, MINUS_SIGN
-        return pieces, f"Multiply each term in the bracket by {show(rest)}"
+        return pieces, msg("Multiply each term in the bracket by {rest}", rest=show(rest))
     # a higher power of a bracket
     index = brackets[0]
     power = factors[index]
@@ -133,8 +134,12 @@ def _open_term(term: sp.Expr) -> tuple[list[sp.Expr], str] | None:
             for k in range(exponent + 1)
         ]
         return _times(outside, pieces), (
-            f"Use the binomial theorem: (a + b)^{exponent} is the sum of "
-            f"C({exponent}, k) a^({exponent} - k) b^k for k = 0 to {exponent}"
+            msg(
+                "Use the binomial theorem: (a + b)^{exponent} is the sum of "
+                "C({exponent}, k) a^({exponent} - k) b^k for k = 0 to "
+                "{exponent}",
+                exponent=exponent,
+            )
         )
     squared = [a * b for a in terms for b in terms]
     if exponent == 2:
@@ -142,7 +147,12 @@ def _open_term(term: sp.Expr) -> tuple[list[sp.Expr], str] | None:
     lower = power.base ** (exponent - 2)
     rest = f"({show(power.base)})" + (f"^{exponent - 2}" if exponent > 3 else "")
     return _times(outside * lower, squared), (
-        f"Write {show(power)} as ({show(power.base)})^2 * {rest} and square the bracket"
+        msg(
+            "Write {power} as ({base})^2 * {rest} and square the bracket",
+            power=show(power),
+            base=show(power.base),
+            rest=rest,
+        )
     )
 
 

@@ -13,6 +13,7 @@ import sympy as sp
 
 from ..document import Document, Line
 from ..equivalence import Verdict
+from ..i18n import msg
 from ..parse.plain import read_as
 from ..report import Report, Step
 
@@ -53,29 +54,31 @@ def _judge(
 ) -> None:
     if previous_solutions is None or solutions is None:
         step.verdict = Verdict.UNSURE
-        step.message = "cannot work out the solutions of these systems to compare them"
+        step.message = msg("cannot work out the solutions of these systems to compare them")
         return
     lost = [s for s in previous_solutions if not _satisfies(line.system, s)]
     if lost:
         step.verdict = Verdict.WRONG
-        step.message = (
-            f"the solution {_describe(lost[0])} of the line above does not satisfy this line"
+        step.message = msg(
+            "the solution {lost} of the line above does not satisfy this line",
+            lost=_describe(lost[0]),
         )
         failing = _failing_equation(line.system, lost[0])
         if failing is not None:
-            step.hints = [f"check equation {failing} of this line"]
+            step.hints = [msg("check equation {failing} of this line", failing=failing)]
         return
     gained = [s for s in solutions if not _satisfies(previous.system, s)]
     if gained and line.arrow != "=>":
         step.verdict = Verdict.WARNING
-        step.message = (
-            f"this line has more solutions than the one above (for example "
-            f"{_describe(gained[0])}) — an equation was lost or combined in a way that "
-            "cannot be undone"
+        step.message = msg(
+            "this line has more solutions than the one above (for "
+            "example {gained}) — an equation was lost or combined in a "
+            "way that cannot be undone",
+            gained=_describe(gained[0]),
         )
         return
     step.verdict = Verdict.OK
-    step.message = "same solutions as the line above"
+    step.message = msg("same solutions as the line above")
 
 
 def _check_against_first(document: Document, steps: list[Step], last: list[dict] | None) -> None:
@@ -88,11 +91,12 @@ def _check_against_first(document: Document, steps: list[Step], last: list[dict]
     for solution in last:
         if not _satisfies(first.system, solution):
             steps[-1].verdict = Verdict.WRONG
-            steps[-1].message = (
-                f"{_describe(solution)} does not satisfy the original system on line "
-                f"{first.number}"
+            steps[-1].message = msg(
+                "{solution} does not satisfy the original system on line {number}",
+                solution=_describe(solution),
+                number=first.number,
             )
-            steps[-1].hints = ["always put your answer back into the first system"]
+            steps[-1].hints = [msg("always put your answer back into the first system")]
             return
 
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import msg
 from ..parse.plain import latex_of
 from . import dispatch
 from .core import Equation, Outcome, Work, show, sort_values
@@ -110,18 +111,18 @@ def _power_equals_power(
         else:
             base, m1, m2 = _common_base(b1, b2)
             work.equation(
-                f"Write both sides as powers of {show(base)}",
+                msg("Write both sides as powers of {base}", base=show(base)),
                 Equation(
                     sp.Pow(base, sp.expand(m1 * u1), evaluate=False),
                     sp.Pow(base, sp.expand(m2 * u2), evaluate=False),
                 ),
             )
         exponents = Equation(sp.expand(m1 * u1), sp.expand(m2 * u2))
-        work.equation("The bases are the same, so the exponents are equal", exponents)
+        work.equation(msg("The bases are the same, so the exponents are equal"), exponents)
         return dispatch.solve_equation(exponents, variable, work, depth=depth + 1)
 
     logged = Equation(sp.expand(u1 * sp.log(b1)), sp.expand(u2 * sp.log(b2)))
-    work.equation("Take the natural logarithm of both sides, using ln(a^u) = u*ln(a)", logged)
+    work.equation(msg("Take the natural logarithm of both sides, using ln(a^u) = u*ln(a)"), logged)
     return dispatch.solve_equation(logged, variable, work, depth=depth + 1)
 
 
@@ -140,42 +141,47 @@ def _one_power(
             return substituted
         return dispatch.SOLVERS["other"](equation, variable, work, None, depth)
     if not already_isolated(equation, power):
-        work.equation("Isolate the power on one side", isolated)
+        work.equation(msg("Isolate the power on one side"), isolated)
 
     value = isolated.rhs
     base, exponent = _base_and_exponent(power)
     if value.is_number and not value.is_positive:
         work.note(
-            f"A power of a positive number is always positive, so it can never equal "
-            f"{show(value)}: there is no solution"
+            msg(
+                "A power of a positive number is always positive, so it can "
+                "never equal {value}: there is no solution",
+                value=show(value),
+            )
         )
         return Outcome.none()
 
     if method == "same-base":
         if value == 1:
             exponents = Equation(exponent, 0)
-            work.equation("Any number to the power 0 is 1, so the exponent is 0", exponents)
+            work.equation(msg("Any number to the power 0 is 1, so the exponent is 0"), exponents)
             return dispatch.solve_equation(exponents, variable, work, depth=depth + 1)
         common = _common_base(base, value)
         if common is not None:
             new_base, m1, m2 = common
             work.equation(
-                f"Write both sides as powers of {show(new_base)}",
+                msg("Write both sides as powers of {new_base}", new_base=show(new_base)),
                 Equation(
                     sp.Pow(new_base, sp.expand(m1 * exponent), evaluate=False),
                     sp.Pow(new_base, m2, evaluate=False),
                 ),
             )
             exponents = Equation(sp.expand(m1 * exponent), m2)
-            work.equation("The bases are the same, so the exponents are equal", exponents)
+            work.equation(msg("The bases are the same, so the exponents are equal"), exponents)
             return dispatch.solve_equation(exponents, variable, work, depth=depth + 1)
 
     if base == sp.E:
         logged = Equation(exponent, sp.log(value))
-        work.equation("Take the natural logarithm of both sides, using ln(e^u) = u", logged)
+        work.equation(msg("Take the natural logarithm of both sides, using ln(e^u) = u"), logged)
     else:
         logged = Equation(sp.expand(exponent * sp.log(base)), sp.log(value))
-        work.equation("Take the natural logarithm of both sides, using ln(a^u) = u*ln(a)", logged)
+        work.equation(
+            msg("Take the natural logarithm of both sides, using ln(a^u) = u*ln(a)"), logged
+        )
     return dispatch.solve_equation(logged, variable, work, depth=depth + 1)
 
 
@@ -199,7 +205,7 @@ def _substitute(
 
     simple = sp.exp(variable) if base == sp.E else sp.Pow(base, variable, evaluate=False)
     work.show(
-        f"Substitute t = {show(simple)}",
+        msg("Substitute t = {simple}", simple=show(simple)),
         f"{show(reduced)} = 0",
         f"{latex_of(reduced)} = 0",
     )
@@ -208,14 +214,19 @@ def _substitute(
     dropped = [value for value in found.values if not value.is_positive]
     if dropped:
         work.note(
-            f"t = {show(simple)} is always positive, so "
-            + ", ".join(f"t = {show(value)}" for value in dropped)
-            + " gives no solution"
+            msg(
+                "t = {simple} is always positive, so {values} gives no solution",
+                simple=show(simple),
+                values=", ".join(f"t = {show(value)}" for value in dropped),
+            )
         )
     answers = [sp.simplify(sp.log(value) / sp.log(base)) for value in positive]
     if answers:
         work.alternatives(
-            f"Put {show(simple)} back in place of t and take the natural logarithm",
+            msg(
+                "Put {simple} back in place of t and take the natural logarithm",
+                simple=show(simple),
+            ),
             [Equation(variable, answer) for answer in answers],
         )
     return Outcome.of(answers)

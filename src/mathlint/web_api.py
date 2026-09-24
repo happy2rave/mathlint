@@ -9,29 +9,33 @@ from __future__ import annotations
 
 import json
 import re
+import time
 
 import sympy as sp
 
 from ._version import __version__
 from .check import check_document
 from .document import parse_document
-from .errors import MathlintError
+from .errors import MathlintError, error_text
 from .graph import graph_for, sample
+from .i18n import localize, msg
 from .parse.plain import parse_expression
 from .practice import practice_for
 from .steps import differentiate_solution, integrate_solution, parse_matrix, solve_linalg
 
 
 def handle(kind: str, payload: str) -> str:
-    """Answer one request from the page."""
+    """Answer one request from the page, in the language it asks for (``lang``)."""
+    lang = "en"
     try:
         data = json.loads(payload) if payload else {}
+        lang = data.get("lang") or "en"
         handler = _HANDLERS.get(kind)
         if handler is None:
             raise ValueError(f"unknown request {kind!r}")
-        return json.dumps({"ok": True, "result": handler(data)})
+        return json.dumps({"ok": True, "result": localize(handler(data), lang)})
     except MathlintError as error:
-        return json.dumps({"ok": False, "error": str(error)})
+        return json.dumps({"ok": False, "error": localize(error_text(error), lang)})
     except Exception as error:  # the page must always get an explanation
         return json.dumps({"ok": False, "error": f"{type(error).__name__}: {error}"})
 
@@ -68,14 +72,14 @@ def _tutor(data: dict) -> dict:
         return {
             "accepted": True,
             "verdict": "OK",
-            "message": "matches the next worked step",
+            "message": msg("matches the next worked step"),
             "hints": [],
         }
 
     return {
         "accepted": False,
         "verdict": checked.verdict.value if checked.verdict else "UNSURE",
-        "message": checked.message or "That line does not follow yet.",
+        "message": checked.message or msg("That line does not follow yet."),
         "hints": list(checked.hints),
     }
 
@@ -172,6 +176,22 @@ def _preview(data: dict) -> dict:
     return {"latex": latex, "decimal_latex": result.get("decimal_latex")}
 
 
+def _warm(_: dict) -> dict:
+    """Load, while the reader is still looking, what a first request would wait for.
+
+    In the browser a module is compiled the first time it is imported, which can
+    take a second for SymPy's integration and equation solvers.
+    """
+    started = time.perf_counter()
+    from sympy.integrals import manualintegrate  # noqa: F401
+    from sympy.solvers import ode  # noqa: F401
+
+    from . import calc, solve  # noqa: F401
+
+    check_document(parse_document("2x = 4\nx = 2"))
+    return {"seconds": round(time.perf_counter() - started, 3)}
+
+
 def _only_variable(expression: sp.Expr) -> sp.Symbol:
     symbols = sorted(expression.free_symbols, key=lambda symbol: symbol.name)
     return symbols[0] if len(symbols) == 1 else sp.Symbol("x")
@@ -185,4 +205,5 @@ _HANDLERS = {
     "solve": _solve,
     "preview": _preview,
     "plot": _plot,
+    "warm": _warm,
 }

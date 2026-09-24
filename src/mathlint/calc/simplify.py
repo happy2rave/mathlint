@@ -13,6 +13,7 @@ from functools import reduce
 import sympy as sp
 from sympy.core.parameters import distribute
 
+from ..i18n import msg
 from ..parse.plain import latex_of, read_as
 from .expand import expand_steps, has_brackets
 from .expression import Steps, method, show
@@ -20,23 +21,25 @@ from .expression import Steps, method, show
 #: rewrites that only ever apply one rule, tried in this order
 RULES = [
     (
-        "Combine the logarithms: ln(a) + ln(b) = ln(ab), ln(a) - ln(b) = ln(a/b), "
-        "k ln(a) = ln(a^k)",
+        msg(
+            "Combine the logarithms: ln(a) + ln(b) = ln(ab), ln(a) - "
+            "ln(b) = ln(a/b), k ln(a) = ln(a^k)"
+        ),
         lambda expression: expression.has(sp.log),
         lambda expression: sp.logcombine(expression, force=True),
     ),
     (
-        "Use the exponent rules: a^m a^n = a^(m+n), (a^m)^n = a^(mn)",
+        msg("Use the exponent rules: a^m a^n = a^(m+n), (a^m)^n = a^(mn)"),
         lambda expression: expression.has(sp.Pow) or expression.has(sp.exp),
         lambda expression: sp.powsimp(expression),
     ),
     (
-        "Use the trigonometric identities, such as sin^2 x + cos^2 x = 1",
+        msg("Use the trigonometric identities, such as sin^2 x + cos^2 x = 1"),
         lambda expression: expression.has(sp.sin, sp.cos, sp.tan, sp.cot, sp.sec, sp.csc),
         sp.trigsimp,
     ),
     (
-        "Rationalise the denominator",
+        msg("Rationalise the denominator"),
         lambda expression: _has_root(sp.denom(expression)),
         sp.radsimp,
     ),
@@ -61,7 +64,7 @@ def simplify_steps(expression: sp.Expr, steps: Steps) -> sp.Expr:
     with distribute(True):
         final = sp.simplify(current)
     if _changed(final, current) and _shorter(final, current, strictly=True):
-        steps.show("Simplify", final)
+        steps.show(msg("Simplify"), final)
         current = final
     return current
 
@@ -81,14 +84,14 @@ def _fractions(expression: sp.Expr, steps: Steps) -> sp.Expr:
         common = sp.gcd(top, bottom)
     if _changed(factored_top, top) or _changed(factored_bottom, bottom):
         steps.show_text(
-            "Factor the numerator and the denominator",
+            msg("Factor the numerator and the denominator"),
             *fraction_text(factored_top, factored_bottom),
         )
     result = _quotient(factored_top, factored_bottom)
     if common.free_symbols:
         with distribute(True):
             result = sp.factor(sp.cancel(top / bottom))
-        steps.show(f"Cancel the common factor {show(sp.factor(common))}", result)
+        steps.show(msg("Cancel the common factor {factor}", factor=show(sp.factor(common))), result)
     remaining = _excluded_values(result)
     for symbol, values in excluded.items():
         lost = [value for value in values if value not in remaining.get(symbol, [])]
@@ -96,9 +99,10 @@ def _fractions(expression: sp.Expr, steps: Steps) -> sp.Expr:
             steps.condition(", ".join(f"{symbol} != {show(value)}" for value in lost))
     if steps.computation.conditions:
         steps.note(
-            "The original is not defined for "
-            + ", ".join(steps.computation.conditions).replace("!=", "=")
-            + ", so the answer keeps that condition"
+            msg(
+                "The original is not defined for {values}, so the answer keeps that condition",
+                values=", ".join(steps.computation.conditions).replace("!=", "="),
+            )
         )
     return result
 
@@ -123,7 +127,7 @@ def _common_denominator(terms, steps: Steps) -> tuple[sp.Expr, sp.Expr]:
         latex.append(sign + top_latex)
     if not same_bottom:
         steps.show_text(
-            f"Write every fraction over the common denominator {show(bottom)}",
+            msg("Write every fraction over the common denominator {bottom}", bottom=show(bottom)),
             "".join(plain),
             "".join(latex),
         )
@@ -131,16 +135,16 @@ def _common_denominator(terms, steps: Steps) -> tuple[sp.Expr, sp.Expr]:
     flat = [part for piece in pieces for part in sp.Add.make_args(piece)]
     added = sp.Add(*flat, evaluate=False)
     text = (
-        "The denominators are the same, so add the numerators"
+        msg("The denominators are the same, so add the numerators")
         if same_bottom
-        else ("Add the numerators")
+        else (msg("Add the numerators"))
     )
     steps.show_text(text, *fraction_text(added, bottom))
     with distribute(True):
         top = sp.expand(sp.Add(*pieces))
     if _changed(top, added):
         steps.show_text(
-            "Multiply out the numerator and collect like terms", *fraction_text(top, bottom)
+            msg("Multiply out the numerator and collect like terms"), *fraction_text(top, bottom)
         )
     return top, bottom
 

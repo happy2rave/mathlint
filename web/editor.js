@@ -1,5 +1,6 @@
 // The ruled sheet: every line is a MathLive <math-field>, so fractions stack,
 // powers rise and integrals look like integrals while you type.
+import { t } from "./i18n.js";
 
 const TOUCH = window.matchMedia("(pointer: coarse)").matches;
 
@@ -10,7 +11,28 @@ const SHORTCUTS = {
   "d/dx": String.raw`\frac{d}{dx}`,
 };
 
+// MathLive's text box lives in the field's shadow root and has no name of its
+// own. The field's label goes there: on <math-field> itself, which has no role,
+// aria-label and aria-labelledby are not valid ARIA and screen readers skip them.
+export function nameField(field, label = null) {
+  if (label !== null) field.dataset.label = label;
+  for (const attribute of ["aria-label", "aria-labelledby"]) {
+    const value = field.getAttribute(attribute);
+    if (!value) continue;
+    field.dataset[attribute === "aria-label" ? "label" : "labelledby"] = value;
+    field.removeAttribute(attribute);
+  }
+  const labelledBy = field.dataset.labelledby && document.getElementById(field.dataset.labelledby);
+  const name = labelledBy ? labelledBy.textContent.trim() : field.dataset.label || "";
+  const sink = field.shadowRoot?.querySelector('[part="keyboard-sink"]');
+  if (sink && name) sink.setAttribute("aria-label", name);
+}
+
 export function configureField(field) {
+  nameField(field);
+  // the text box may be drawn a moment later; name it before anyone reaches it
+  requestAnimationFrame(() => nameField(field));
+  field.addEventListener("focusin", () => nameField(field));
   // our keypad replaces MathLive's keyboard
   field.mathVirtualKeyboardPolicy = "manual";
   field.smartFence = true;
@@ -82,7 +104,7 @@ export class MathSheet {
   // onEnter: what Enter does in this sheet (by default it starts a new line)
   constructor(list, { onChange, onEnter, lineLabel } = {}) {
     this.list = list;
-    this.lineLabel = lineLabel || "A line of your working";
+    this.lineLabel = lineLabel || t("check.line");
     this.onChange = onChange || (() => {});
     this.onEnter = onEnter || ((field) => this.newLineAfter(field));
     this.active = null;
@@ -92,6 +114,15 @@ export class MathSheet {
 
   get fields() {
     return [...this.list.querySelectorAll("math-field")];
+  }
+
+  // The words a screen reader says for each line, in a new language.
+  relabel(lineLabel) {
+    this.lineLabel = lineLabel;
+    for (const field of this.fields) nameField(field, lineLabel);
+    for (const button of this.list.querySelectorAll(".line-remove")) {
+      button.setAttribute("aria-label", t("check.removeLine"));
+    }
   }
 
   contains(field) {
@@ -123,12 +154,22 @@ export class MathSheet {
     this.clearMarks();
     this.filledFields().forEach((field, index) => {
       const verdict = verdicts[index];
-      if (verdict) field.closest("li").dataset.mark = verdict.toLowerCase();
+      if (!verdict) return;
+      const row = field.closest("li");
+      row.dataset.mark = verdict.toLowerCase();
+      // the margin mark is drawn by CSS; a screen reader gets it in words
+      const word = document.createElement("span");
+      word.className = "sr-only mark-word";
+      word.textContent = t("verdict." + verdict);
+      row.append(word);
     });
   }
 
   clearMarks() {
-    for (const row of this.list.children) delete row.dataset.mark;
+    for (const row of this.list.children) {
+      delete row.dataset.mark;
+      row.querySelector(".mark-word")?.remove();
+    }
   }
 
   // What gets checked: the non-empty lines, one per line of text.
@@ -169,7 +210,7 @@ export class MathSheet {
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "line-remove";
-    remove.setAttribute("aria-label", "Remove this line");
+    remove.setAttribute("aria-label", t("check.removeLine"));
     remove.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>';
     remove.addEventListener("pointerdown", (event) => event.preventDefault());
     remove.addEventListener("click", () => this.removeLine(field));

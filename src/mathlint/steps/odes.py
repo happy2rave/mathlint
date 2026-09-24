@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 import sympy as sp
 
 from ..errors import ParseError, UnsupportedError
+from ..i18n import msg
 from ..parse.plain import latex_of, parse_expression, read_as
 from .solution import Solution, SolutionStep
 
@@ -63,7 +64,7 @@ def parse_ode(text: str) -> ODEProblem:
     parts = [part for part in re.split(r"[;\n]|,(?=\s*y'*\s*\()", body) if part.strip()]
     equations = [part for part in parts if "'" in part and not _CONDITION.match(part)]
     if len(equations) != 1:
-        raise ParseError("write one differential equation, like y' = 2y, then any y(0) = 1")
+        raise ParseError(msg("write one differential equation, like y' = 2y, then any y(0) = 1"))
     x = (
         sp.Symbol("t")
         if re.search(r"(?<![A-Za-z])t(?![A-Za-z])", equations[0])
@@ -73,11 +74,11 @@ def parse_ode(text: str) -> ODEProblem:
     y = sp.Function("y")(x)
     left, _, right = equations[0].partition("=")
     if "=" in right:
-        raise ParseError("a differential equation has one '=' sign")
+        raise ParseError(msg("a differential equation has one '=' sign"))
 
     def read(side: str) -> sp.Expr:
         if re.search(r"y'{3,}", side):
-            raise UnsupportedError("only first- and second-order equations are solved so far")
+            raise UnsupportedError(msg("only first- and second-order equations are solved so far"))
         marked = re.sub(r"(?<![A-Za-z])y('+)", lambda m: " " + _MARKERS[m.group(1)] + " ", side)
         marked = re.sub(r"(?<![A-Za-z])y(?![A-Za-z'_])", " Q_0 ", marked)
         expression = parse_expression(marked).expr
@@ -92,7 +93,7 @@ def parse_ode(text: str) -> ODEProblem:
     equation = sp.Eq(read(left), read(right))
     order = sp.ode_order(equation, y)
     if order not in (1, 2):
-        raise UnsupportedError("only first- and second-order equations are solved so far")
+        raise UnsupportedError(msg("only first- and second-order equations are solved so far"))
     conditions = []
     for part in parts:
         match = _CONDITION.match(part)
@@ -140,8 +141,11 @@ def ode_solution(problem: ODEProblem) -> Solution:
     x = problem.x
     y = sp.Function("y")(x)
     shown = _prime(problem.equation.lhs, x), _prime(problem.equation.rhs, x)
-    solution = Solution(operation="ode", title=f"Solve {read_as(shown[0])} = {read_as(shown[1])}")
-    _step(solution, "Start from", problem.equation.lhs, problem.equation.rhs, x)
+    solution = Solution(
+        operation="ode",
+        title=msg("Solve {lhs} = {rhs}", lhs=read_as(shown[0]), rhs=read_as(shown[1])),
+    )
+    _step(solution, msg("Start from"), problem.equation.lhs, problem.equation.rhs, x)
     general = None
     try:
         if problem.order == 1:
@@ -156,11 +160,11 @@ def ode_solution(problem: ODEProblem) -> Solution:
             general = sp.dsolve(problem.equation, y)
         except (NotImplementedError, ValueError, TypeError) as error:
             raise UnsupportedError(
-                "this differential equation is not one mathlint can solve yet"
+                msg("this differential equation is not one mathlint can solve yet")
             ) from error
         if isinstance(general, list):
             general = general[0]
-        _step(solution, "Solve (computer algebra)", sp.Symbol("y"), general.rhs)
+        _step(solution, msg("Solve (computer algebra)"), sp.Symbol("y"), general.rhs)
     answer = general
     if problem.conditions:
         answer = _conditions(general, problem.conditions, y, x, solution)
@@ -183,7 +187,7 @@ def _first_order(equation, y, x, solution: Solution):
         return None
     f = sp.expand(slope[0])
     if equation.lhs != y.diff(x):
-        _step(solution, "Get y' on its own", y.diff(x), f, x)
+        _step(solution, msg("Get y' on its own"), y.diff(x), f, x)
 
     Y = sp.Symbol("y")
     in_y = f.subs(y, Y)
@@ -201,9 +205,11 @@ def _separable(g, h, y, x, Y, solution: Solution):
     C = sp.Symbol("C")
     solution.steps.append(
         SolutionStep(
-            text="The right side is a function of x times a function of y, so separate the "
-            "variables: everything with y (and dy) on the left, everything with x (and dx) "
-            "on the right",
+            text=msg(
+                "The right side is a function of x times a function of y, so "
+                "separate the variables: everything with y (and dy) on the "
+                "left, everything with x (and dx) on the right"
+            ),
             display=f"{_times(1 / h)}dy = {_times(g)}dx",
             display_latex=rf"{_times_latex(1 / h)}\,dy = {_times_latex(g)}\,dx",
         )
@@ -215,7 +221,9 @@ def _separable(g, h, y, x, Y, solution: Solution):
         lambda node: isinstance(node, sp.log) and node.args[0].has(Y),
         lambda node: sp.log(sp.Abs(node.args[0])),
     )
-    _step(solution, "Integrate both sides, with one constant C for both", shown_left, right + C)
+    _step(
+        solution, msg("Integrate both sides, with one constant C for both"), shown_left, right + C
+    )
     solved = sp.solve(sp.Eq(left, right + C), Y)
     if not solved:
         return sp.Eq(y, sp.Symbol("y"))  # keep it implicit; checkodesol decides
@@ -223,9 +231,9 @@ def _separable(g, h, y, x, Y, solution: Solution):
     # plus or minus e^C, or C^3/3, is just another constant: write it as C
     value = _renamed_constant(value.subs(sp.exp(C), C), C, x)
     general = sp.Eq(y, value)
-    text = "Solve for y"
+    text = msg("Solve for y")
     if shown_left != left:
-        text += " (the plus or minus from |y| and e^C together are just another constant C)"
+        text += msg(" (the plus or minus from |y| and e^C together are just another constant C)")
     _step(solution, text, sp.Symbol("y"), value)
     return general
 
@@ -266,7 +274,11 @@ def _linear(p, q, y, x, solution: Solution):
     body_latex = latex_of(-term if sign == " - " else term)
     solution.steps.append(
         SolutionStep(
-            text=f"This is linear: y' + P(x) y = Q(x), with P = {read_as(p)} and Q = {read_as(q)}",
+            text=msg(
+                "This is linear: y' + P(x) y = Q(x), with P = {p} and Q = {q}",
+                p=read_as(p),
+                q=read_as(q),
+            ),
             display=f"y'{sign}{body} = {read_as(q)}",
             display_latex=f"y'{sign}{body_latex} = {latex_of(q)}",
         )
@@ -274,21 +286,21 @@ def _linear(p, q, y, x, solution: Solution):
     factor = sp.simplify(sp.exp(sp.integrate(p, x)))
     solution.steps.append(
         SolutionStep(
-            text="The integrating factor is e^(integral of P)",
+            text=msg("The integrating factor is e^(integral of P)"),
             display=f"mu = {read_as(factor)}",
             display_latex=rf"\mu = e^{{\int {latex_of(p)}\,dx}} = {latex_of(factor)}",
         )
     )
     _step(
         solution,
-        "Multiply both sides by mu: the left side becomes the derivative of mu*y",
+        msg("Multiply both sides by mu: the left side becomes the derivative of mu*y"),
         sp.Derivative(factor * sp.Symbol("y"), x),
         sp.simplify(factor * q),
     )
     integral = sp.integrate(sp.simplify(factor * q), x)
-    _step(solution, "Integrate both sides", factor * sp.Symbol("y"), integral + C)
+    _step(solution, msg("Integrate both sides"), factor * sp.Symbol("y"), integral + C)
     value = sp.simplify((integral + C) / factor)
-    _step(solution, "Divide by mu", sp.Symbol("y"), value)
+    _step(solution, msg("Divide by mu"), sp.Symbol("y"), value)
     return sp.Eq(y, value)
 
 
@@ -307,8 +319,10 @@ def _second_order(equation, y, x, solution: Solution):
     characteristic = a * r**2 + b * r + c
     _step(
         solution,
-        "Constant coefficients: try y = e^(rx), which turns the equation into the "
-        "characteristic equation",
+        msg(
+            "Constant coefficients: try y = e^(rx), which turns the "
+            "equation into the characteristic equation"
+        ),
         characteristic,
         sp.Integer(0),
     )
@@ -317,18 +331,25 @@ def _second_order(equation, y, x, solution: Solution):
     if len(roots) == 2 and all(root.is_real for root in roots):
         r1, r2 = sorted(roots, key=float)
         homogeneous = C1 * sp.exp(r1 * x) + C2 * sp.exp(r2 * x)
-        text = f"Two real roots, r = {read_as(r1)} and r = {read_as(r2)}, give two exponentials"
+        text = msg(
+            "Two real roots, r = {r1} and r = {r2}, give two exponentials",
+            r1=read_as(r1),
+            r2=read_as(r2),
+        )
     elif len(roots) == 1:
         (r1,) = roots
         homogeneous = (C1 + C2 * x) * sp.exp(r1 * x)
-        text = f"A double root r = {read_as(r1)}: the second solution gets an extra factor x"
+        text = msg(
+            "A double root r = {r1}: the second solution gets an extra factor x", r1=read_as(r1)
+        )
     else:
         root = next(iter(roots))
         alpha, beta = sp.re(root), abs(sp.im(root))
         homogeneous = sp.exp(alpha * x) * (C1 * sp.cos(beta * x) + C2 * sp.sin(beta * x))
-        text = (
-            f"Complex roots r = {read_as(alpha)} ± {read_as(beta)}i give an exponential "
-            "times a cosine and a sine"
+        text = msg(
+            "Complex roots r = {alpha} ± {beta}i give an exponential times a cosine and a sine",
+            alpha=read_as(alpha),
+            beta=read_as(beta),
         )
     _step(solution, text, sp.Symbol("y_h") if forcing != 0 else sp.Symbol("y"), homogeneous)
     if forcing == 0:
@@ -339,13 +360,16 @@ def _second_order(equation, y, x, solution: Solution):
     particular = sp.simplify(full.rhs.subs({constant: 0 for constant in constants}))
     _step(
         solution,
-        "The right side is not 0, so add a particular solution: guess a form like the "
-        "right side and find its numbers (undetermined coefficients)",
+        msg(
+            "The right side is not 0, so add a particular solution: "
+            "guess a form like the right side and find its numbers "
+            "(undetermined coefficients)"
+        ),
         sp.Symbol("y_p"),
         particular,
     )
     value = homogeneous + particular
-    _step(solution, "The general solution is y_h + y_p", sp.Symbol("y"), value)
+    _step(solution, msg("The general solution is y_h + y_p"), sp.Symbol("y"), value)
     return sp.Eq(y, value)
 
 
@@ -360,18 +384,20 @@ def _conditions(general, conditions, y, x, solution: Solution):
         name = "y" + "'" * order
         solution.steps.append(
             SolutionStep(
-                text=f"Use {name}({read_as(at)}) = {read_as(wanted)}",
+                text=msg(
+                    "Use {name}({at}) = {wanted}", name=name, at=read_as(at), wanted=read_as(wanted)
+                ),
                 display=f"{read_as(equation.lhs)} = {read_as(equation.rhs)}",
                 display_latex=f"{latex_of(equation.lhs)} = {latex_of(equation.rhs)}",
             )
         )
     found = sp.solve(equations, constants, dict=True)
     if not found:
-        raise ParseError("these initial conditions cannot all hold")
+        raise ParseError(msg("these initial conditions cannot all hold"))
     found = found[0]
     solution.steps.append(
         SolutionStep(
-            text="Solve for the constants",
+            text=msg("Solve for the constants"),
             display=", ".join(f"{name} = {read_as(found[name])}" for name in found),
             display_latex=r",\ ".join(
                 f"{latex_of(name)} = {latex_of(found[name])}" for name in found
@@ -379,5 +405,5 @@ def _conditions(general, conditions, y, x, solution: Solution):
         )
     )
     particular = sp.expand(value.subs(found))
-    _step(solution, "Put them back", sp.Symbol("y"), particular)
+    _step(solution, msg("Put them back"), sp.Symbol("y"), particular)
     return sp.Eq(y, particular)

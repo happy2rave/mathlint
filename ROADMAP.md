@@ -29,7 +29,7 @@ real problems with known answers — runs on every commit.
 | v0.9 | Done: Calculus, complete | Limits, implicit derivatives, harder integrals, differential equations |
 | v0.10 | Done: Premium, free | "Why?" on every step, step-by-step reveal, animated steps, tutor mode, practice |
 | v0.10.1 | Done: A new look | Phone-first app shell around the notebook, docked keypad, result cards, dark theme |
-| v0.11 | App quality | Installable, offline, history, speed, accessibility, translations |
+| v0.11 | Done: App quality | Installable, offline, history, speed, screen readers, Romanian, Russian and Spanish |
 | v1.0 | App stores | Android and iOS apps from the same code |
 | v1.x | Camera | Photo to editable math, printed first, then handwriting — on the device |
 
@@ -115,9 +115,14 @@ kept as the heart of it, and now carries the checker's marks in its margin.
 
 ### v0.11 — App quality
 
-Installable and offline (the engine is cached on the device), history and
-favourites stored on the device, faster start-up with performance budgets,
-screen-reader support for math, translated steps.
+Every sentence mathlint writes — steps, checker verdicts and hints, the **Why?**
+panels, errors — and the whole interface in Romanian, Russian and Spanish as
+well as English, with a test that solves the problem banks in each language to
+prove no English is left. The app installs to a home screen and works offline:
+every file, the math engine included, is served from the site and kept on the
+device. History and favourites on the device. The engine warms up while you
+read the first answer, and CI holds the page to performance budgets. Math is
+read aloud in words, in the chosen language, and the page passes an axe audit.
 
 ### v1.0 — App stores
 

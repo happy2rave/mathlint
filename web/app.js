@@ -1,8 +1,11 @@
-import { MathSheet, configureField, displayLatex, toLatex } from "./editor.js";
+import { MathSheet, configureField, displayLatex, nameField, toLatex } from "./editor.js";
 import { Engine } from "./engine.js";
 import { Keypad } from "./keypad.js";
 import { numberLine } from "./numberline.js";
 import { Graph } from "./graph.js";
+import { History } from "./history.js";
+import { speak } from "./speech.js";
+import { LANGUAGE_KEY, language, onLanguageChange, pickLanguage, setLanguage, t } from "./i18n.js";
 
 const STORAGE_KEY = "mathlint:last-solution";
 const THEME_KEY = "mathlint:theme";
@@ -47,17 +50,16 @@ const engineText = $("engine-text");
 const examplesSheet = $("examples-sheet");
 const exampleList = $("example-list");
 const aboutSheet = $("about-sheet");
+const historySheet = $("history-sheet");
+const historyList = $("history-list");
+const historyEmpty = $("history-empty");
+const historyClear = $("history-clear");
+const historyStore = new History();
 
 // A phone-sized screen: the keypad docks at the bottom like a keyboard.
 const COMPACT = window.matchMedia("(max-width: 899px)");
 
 const MARKS = { OK: "✓", WRONG: "✗", WARNING: "!", UNSURE: "?" };
-const VERDICT_WORDS = { OK: "Correct", WRONG: "Wrong", WARNING: "Careful", UNSURE: "Not sure" };
-const EXPRESSION_HELP =
-  "Tap the keys or type it: x^2 sin x, e^(2x), 1/(x^2+1). The variable is picked up from the expression.";
-const MATRIX_HELP =
-  "Write it as [[2, 1], [3, 4]], MATLAB style [2 1; 3 4], or as a LaTeX pmatrix. " +
-  "Fractions stay exact — no decimals.";
 
 let engine = null;
 let engineReady = false;
@@ -102,9 +104,11 @@ function card(className, title = null) {
 
 // ---------------------------------------------------------------- the engine pill
 
-function setEngineState(state, text) {
+// `key` names the words, so they can be said again in another language.
+function setEngineState(state, key) {
   enginePill.dataset.state = state;
-  engineText.textContent = text;
+  engineText.dataset.i18n = key;
+  engineText.textContent = t(key);
 }
 
 // ---------------------------------------------------------------- the sheet
@@ -139,7 +143,8 @@ function setTextMode(on) {
   mathLines.hidden = on;
   textSheet.hidden = !on;
   checkKeypadSlot.hidden = on;
-  modeToggle.textContent = on ? "Use the keypad" : "Type as text";
+  modeToggle.dataset.i18n = on ? "check.useKeypad" : "check.typeAsText";
+  modeToggle.textContent = t(modeToggle.dataset.i18n);
   modeToggle.setAttribute("aria-pressed", String(on));
   drawGutter();
   if (on) {
@@ -217,10 +222,10 @@ function handleEnter(field) {
 
 // What the Enter key does, in words, for the field it will act on.
 function enterLabel(field) {
-  if (field.closest(".tutor-card")) return "Check";
-  if (solveSheet.contains(field)) return "Solve";
+  if (field.closest(".tutor-card")) return t("keypad.enterCheck");
+  if (solveSheet.contains(field)) return t("keypad.enterSolve");
   if (sheet.contains(field)) return null;
-  return "Go";
+  return t("keypad.enterGo");
 }
 
 function deleteEmptyLine(field) {
@@ -267,6 +272,13 @@ function watchKeypadFocus() {
 
 // ---------------------------------------------------------------- math on the page
 
+// Math in words, in the reader's language, for screen readers.
+function spoken(latex) {
+  return speak(latex, (key, args) => t("speech." + key, args));
+}
+
+// Drawn with KaTeX for the eye; a screen reader hears the same math in words
+// instead (MathML support differs too much between readers, above all on phones).
 function renderMath(target, latex, displayMode = false) {
   if (!latex || !window.katex) {
     target.textContent = target.dataset.plain || "";
@@ -274,9 +286,19 @@ function renderMath(target, latex, displayMode = false) {
   }
   try {
     window.katex.render(latex, target, { throwOnError: false, displayMode });
+    target.querySelector(".katex")?.setAttribute("aria-hidden", "true");
+    target.append(el("span", "sr-only", spoken(latex)));
   } catch {
     target.textContent = target.dataset.plain || "";
   }
+}
+
+// A short sentence for screen readers when a result arrives.
+function announce(text) {
+  const announcer = $("announcer");
+  announcer.textContent = "";
+  // a change the reader's screen reader will notice, even for the same words
+  setTimeout(() => (announcer.textContent = text), 50);
 }
 
 // Plain-text math (a practice problem) drawn as math.
@@ -295,6 +317,20 @@ function renderFailure(target, message) {
   target.append(box);
 }
 
+// Math wider than its card scrolls sideways; a keyboard has to be able to reach
+// it to scroll it, so such math takes the focus.
+function reachableWhenWide(root) {
+  requestAnimationFrame(() => {
+    for (const math of root.querySelectorAll(".answer, .worked-math, .step-raw, .step-read")) {
+      if (math.scrollWidth > math.clientWidth + 1) {
+        math.tabIndex = 0;
+        math.setAttribute("role", "group");
+        math.setAttribute("aria-label", math.querySelector(".sr-only")?.textContent || "");
+      }
+    }
+  });
+}
+
 // ---------------------------------------------------------------- running a request
 
 // Run one engine request while showing a status and a Stop button.
@@ -304,7 +340,7 @@ async function run(kind, payload, { statusLine, button, stopButton, label, pane 
   button.disabled = true;
   stopButton.hidden = false;
   pane.setAttribute("aria-busy", "true");
-  setEngineState("busy", "Working");
+  setEngineState("busy", "engine.working");
   try {
     return await engine.call(kind, payload);
   } finally {
@@ -313,15 +349,20 @@ async function run(kind, payload, { statusLine, button, stopButton, label, pane 
     button.disabled = false;
     stopButton.hidden = true;
     pane.removeAttribute("aria-busy");
-    if (engineReady) setEngineState("ready", "Ready");
+    if (engineReady) setEngineState("ready", readyKey());
   }
 }
 
-// After a tap on Solve, bring the answer into view on a phone.
+// After a tap on Solve, bring the answer into view on a phone, and take the
+// keyboard there when the tap was on a button (not while typing in a line).
 function revealResults(target) {
-  if (!COMPACT.matches) return;
   const first = target.firstElementChild;
-  if (first) first.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (!first) return;
+  if (document.activeElement?.tagName === "BUTTON") {
+    first.tabIndex = -1;
+    first.focus({ preventScroll: true });
+  }
+  if (COMPACT.matches) first.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // ---------------------------------------------------------------- checking
@@ -333,7 +374,7 @@ function stepElement(step) {
   const mark = el("div", "mark");
   const number = el("span", "mark-number", String(step.line));
   const symbol = el("b", "mark-symbol", MARKS[verdict] || "");
-  if (verdict) symbol.setAttribute("aria-label", VERDICT_WORDS[verdict]);
+  if (verdict) symbol.setAttribute("aria-label", t("verdict." + verdict));
   mark.append(number, symbol);
   row.append(mark);
 
@@ -350,7 +391,7 @@ function stepElement(step) {
   body.append(raw);
 
   const read = el("p", "step-read");
-  const label = el("span", "", "reads as ");
+  const label = el("span", "", t("report.readsAs"));
   const math = el("span");
   math.dataset.plain = step.read_as;
   renderMath(math, step.read_as_latex);
@@ -358,7 +399,7 @@ function stepElement(step) {
   body.append(read);
 
   if (step.message) {
-    const method = { exact: " (proved exactly)", numeric: " (checked with numbers)" }[step.method] || "";
+    const method = { exact: t("report.proved"), numeric: t("report.numeric") }[step.method] || "";
     body.append(el("p", "step-note " + verdict.toLowerCase(), step.message + method));
   }
 
@@ -367,11 +408,13 @@ function stepElement(step) {
       ? Object.entries(step.counterexample).map(([name, value]) => `${name} = ${value}`).join(", ")
       : null;
     const evidence = el("div", "evidence");
-    evidence.append(el("span", "evidence-label", at ? `Counterexample · at ${at}` : "Counterexample"));
+    evidence.append(
+      el("span", "evidence-label", at ? t("report.counterexampleAt", { point: at }) : t("report.counterexample"))
+    );
     const values = el("span", "evidence-values");
     values.append(
-      el("span", "", `line ${step.compared_to} = ${step.values[0]}`),
-      el("span", "", `line ${step.line} = ${step.values[1]}`)
+      el("span", "", t("report.lineValue", { line: step.compared_to, value: step.values[0] })),
+      el("span", "", t("report.lineValue", { line: step.line, value: step.values[1] }))
     );
     evidence.append(values);
     body.append(evidence);
@@ -395,20 +438,20 @@ function renderReport(report) {
   if (error) {
     words.append(
       el("strong", "", error.compared_to
-        ? `First mistake: line ${error.compared_to} → ${error.line}.`
-        : `First mistake: line ${error.line}.`),
-      el("span", "", error.compared_to ? "Everything above it checks out." : "Look at this line again.")
+        ? t("report.firstMistakePair", { from: error.compared_to, to: error.line })
+        : t("report.firstMistake", { line: error.line })),
+      el("span", "", error.compared_to ? t("report.aboveChecks") : t("report.lookAgain"))
     );
   } else {
     words.append(
-      el("strong", "", "No mistakes found."),
-      el("span", "", "Every line follows from the one before it.")
+      el("strong", "", t("report.noMistakes")),
+      el("span", "", t("report.follows"))
     );
   }
   summary.append(badge, words);
   results.append(summary);
 
-  const marked = card("report-card", report.mode === "equation" ? "Solving, step by step" : "Your working, marked");
+  const marked = card("report-card", report.mode === "equation" ? t("report.solving") : t("report.marked"));
   const list = el("ol", "verdict-lines");
   for (const step of report.steps) list.append(stepElement(step));
   marked.append(list);
@@ -423,7 +466,9 @@ function renderReport(report) {
   }
 }
 
-async function check({ reveal = false } = {}) {
+// `record`: a check the reader asked for goes into the history; one run on
+// their behalf (opening the tab, changing the language) does not.
+async function check({ reveal = false, record = true } = {}) {
   if (!engineReady) return;
   checkedOnce = true;
   const text = currentText();
@@ -432,10 +477,20 @@ async function check({ reveal = false } = {}) {
   const outcome = await run(
     "check",
     { text },
-    { statusLine: status, button: checkButton, stopButton: $("stop-check"), label: "Checking…", pane: results }
+    { statusLine: status, button: checkButton, stopButton: $("stop-check"), label: t("check.busy"), pane: results }
   );
-  if (outcome.ok) renderReport(outcome.result);
-  else renderFailure(results, outcome.error);
+  if (outcome.ok) {
+    renderReport(outcome.result);
+    reachableWhenWide(results);
+    announce(results.querySelector(".summary")?.textContent || "");
+  } else {
+    renderFailure(results, outcome.error);
+    announce(outcome.error);
+  }
+  if (outcome.ok && record && text) {
+    const error = outcome.result.steps.find((step) => step.verdict === "WRONG");
+    historyStore.add({ tab: "check", input: text, extra: { mistake: error ? error.line : null, asMath: checkedAsMath } });
+  }
   if (reveal) revealResults(results);
 }
 
@@ -453,13 +508,18 @@ function closeSheet(dialog) {
 }
 
 function setUpSheets() {
-  for (const dialog of [examplesSheet, aboutSheet]) {
+  for (const dialog of [examplesSheet, aboutSheet, historySheet]) {
     dialog.addEventListener("click", (event) => {
       // a tap on the backdrop, or on a close button
       if (event.target === dialog || event.target.closest("[data-close]")) closeSheet(dialog);
     });
   }
   $("open-about").addEventListener("click", () => openSheet(aboutSheet));
+  $("open-history").addEventListener("click", openHistory);
+  for (const input of document.querySelectorAll('input[name="history-filter"]')) {
+    input.addEventListener("change", renderHistory);
+  }
+  historyClear.addEventListener("click", clearHistory);
   $("open-solve-examples").addEventListener("click", () => openExamples("solve"));
   $("open-check-examples").addEventListener("click", () => openExamples("check"));
 }
@@ -467,7 +527,7 @@ function setUpSheets() {
 function exampleButton(name, lines, onPick) {
   const button = el("button", "example");
   button.type = "button";
-  button.append(el("span", "example-name", name));
+  button.append(el("span", "example-name", t("example." + name)));
   const math = el("span", "example-math");
   for (const line of lines) {
     const row = el("span", "example-line");
@@ -486,7 +546,8 @@ function exampleButton(name, lines, onPick) {
 function openExamples(context) {
   exampleList.replaceChildren();
   $("textbook-library").hidden = context !== "solve";
-  $("examples-title").textContent = context === "solve" ? "Examples" : "Worked examples to check";
+  $("examples-title").dataset.i18n = context === "solve" ? "examples.solve" : "examples.check";
+  $("examples-title").textContent = t($("examples-title").dataset.i18n);
 
   if (context === "solve") {
     const groups = new Map();
@@ -496,7 +557,7 @@ function openExamples(context) {
       groups.get(group).push(example);
     }
     for (const [group, list] of groups) {
-      exampleList.append(el("h3", "example-group", group));
+      exampleList.append(el("h3", "example-group", group === "More" ? t("examples.more") : t("example." + group)));
       const grid = el("div", "example-grid");
       for (const example of list) {
         grid.append(
@@ -529,26 +590,40 @@ function openExamples(context) {
 
 async function solve(options = null) {
   // solve() and solve("factoring") are both still fine
-  const { method = null, reveal = false } =
+  const { method = null, reveal = false, record = true } =
     typeof options === "string" ? { method: options } : options || {};
   const variable = solveVariable;
   if (!engineReady) return;
   // one line is an equation; several lines are a system
   const text = solveSheet.getText();
   if (!text) {
-    renderFailure(
-      solved,
-      "Type something first — an equation like x^2 - 5x + 6 = 0, or something to work out like 1/2 + 1/3."
-    );
+    renderFailure(solved, t("solve.empty"));
     return;
   }
   const outcome = await run(
     "solve",
     { text, method, variable },
-    { statusLine: solveStatus, button: solveButton, stopButton: $("stop-solve"), label: "Solving…", pane: solved }
+    { statusLine: solveStatus, button: solveButton, stopButton: $("stop-solve"), label: t("solve.busy"), pane: solved }
   );
-  if (outcome.ok) renderSolved(outcome.result);
-  else renderFailure(solved, outcome.error);
+  if (outcome.ok) {
+    renderSolved(outcome.result);
+    reachableWhenWide(solved);
+    const answer = outcome.result.answer_latex;
+    announce(answer ? t("answer.announce", { answer: spoken(answer) }) : t("answer.whichLetter"));
+  } else {
+    renderFailure(solved, outcome.error);
+    announce(outcome.error);
+  }
+  if (outcome.ok && record && !outcome.result.needs_letter) {
+    const solution = outcome.result;
+    historyStore.add({
+      tab: "solve",
+      input: text,
+      kind: solution.kind_label,
+      answer: solution.answer_latex,
+      extra: { method, variable },
+    });
+  }
   if (reveal) revealResults(solved);
 }
 
@@ -589,7 +664,7 @@ function showPreview(result) {
     : result.latex;
   const math = el("span", "live-math");
   renderMath(math, latex);
-  liveAnswer.replaceChildren(el("span", "live-tag", "Answer"), math);
+  liveAnswer.replaceChildren(el("span", "live-tag", t("answer.live")), math);
   liveAnswer.hidden = false;
 }
 
@@ -632,10 +707,10 @@ function renderSolved(solution) {
   solved.append(answerCard);
 
   if (solution.needs_letter) {
-    answerCard.append(el("p", "eyebrow", "Several letters"));
+    answerCard.append(el("p", "eyebrow", t("answer.severalLetters")));
     answerCard.append(
-      el("p", "answer-question", "This equation has several letters. Which one do you want to solve for?"),
-      letterChips(solution.letters, null, "Solve for")
+      el("p", "answer-question", t("answer.whichLetter")),
+      letterChips(solution.letters, null, t("answer.solveFor"))
     );
     return;
   }
@@ -644,9 +719,9 @@ function renderSolved(solution) {
   const head = el("div", "answer-head");
   head.append(el("p", "eyebrow solved-kind", solution.kind_label));
   if (found) {
-    const verified = el("span", "answer-badge", "Checked");
+    const verified = el("span", "answer-badge", t("answer.checked"));
     verified.prepend(icon("shield"));
-    verified.title = "Every answer is checked in the original problem before it is shown";
+    verified.title = t("answer.checkedTitle");
     head.append(verified);
   }
   answerCard.append(head);
@@ -660,7 +735,7 @@ function renderSolved(solution) {
   if (solution.interval_latex && solution.number_line && !solution.everything) {
     const intervals = el("p", "answer-note");
     intervals.dataset.plain = solution.interval_text;
-    renderMath(intervals, String.raw`\text{that is } ` + solution.interval_latex);
+    renderMath(intervals, String.raw`\text{${t("answer.thatIs")} } ` + solution.interval_latex);
     answerCard.append(intervals);
     if (solution.number_line.intervals.length || solution.number_line.points.length) {
       answerCard.append(numberLine(solution.number_line, renderMath));
@@ -670,23 +745,24 @@ function renderSolved(solution) {
   // the exact answer stays first; the decimal is what a calculator would say
   if (solution.decimal_latex) {
     const decimal = el("p", "answer-note answer-decimal");
-    decimal.dataset.plain = "about " + solution.decimal;
+    decimal.dataset.plain = t("answer.about", { value: solution.decimal });
     renderMath(decimal, solution.decimal_latex);
     answerCard.append(decimal);
   }
 
   // what the answer is only true for, such as x != -2 after cancelling (x + 2)
   if (solution.conditions && solution.conditions.length) {
-    answerCard.append(el("p", "answer-note", "for " + solution.conditions.join(", ").replaceAll("!=", "≠")));
+    const conditions = solution.conditions.join(", ").replaceAll("!=", "≠");
+    answerCard.append(el("p", "answer-note", t("answer.for", { conditions })));
   }
 
   // a letter to solve for only makes sense for an equation
   if (solution.variable && solution.letters && solution.letters.length > 1) {
-    answerCard.append(letterChips(solution.letters, solution.variable, "Solve for"));
+    answerCard.append(letterChips(solution.letters, solution.variable, t("answer.solveFor")));
   }
 
   if (solution.methods.length > 1) {
-    const verb = solution.variable || solution.unknowns ? "Solve it by" : "Method";
+    const verb = solution.variable || solution.unknowns ? t("answer.solveItBy") : t("answer.method");
     answerCard.append(
       chipGroup(
         verb,
@@ -701,7 +777,7 @@ function renderSolved(solution) {
 
   if (solution.graph) solved.append(graphSection(solution.graph));
 
-  const steps = card("steps-card", "Steps");
+  const steps = card("steps-card", t("card.steps"));
   solved.append(steps);
   renderLearningSteps(steps, solution);
   if (solution.practice && solution.practice.length) {
@@ -722,7 +798,9 @@ function fillTextbookProblems(problems) {
   for (const [index, problem] of problems.entries()) {
     const option = document.createElement("option");
     option.value = String(index);
-    option.textContent = `${problem.section} · exercise ${problem.exercise}`;
+    option.dataset.section = problem.section;
+    option.dataset.exercise = problem.exercise;
+    option.textContent = t("textbook.exercise", { section: problem.section, exercise: problem.exercise });
     textbookSelect.append(option);
   }
 
@@ -746,8 +824,8 @@ function fillTextbookProblems(problems) {
 }
 
 function practiceSection(problems) {
-  const section = card("practice-card", "Practice this skill");
-  section.append(el("p", "card-intro", "Three more problems of the same kind, generated on your device."));
+  const section = card("practice-card", t("practice.title"));
+  section.append(el("p", "card-intro", t("practice.intro")));
   const list = el("div", "practice-list");
 
   for (const problem of problems) {
@@ -761,7 +839,7 @@ function practiceSection(problems) {
       math.append(row);
     }
     button.append(math);
-    const go = el("span", "practice-go", "Solve it");
+    const go = el("span", "practice-go", t("practice.go"));
     go.append(icon("arrow"));
     button.append(go);
     button.addEventListener("click", () => {
@@ -778,7 +856,7 @@ function practiceSection(problems) {
 }
 
 function graphSection(spec) {
-  const section = card("graph-card", "Graph");
+  const section = card("graph-card", t("card.graph"));
   const graph = new Graph(spec, {
     renderMath,
     fetchSamples: async (xMin, xMax) => {
@@ -811,8 +889,10 @@ function updateOperationInput() {
   matrixBlock.hidden = calculus;
   bounds.hidden = operation !== "integrate";
   stepsKeypadSlot.hidden = !calculus;
-  targetLabel.textContent = calculus ? "Your expression" : "Your matrix";
-  targetHelp.textContent = calculus ? EXPRESSION_HELP : MATRIX_HELP;
+  targetLabel.dataset.i18n = calculus ? "workout.expression" : "workout.matrix";
+  targetLabel.textContent = t(targetLabel.dataset.i18n);
+  targetHelp.dataset.i18n = calculus ? "workout.expressionHelp" : "workout.matrixHelp";
+  targetHelp.textContent = t(targetHelp.dataset.i18n);
 }
 
 function workedStep(step, index) {
@@ -840,19 +920,19 @@ function workedStep(step, index) {
 function whyDetails(why) {
   const details = el("details", "step-why");
   const summary = document.createElement("summary");
-  summary.textContent = "Why?";
+  summary.textContent = t("steps.why");
   summary.prepend(icon("bulb"));
   details.append(summary);
 
   const entries = [
-    ["Rule", why.rule],
-    ["Example", why.example],
-    ["Common mistake", why.mistake],
+    ["rule", why.rule],
+    ["example", why.example],
+    ["mistake", why.mistake],
   ];
   const panel = el("div", "why-panel");
-  for (const [label, value] of entries) {
-    const paragraph = el("p", "why-" + label.split(" ").at(-1).toLowerCase());
-    const heading = el("strong", "", label);
+  for (const [part, value] of entries) {
+    const paragraph = el("p", "why-" + part);
+    const heading = el("strong", "", t("steps." + part));
     paragraph.append(heading, el("span", "", value));
     panel.append(paragraph);
   }
@@ -881,12 +961,12 @@ function renderLearningSteps(target, solution) {
   meter.append(progress, bar);
 
   const toolbar = el("div", "learning-toolbar");
-  const reveal = el("button", "primary learning-button", "Reveal next step");
+  const reveal = el("button", "primary learning-button", t("steps.reveal"));
   reveal.type = "button";
-  const tryNext = el("button", "tonal learning-button", "Try the next step");
+  const tryNext = el("button", "tonal learning-button", t("steps.try"));
   tryNext.type = "button";
   tryNext.prepend(icon("sparkle"));
-  const showAll = el("button", "ghost-button learning-button", "Show all steps");
+  const showAll = el("button", "ghost-button learning-button", t("steps.showAll"));
   showAll.type = "button";
   toolbar.append(reveal, tryNext, showAll);
 
@@ -896,15 +976,15 @@ function renderLearningSteps(target, solution) {
 
   const tutor = el("form", "tutor-card");
   tutor.hidden = true;
-  tutor.setAttribute("aria-label", "Try the next step yourself");
-  const tutorLabel = el("label", "", "Write a valid next line");
+  tutor.setAttribute("aria-label", t("tutor.label"));
+  const tutorLabel = el("label", "", t("tutor.prompt"));
   const tutorField = document.createElement("math-field");
-  tutorField.setAttribute("aria-label", "Your next line");
+  tutorField.setAttribute("aria-label", t("tutor.field"));
   tutorLabel.append(tutorField);
   const tutorActions = el("div", "tutor-actions");
-  const checkStep = el("button", "primary learning-button", "Check my step");
+  const checkStep = el("button", "primary learning-button", t("tutor.check"));
   checkStep.type = "submit";
-  const cancelTutor = el("button", "ghost-button learning-button", "Cancel");
+  const cancelTutor = el("button", "ghost-button learning-button", t("common.cancel"));
   cancelTutor.type = "button";
   tutorActions.append(checkStep, cancelTutor);
   const feedback = el("p", "tutor-feedback");
@@ -932,7 +1012,7 @@ function renderLearningSteps(target, solution) {
 
   function update() {
     elements.forEach((element, index) => (element.hidden = index >= shown));
-    progress.textContent = `Step ${Math.min(shown, steps.length)} of ${steps.length}`;
+    progress.textContent = t("steps.progress", { shown: Math.min(shown, steps.length), total: steps.length });
     fill.style.width = `${(Math.min(shown, steps.length) / steps.length) * 100}%`;
     reveal.hidden = shown >= steps.length;
     showAll.hidden = shown >= steps.length;
@@ -953,6 +1033,7 @@ function renderLearningSteps(target, solution) {
         once: true,
       });
     }
+    reachableWhenWide(learning);
   }
 
   reveal.addEventListener("click", () => revealThrough(shown));
@@ -962,7 +1043,7 @@ function renderLearningSteps(target, solution) {
     if (tutorTarget < 0) return;
     tutor.hidden = false;
     tutor.dataset.result = "";
-    feedback.textContent = `Aim for step ${tutorTarget + 1}. Any mathematically valid next line counts.`;
+    feedback.textContent = t("tutor.aim", { step: tutorTarget + 1 });
     tutorField.value = "";
     tutorField.focus();
   });
@@ -975,12 +1056,12 @@ function renderLearningSteps(target, solution) {
     const attempt = tutorText(tutorField.value.trim());
     const previous = previousMathIndex(tutorTarget);
     if (!attempt || tutorTarget < 0 || previous < 0) {
-      feedback.textContent = "Write a complete next line first.";
+      feedback.textContent = t("tutor.empty");
       return;
     }
 
     checkStep.disabled = true;
-    feedback.textContent = "Checking your step…";
+    feedback.textContent = t("tutor.checking");
     tutor.dataset.result = "";
     const outcome = await engine.call("tutor", {
       previous: steps[previous].math,
@@ -995,16 +1076,16 @@ function renderLearningSteps(target, solution) {
     const checked = outcome.result;
     if (checked.accepted) {
       const note = checked.verdict === "WARNING" ? ` ${checked.message}` : "";
-      feedback.textContent = `Yes — that step works.${note}`;
+      feedback.textContent = t("tutor.yes") + note;
       revealThrough(tutorTarget);
       tutor.hidden = true;
       elements[tutorTarget].tabIndex = -1;
       elements[tutorTarget].focus();
       return;
     }
-    const hint = checked.hints && checked.hints.length ? ` Hint: ${checked.hints[0]}` : "";
+    const hint = checked.hints && checked.hints.length ? " " + t("tutor.hint", { hint: checked.hints[0] }) : "";
     tutor.dataset.result = "wrong";
-    feedback.textContent = `${checked.message || "That line does not follow yet."}${hint}`;
+    feedback.textContent = checked.message + hint;
   });
 
   update();
@@ -1023,7 +1104,7 @@ function renderSolution(solution) {
   }
 }
 
-async function showSteps({ reveal = false } = {}) {
+async function showSteps({ reveal = false, record = true } = {}) {
   if (!engineReady) return;
   workedOnce = true;
   const operation = operationValue();
@@ -1031,18 +1112,172 @@ async function showSteps({ reveal = false } = {}) {
   const lower = operation === "integrate" ? lowerField.value.trim() : "";
   const upper = operation === "integrate" ? upperField.value.trim() : "";
   if (Boolean(lower) !== Boolean(upper)) {
-    renderFailure(worked, "Fill in both limits for a definite integral, or leave both empty.");
+    renderFailure(worked, t("workout.bothLimits"));
     return;
   }
   const target = calculus ? expressionField.value : matrixInput.value;
   const outcome = await run(
     "steps",
     { operation, target, lower, upper },
-    { statusLine: stepsStatus, button: stepsButton, stopButton: $("stop-steps"), label: "Working…", pane: worked }
+    { statusLine: stepsStatus, button: stepsButton, stopButton: $("stop-steps"), label: t("workout.busy"), pane: worked }
   );
-  if (outcome.ok) renderSolution(outcome.result);
-  else renderFailure(worked, outcome.error);
+  if (outcome.ok) {
+    renderSolution(outcome.result);
+    reachableWhenWide(worked);
+    announce(outcome.result.summary || outcome.result.title);
+  } else {
+    renderFailure(worked, outcome.error);
+    announce(outcome.error);
+  }
+  if (outcome.ok && record && target.trim()) {
+    historyStore.add({
+      tab: "linalg",
+      input: target,
+      kind: outcome.result.title,
+      answer: outcome.result.result_latex || "",
+      extra: { operation, lower, upper },
+    });
+  }
   if (reveal) revealResults(worked);
+}
+
+// ---------------------------------------------------------------- history
+
+function openHistory() {
+  renderHistory();
+  openSheet(historySheet);
+}
+
+function historyFilter() {
+  return document.querySelector('input[name="history-filter"]:checked')?.value || "all";
+}
+
+function when(time) {
+  const seconds = Math.round((time - Date.now()) / 1000);
+  const format = new Intl.RelativeTimeFormat(language(), { numeric: "auto" });
+  for (const [unit, size] of [["year", 31536000], ["month", 2592000], ["week", 604800], ["day", 86400], ["hour", 3600], ["minute", 60]]) {
+    if (Math.abs(seconds) >= size) return format.format(Math.round(seconds / size), unit);
+  }
+  return format.format(0, "second");
+}
+
+function historyEntry(entry) {
+  const row = el("li", "history-entry");
+  const open = el("button", "history-open");
+  open.type = "button";
+  const tabName = { solve: t("tab.solve"), check: t("tab.check"), linalg: t("tab.workout") }[entry.tab];
+  const meta = [tabName, entry.kind, when(entry.time)].filter(Boolean).join(" · ");
+  open.append(el("span", "history-meta", meta));
+  for (const line of entry.input.split("\n").slice(0, 3)) {
+    const math = el("span", "history-line");
+    math.dataset.plain = line;
+    if (entry.tab === "check" && entry.extra && entry.extra.asMath === false) math.textContent = line;
+    else renderMath(math, displayLatex(entry.tab === "linalg" ? toLatex(line) : line));
+    open.append(math);
+  }
+  if (entry.tab === "check") {
+    const mistake = entry.extra && entry.extra.mistake;
+    open.append(
+      el(
+        "span",
+        "history-answer " + (mistake ? "mark-wrong" : "mark-ok"),
+        mistake ? "✗ " + t("report.firstMistake", { line: mistake }) : "✓ " + t("report.noMistakes")
+      )
+    );
+  } else if (entry.answer) {
+    const answer = el("span", "history-answer");
+    renderMath(answer, entry.answer);
+    open.append(answer);
+  }
+  open.addEventListener("click", () => {
+    closeSheet(historySheet);
+    reopen(entry);
+  });
+
+  const star = el("button", "icon-button history-star");
+  star.type = "button";
+  star.append(icon("star"));
+  star.setAttribute("aria-pressed", String(entry.starred));
+  star.setAttribute("aria-label", t(entry.starred ? "history.unstar" : "history.star"));
+  star.title = star.getAttribute("aria-label");
+  star.addEventListener("click", () => {
+    historyStore.star(entry.id, !entry.starred);
+    renderHistory();
+    historyList.querySelector(`[data-id="${entry.id}"] .history-star`)?.focus();
+  });
+
+  const remove = el("button", "icon-button history-delete");
+  remove.type = "button";
+  remove.append(icon("trash"));
+  remove.setAttribute("aria-label", t("history.delete"));
+  remove.title = t("history.delete");
+  remove.addEventListener("click", () => {
+    historyStore.remove(entry.id);
+    renderHistory();
+    historyList.querySelector(".history-open")?.focus();
+  });
+
+  row.dataset.id = entry.id;
+  row.append(open, star, remove);
+  return row;
+}
+
+function renderHistory() {
+  const starredOnly = historyFilter() === "starred";
+  const entries = historyStore.list({ starred: starredOnly });
+  historyList.replaceChildren(...entries.map(historyEntry));
+  const available = historyStore.available;
+  historyEmpty.hidden = entries.length > 0;
+  historyEmpty.textContent = !available
+    ? t("history.unavailable")
+    : starredOnly
+      ? t("history.noStarred")
+      : t("history.empty");
+  historyClear.hidden = !historyStore.list().some((entry) => !entry.starred);
+  historyClear.classList.remove("confirming");
+  historyClear.textContent = t("history.clear");
+}
+
+// Clearing asks once more; starred entries stay.
+let clearTimer = null;
+function clearHistory() {
+  if (!historyClear.classList.contains("confirming")) {
+    historyClear.classList.add("confirming");
+    historyClear.textContent = t("history.confirmClear");
+    clearTimeout(clearTimer);
+    clearTimer = setTimeout(renderHistory, 4000);
+    return;
+  }
+  clearTimeout(clearTimer);
+  historyStore.clear();
+  renderHistory();
+}
+
+function reopen(entry) {
+  const extra = entry.extra || {};
+  if (entry.tab === "solve") {
+    solveSheet.setLines(entry.input.split("\n"));
+    selectTab("solve");
+    solveVariable = extra.variable || null;
+    solve({ method: extra.method || null, reveal: true });
+  } else if (entry.tab === "check") {
+    checkedOnce = true;
+    selectTab("check");
+    setTextMode(extra.asMath === false);
+    setText(entry.input);
+    check({ reveal: true });
+  } else {
+    workedOnce = true;
+    const radio = operationGroup.querySelector(`input[value="${extra.operation}"]`);
+    if (radio) radio.checked = true;
+    updateOperationInput();
+    if (isCalculus(extra.operation)) expressionField.value = entry.input;
+    else matrixInput.value = entry.input;
+    lowerField.value = extra.lower || "";
+    upperField.value = extra.upper || "";
+    selectTab("linalg");
+    showSteps({ reveal: true });
+  }
 }
 
 // ---------------------------------------------------------------- the app shell
@@ -1070,8 +1305,8 @@ function selectTab(name, { focus = false } = {}) {
   window.scrollTo({ top: 0 });
   keypad?.refresh();
   // the other tabs run their example the first time they are opened
-  if (name === "check" && engineReady && !checkedOnce) check();
-  if (name === "linalg" && engineReady && !workedOnce) showSteps();
+  if (name === "check" && engineReady && !checkedOnce) check({ record: false });
+  if (name === "linalg" && engineReady && !workedOnce) showSteps({ record: false });
 }
 
 function setUpTabs() {
@@ -1107,6 +1342,33 @@ function applyTheme(theme) {
   }
 }
 
+function setUpLanguage() {
+  for (const input of document.querySelectorAll('input[name="language"]')) {
+    input.checked = input.value === language();
+    input.addEventListener("change", () => setLanguage(input.value));
+  }
+  onLanguageChange(() => {
+    for (const input of document.querySelectorAll('input[name="language"]')) {
+      input.checked = input.value === language();
+    }
+    for (const option of textbookSelect.options) {
+      const { section, exercise } = option.dataset;
+      option.textContent = t("textbook.exercise", { section, exercise });
+    }
+    keypad?.render();
+    solveSheet?.relabel(t("solve.line"));
+    sheet?.relabel(t("check.line"));
+    // the other fields' names were just said again on the host: move them in
+    for (const field of document.querySelectorAll("math-field")) nameField(field);
+    // what is on the screen is said again in the new language
+    if (!engineReady) return;
+    if (solved.childElementCount) solve({ record: false });
+    if (checkedOnce) check({ record: false });
+    if (workedOnce) showSteps({ record: false });
+    if (historySheet.open) renderHistory();
+  });
+}
+
 function setUpTheme() {
   const current = document.documentElement.dataset.theme || "system";
   for (const input of document.querySelectorAll('input[name="theme"]')) {
@@ -1118,10 +1380,72 @@ function setUpTheme() {
 
 // ---------------------------------------------------------------- start-up
 
+// ---------------------------------------------------------------- offline
+
+// sw.js keeps the whole app, engine included, on the device. A new version
+// installs quietly and waits until the reader chooses to reload.
+function setUpOffline() {
+  const state = $("offline-state");
+  const toast = $("update-toast");
+  const say = (key) => {
+    state.dataset.i18n = key;
+    state.textContent = t(key);
+  };
+  if (!("serviceWorker" in navigator)) return say("offline.unsupported");
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    // a reload only when the reader asked for the new version
+    if (reloading) location.reload();
+  });
+  const offer = (worker) => {
+    toast.hidden = false;
+    $("update-reload").onclick = () => {
+      reloading = true;
+      worker.postMessage("skip-waiting");
+    };
+  };
+  navigator.serviceWorker
+    .register("sw.js")
+    .then((registration) => {
+      if (registration.waiting && navigator.serviceWorker.controller) offer(registration.waiting);
+      registration.addEventListener("updatefound", () => {
+        const next = registration.installing;
+        next?.addEventListener("statechange", () => {
+          if (next.state === "installed" && navigator.serviceWorker.controller) offer(next);
+        });
+      });
+      return navigator.serviceWorker.ready;
+    })
+    .then(() => say("offline.ready"))
+    .catch(() => say("offline.unsupported"));
+}
+
+function savedLanguage() {
+  try {
+    return localStorage.getItem(LANGUAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+// The engine pill's word for "ready": it says so when the device is offline.
+function readyKey() {
+  return navigator.onLine === false ? "engine.readyOffline" : "engine.ready";
+}
+
 async function boot() {
+  try {
+    await setLanguage(pickLanguage(savedLanguage(), navigator.languages || [navigator.language]), {
+      save: false,
+    });
+  } finally {
+    document.documentElement.classList.remove("translating");
+  }
   setUpTabs();
   setUpSheets();
   setUpTheme();
+  setUpLanguage();
+  setUpOffline();
   await customElements.whenDefined("math-field");
 
   for (const field of [expressionField, lowerField, upperField]) configureField(field);
@@ -1132,12 +1456,12 @@ async function boot() {
       solveVariable = null;
       schedulePreview();
     },
-    lineLabel: "An equation or expression",
+    lineLabel: t("solve.line"),
   });
   $("add-equation").addEventListener("click", () => solveSheet.addLine());
   expressionField.value = String.raw`x^2\sin x`;
 
-  sheet = new MathSheet(mathLines);
+  sheet = new MathSheet(mathLines, { lineLabel: t("check.line") });
   keypad = new Keypad(keypadRoot, {
     getTarget: keypadTarget,
     onEnter: handleEnter,
@@ -1181,12 +1505,12 @@ async function boot() {
   for (const input of operationGroup.querySelectorAll("input")) {
     input.addEventListener("change", () => {
       updateOperationInput();
-      if (engineReady) showSteps();
+      if (engineReady) showSteps({ record: false });
     });
   }
   updateOperationInput();
 
-  const stop = () => engine.stop("Stopped. The engine restarts in the background.");
+  const stop = () => engine.stop(t("engine.stopped"));
   $("stop-check").addEventListener("click", stop);
   $("stop-solve").addEventListener("click", stop);
   $("stop-steps").addEventListener("click", stop);
@@ -1194,35 +1518,56 @@ async function boot() {
   // a shared link to someone's working opens on the Check tab
   if (sharedText()) selectTab("check");
 
-  setEngineState("loading", "Loading");
+  setEngineState("loading", "engine.loading");
   engine = new Engine({
-    onStatus: (text) => {
-      status.textContent = text;
-      solveStatus.textContent = text;
-      stepsStatus.textContent = text;
+    onStatus: (key) => {
+      for (const line of [status, solveStatus, stepsStatus]) {
+        line.dataset.i18n = key;
+        line.textContent = t(key);
+      }
     },
   });
   const version = await engine.ready;
   engineReady = true;
+  // seconds from opening the page to a working engine, shown in About
+  const ready = performance.mark("mathlint:engine-ready");
+  const showStartup = () =>
+    ($("startup").textContent = t("about.startup", { seconds: (ready.startTime / 1000).toFixed(1) }));
+  showStartup();
+  onLanguageChange(showStartup);
   versionSlot.textContent = "mathlint " + version;
-  setEngineState("ready", "Ready");
-  enginePill.title = `mathlint ${version} runs on your device`;
+  setEngineState("ready", readyKey());
+  for (const event of ["online", "offline"]) {
+    window.addEventListener(event, () => {
+      if (enginePill.dataset.state === "ready") setEngineState("ready", readyKey());
+    });
+  }
+  enginePill.title = t("engine.title", { version });
+  onLanguageChange(() => (enginePill.title = t("engine.title", { version })));
+  for (const line of [status, solveStatus, stepsStatus]) delete line.dataset.i18n;
   for (const line of [status, solveStatus, stepsStatus]) line.textContent = "";
   checkButton.disabled = false;
   stepsButton.disabled = false;
   solveButton.disabled = false;
-  solve();
-  if (activeTab() === "check") check();
+  await solve({ record: false });
+  if (activeTab() === "check") await check({ record: false });
+  warmUp();
+}
+
+// While the reader looks at the first answer, the engine loads what the other
+// kinds of problem need, so their first answer comes sooner.
+function warmUp() {
+  const idle = window.requestIdleCallback || ((callback) => setTimeout(callback, 1000));
+  idle(async () => {
+    const outcome = await engine.call("warm", {}, { quiet: true, timeLimit: 60000 });
+    if (outcome.ok) performance.mark("mathlint:warm", { detail: outcome.result });
+  });
 }
 
 boot().catch((error) => {
-  setEngineState("error", "Offline");
-  const message = "The math engine could not start.";
-  for (const line of [status, solveStatus, stepsStatus]) line.textContent = message;
+  setEngineState("error", "engine.failed");
+  for (const line of [status, solveStatus, stepsStatus]) line.textContent = t("engine.cannotStart");
   for (const target of [solved, results]) {
-    renderFailure(
-      target,
-      "Loading failed: " + error.message + ". Check your connection and reload — the engine comes from a CDN."
-    );
+    renderFailure(target, t("engine.loadFailed", { error: error.message }));
   }
 });

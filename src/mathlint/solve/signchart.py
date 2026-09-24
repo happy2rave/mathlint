@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import msg
 from ..parse.plain import latex_of, read_as
 from .inequality import FLIPPED, LATEX, RELATIONS, Inequality, Steps
 from .intervals import as_inequality
@@ -29,10 +30,13 @@ def sign_chart(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.
     shown = inequality.lhs  # what the last step showed on the left
     if inequality.rhs != 0:
         text = (
-            "Move everything to the left side and write it as one fraction. Do not multiply "
-            "by the denominator: its sign is not known"
+            msg(
+                "Move everything to the left side and write it as one "
+                "fraction. Do not multiply by the denominator: its sign is "
+                "not known"
+            )
             if rational
-            else "Move everything to the left side"
+            else msg("Move everything to the left side")
         )
         shown = _quotient(top, bottom)
         steps.show(text, Inequality(shown, op, 0))
@@ -44,7 +48,9 @@ def sign_chart(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.
         op = FLIPPED[op]
         shown = _quotient(top, bottom)
         steps.show(
-            "Multiply both sides by -1; multiplying by a negative number turns the sign around",
+            msg(
+                "Multiply both sides by -1; multiplying by a negative number turns the sign around"
+            ),
             Inequality(shown, op, 0),
             operation="* (-1)",
         )
@@ -59,13 +65,18 @@ def sign_chart(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.
         sp.Mul(*[factor**power for factor, power in bottom_factors]),
     )
     if read_as(factored) != read_as(shown):
-        steps.show("Factor", Inequality(factored, op, 0))
+        steps.show(msg("Factor"), Inequality(factored, op, 0))
 
     zeros = _zeros(top_factors, variable)
     poles = _zeros(bottom_factors, variable)
     if poles:
         excluded = ", ".join(f"{variable} = {read_as(point)}" for point in poles)
-        steps.text(f"The denominator is zero at {excluded}, so that is never part of the answer")
+        steps.text(
+            msg(
+                "The denominator is zero at {excluded}, so that is never part of the answer",
+                excluded=excluded,
+            )
+        )
     cuts = sorted(set(zeros) | set(poles), key=float)
     rows = [(factor, power, False) for factor, power in top_factors] + [
         (factor, power, True) for factor, power in bottom_factors
@@ -76,22 +87,35 @@ def sign_chart(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.
     if not cuts:
         test = sp.Integer(0)
         holds = bool(RELATIONS[op](factored.subs(variable, test), 0))
-        verdict = "always" if holds else "never"
-        steps.text(
-            f"The left side is never zero, so it has the same sign everywhere. At {variable} = 0 "
-            f"it is {read_as(factored.subs(variable, test))}, so the inequality is {verdict} true"
-        )
+        value = read_as(factored.subs(variable, test))
+        if holds:
+            text = msg(
+                "The left side is never zero, so it has the same sign everywhere. At "
+                "{variable} = 0 it is {value}, so the inequality is always true",
+                variable=variable,
+                value=value,
+            )
+        else:
+            text = msg(
+                "The left side is never zero, so it has the same sign everywhere. At "
+                "{variable} = 0 it is {value}, so the inequality is never true",
+                variable=variable,
+                value=value,
+            )
+        steps.text(text)
         return sp.S.Reals if holds else sp.S.EmptySet
 
     where = ", ".join(f"{variable} = {read_as(point)}" for point in cuts)
-    steps.text(f"The left side can only change sign where a factor is zero: {where}")
+    steps.text(
+        msg("The left side can only change sign where a factor is zero: {where}", where=where)
+    )
 
     intervals = _intervals(cuts)
     tests = [_test_point(interval) for interval in intervals]
     signs = [[_sign(factor**power, variable, test) for test in tests] for factor, power, _ in rows]
     totals = [_sign(factored, variable, test) for test in tests]
     steps.text(
-        "Make a sign chart: one test number in each interval gives the sign of every factor",
+        msg("Make a sign chart: one test number in each interval gives the sign of every factor"),
         *_chart(variable, intervals, rows, signs, totals, number),
     )
 
@@ -103,10 +127,13 @@ def sign_chart(inequality: Inequality, variable: sp.Symbol, steps: Steps) -> sp.
         answer = sp.Union(answer, sp.FiniteSet(*[point for point in zeros if point not in poles]))
     answer = sp.Complement(answer, sp.FiniteSet(*poles)) if poles else answer
     plain, latex = as_inequality(variable, answer)
-    sign_word = "positive" if wanted > 0 else "negative"
-    if op in ("<=", ">="):
-        sign_word += " or zero"
-    steps.text(f"Keep the intervals where the left side is {sign_word}", plain, latex)
+    keep = {
+        (True, False): msg("Keep the intervals where the left side is positive"),
+        (True, True): msg("Keep the intervals where the left side is positive or zero"),
+        (False, False): msg("Keep the intervals where the left side is negative"),
+        (False, True): msg("Keep the intervals where the left side is negative or zero"),
+    }
+    steps.text(keep[wanted > 0, op in ("<=", ">=")], plain, latex)
     return answer
 
 
@@ -160,7 +187,7 @@ def _chart(variable, intervals, rows, signs, totals, number) -> tuple[str, str]:
     if number != 1:
         names.insert(0, read_as(number))
         signs = [[1 if number > 0 else -1] * len(intervals), *signs]
-    names.append("left side")
+    names.append(msg("left side"))
     table = [[str(variable), *headers]]
     table += [
         [name, *[SIGN_PLAIN[value] for value in row]]
@@ -230,53 +257,72 @@ def absolute_cases(inequality: Inequality, variable: sp.Symbol, steps: Steps) ->
         return SOLVERS["sympy"](inequality, variable, steps)
     inside, op, bound, changed = isolated
     if changed:
-        steps.show("Get the absolute value on its own", Inequality(sp.Abs(inside), op, bound))
+        steps.show(msg("Get the absolute value on its own"), Inequality(sp.Abs(inside), op, bound))
 
     if bound < 0 or (bound == 0 and op in ("<", ">=")):
         # |A| is never negative
         always = op in (">", ">=")
-        verdict = "always" if always else "never"
-        steps.text(
-            f"An absolute value is never negative, so |{read_as(inside)}| {op} {read_as(bound)} "
-            f"is {verdict} true"
-        )
+        inside_text, bound_text = read_as(inside), read_as(bound)
+        if always:
+            text = msg(
+                "An absolute value is never negative, so |{inside}| {op} {bound} is always true",
+                inside=inside_text,
+                op=op,
+                bound=bound_text,
+            )
+        else:
+            text = msg(
+                "An absolute value is never negative, so |{inside}| {op} {bound} is never true",
+                inside=inside_text,
+                op=op,
+                bound=bound_text,
+            )
+        steps.text(text)
         return sp.S.Reals if always else sp.S.EmptySet
     if bound == 0 and op == "<=":
         steps.text(
-            "An absolute value is never negative, so it can only be 0 here",
+            msg("An absolute value is never negative, so it can only be 0 here"),
             f"{read_as(inside)} = 0",
             f"{latex_of(inside)} = 0",
         )
         return sp.FiniteSet(*sp.solveset(inside, variable, sp.S.Reals))
 
     def solve_part(part: Inequality) -> sp.Set:
-        steps.show("Solve", part)
+        steps.show(msg("Solve"), part)
         kind = classify(part, variable)
         return SOLVERS[methods_for(kind)[0]](part, variable, steps)
 
     if op in ("<", "<="):
         low, high = Inequality(-bound, op, inside), Inequality(inside, op, bound)
         steps.text(
-            f"An absolute value {op} {read_as(bound)} means the inside is between "
-            f"{read_as(-bound)} and {read_as(bound)}",
+            msg(
+                "An absolute value {op} {bound} means the inside is between {bound2} and {bound}",
+                op=op,
+                bound=read_as(bound),
+                bound2=read_as(-bound),
+            ),
             f"{read_as(-bound)} {op} {read_as(inside)} {op} {read_as(bound)}",
             rf"{latex_of(-bound)} {LATEX[op]} {latex_of(inside)} {LATEX[op]} {latex_of(bound)}",
         )
         answer = sp.Intersection(solve_part(low), solve_part(high))
         plain, latex = as_inequality(variable, answer)
-        steps.text("Both must hold, so the answer is where they overlap", plain, latex)
+        steps.text(msg("Both must hold, so the answer is where they overlap"), plain, latex)
         return answer
     flipped = FLIPPED[op]
     below, above = Inequality(inside, flipped, -bound), Inequality(inside, op, bound)
     steps.text(
-        f"An absolute value {op} {read_as(bound)} means the inside is below "
-        f"{read_as(-bound)} or above {read_as(bound)}",
+        msg(
+            "An absolute value {op} {bound} means the inside is below {bound2} or above {bound}",
+            op=op,
+            bound=read_as(bound),
+            bound2=read_as(-bound),
+        ),
         f"{below.plain()} or {above.plain()}",
         rf"{below.latex()} \quad\text{{or}}\quad {above.latex()}",
     )
     answer = sp.Union(solve_part(below), solve_part(above))
     plain, latex = as_inequality(variable, answer)
-    steps.text("Either one is enough, so the answer is both parts together", plain, latex)
+    steps.text(msg("Either one is enough, so the answer is both parts together"), plain, latex)
     return answer
 
 

@@ -12,6 +12,7 @@ import sympy as sp
 
 from ..document import Document, Line
 from ..equivalence import Verdict
+from ..i18n import msg
 from ..numeric import evaluate
 from ..parse.plain import read_as
 from ..report import Report, Step
@@ -57,47 +58,58 @@ def _judge(
 ) -> None:
     if previous_set is None or current_set is None:
         step.verdict = Verdict.UNSURE
-        step.message = "cannot work out the solutions of this line"
+        step.message = msg("cannot work out the solutions of this line")
         return
 
     lost = _difference(previous_set, current_set)
     gained = _difference(current_set, previous_set)
     if lost is None or gained is None:
         step.verdict = Verdict.UNSURE
-        step.message = "cannot compare the solutions of these two lines"
+        step.message = msg("cannot compare the solutions of these two lines")
         return
 
     real_losses = [value for value in lost if _satisfies(original, variable, value)]
     if real_losses:
         value = read_as(real_losses[0])
         step.verdict = Verdict.WRONG
-        step.message = f"the solution {variable.name} = {value} was lost"
+        step.message = msg(
+            "the solution {name} = {value} was lost", name=variable.name, value=value
+        )
         step.hints = [
-            f"did you divide by something that is zero when {variable.name} = {value}?"
+            msg(
+                "did you divide by something that is zero when {name} = {value}?",
+                name=variable.name,
+                value=value,
+            )
         ]
         return
 
     if lost:
         dropped = ", ".join(f"{variable.name} = {read_as(value)}" for value in lost)
         step.verdict = Verdict.OK
-        step.message = f"dropped {dropped}, which does not solve the original equation — good"
+        step.message = msg(
+            "dropped {dropped}, which does not solve the original equation — good", dropped=dropped
+        )
         return
 
     if gained:
         added = ", ".join(f"{variable.name} = {read_as(value)}" for value in gained)
         if arrow == "=>":
             step.verdict = Verdict.OK
-            step.message = f"adds {added}; an implication (=>) is allowed to do that"
+            step.message = msg(
+                "adds {added}; an implication (=>) is allowed to do that", added=added
+            )
             return
         step.verdict = Verdict.WARNING
-        step.message = (
-            f"this step introduces {added} — check it against the original equation "
-            "before writing it in the answer"
+        step.message = msg(
+            "this step introduces {added} — check it against the "
+            "original equation before writing it in the answer",
+            added=added,
         )
         return
 
     step.verdict = Verdict.OK
-    step.message = "same solutions as the line above"
+    step.message = msg("same solutions as the line above")
 
 
 def _check_final_answer(
@@ -114,11 +126,13 @@ def _check_final_answer(
     for value in last_line.solutions:
         if not _satisfies(original, variable, value):
             last_step.verdict = Verdict.WRONG
-            last_step.message = (
-                f"{variable.name} = {read_as(value)} does not satisfy the original "
-                f"equation on line {document.lines[0].number}"
+            last_step.message = msg(
+                "{name} = {value} does not satisfy the original equation on line {number}",
+                name=variable.name,
+                value=read_as(value),
+                number=document.lines[0].number,
             )
-            last_step.hints = ["always put your answers back into the first line"]
+            last_step.hints = [msg("always put your answers back into the first line")]
             return []
     return []
 

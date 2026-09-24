@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 import sympy as sp
 
+from ..i18n import either, msg
 from ..parse.plain import latex_of, read_as
 from ..steps.solution import Solution
 
@@ -98,12 +99,12 @@ def show(value: sp.Expr) -> str:
 
 def answer_text(variable: sp.Symbol, outcome: Outcome) -> str:
     if outcome.everything:
-        return "every real number is a solution"
+        return msg("every real number is a solution")
     if outcome.solution_set is not None:
         return f"{variable} in {sp.sstr(outcome.solution_set)}"
     if not outcome.values:
-        return "no real solution"
-    return " or ".join(f"{variable} = {show(value)}" for value in outcome.values)
+        return msg("no real solution")
+    return either(f"{variable} = {show(value)}" for value in outcome.values)
 
 
 def answer_latex(variable: sp.Symbol, outcome: Outcome) -> str:

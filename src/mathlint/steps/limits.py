@@ -16,6 +16,7 @@ from dataclasses import dataclass
 import sympy as sp
 
 from ..errors import ParseError
+from ..i18n import join, msg
 from ..parse.plain import latex_of, parse_expression, read_as
 from .solution import Solution, SolutionStep
 
@@ -53,16 +54,16 @@ def parse_limit(text: str) -> LimitProblem | None:
     else:
         bare = _BARE.match(rest)
         if bare is None:
-            raise ParseError("write the limit like lim x->2 (x^2 - 4)/(x - 2)")
+            raise ParseError(msg("write the limit like lim x->2 (x^2 - 4)/(x - 2)"))
         approach, rest = bare.group(0), rest[bare.end() :]
     match = _APPROACH.match(approach)
     if match is None:
-        raise ParseError("say what the variable approaches, like x->2 or x->oo")
+        raise ParseError(msg("say what the variable approaches, like x->2 or x->oo"))
     variable = sp.Symbol(match.group(1))
     point, direction = _point(match.group(2))
     body = rest.strip()
     if not body:
-        raise ParseError("a limit needs something to take the limit of")
+        raise ParseError(msg("a limit needs something to take the limit of"))
     expression = parse_expression(body).expr
     return LimitProblem(expression, variable, point, direction)
 
@@ -78,7 +79,7 @@ def _group(text: str) -> tuple[str, str]:
             depth -= 1
             if depth == 0:
                 return text[1:index], text[index + 1 :]
-    raise ParseError("unbalanced bracket in the limit")
+    raise ParseError(msg("unbalanced bracket in the limit"))
 
 
 def _point(text: str) -> tuple[sp.Expr, str]:
@@ -94,7 +95,7 @@ def _point(text: str) -> tuple[sp.Expr, str]:
         return (sp.oo if sign > 0 else -sp.oo), "+-"
     point = parse_expression(body).expr
     if point.free_symbols:
-        raise ParseError("the point a limit approaches must be a number or infinity")
+        raise ParseError(msg("the point a limit approaches must be a number or infinity"))
     return point, direction
 
 
@@ -170,9 +171,15 @@ class _Work:
 DOES_NOT_EXIST = sp.S.NaN
 
 
+def _from_side(side: str, value: sp.Expr) -> str:
+    if side == "-":
+        return msg("from the left it goes to {value}", value=_value_plain(value))
+    return msg("from the right it goes to {value}", value=_value_plain(value))
+
+
 def _value_plain(value: sp.Expr) -> str:
     if value is DOES_NOT_EXIST:
-        return "does not exist"
+        return msg("does not exist")
     return "inf" if value == sp.oo else "-inf" if value == -sp.oo else read_as(value)
 
 
@@ -188,9 +195,11 @@ def _value_latex(value: sp.Expr) -> str:
 def limit_solution(problem: LimitProblem) -> Solution:
     """The worked limit; ``result`` is the value, or NaN when it does not exist."""
     f, x, a, direction = problem.expression, problem.variable, problem.point, problem.direction
-    solution = Solution(operation="limit", title=f"Find {limit_plain(f, x, a, direction)}")
+    solution = Solution(
+        operation="limit", title=msg("Find {limit}", limit=limit_plain(f, x, a, direction))
+    )
     work = _Work(solution, problem)
-    work.limit("Start from", f)
+    work.limit(msg("Start from"), f)
     try:
         value = _limit(f, x, a, direction, work, 0)
     except (NotImplementedError, ValueError, TypeError, ZeroDivisionError):
@@ -198,7 +207,7 @@ def limit_solution(problem: LimitProblem) -> Solution:
     expected = _expected(f, x, a, direction)
     if value is None or not _same(value, expected):
         solution.steps = solution.steps[:1]
-        work.value("Limit (computer algebra)", expected)
+        work.value(msg("Limit (computer algebra)"), expected)
         value = expected
     solution.result = value
     solution.summary = f"{limit_plain(f, x, a, direction)} = {_value_plain(value)}"
@@ -236,7 +245,11 @@ def _limit(f, x, a, direction, work: _Work, depth: int) -> sp.Expr | None:
     direct = _substitute(f, x, a)
     if direct is not None:
         work.value(
-            f"Put {x} = {read_as(a)} straight in: the function is defined and continuous there",
+            msg(
+                "Put {x} = {a} straight in: the function is defined and continuous there",
+                x=x,
+                a=read_as(a),
+            ),
             direct,
         )
         return direct
@@ -245,8 +258,12 @@ def _limit(f, x, a, direction, work: _Work, depth: int) -> sp.Expr | None:
     top_value, bottom_value = _substitute(top, x, a), _substitute(bottom, x, a)
     if top_value == 0 and bottom_value == 0:
         work.note(
-            f"Putting {x} = {read_as(a)} in gives 0/0, which says nothing yet: "
-            "rewrite the expression first"
+            msg(
+                "Putting {x} = {a} in gives 0/0, which says nothing yet: "
+                "rewrite the expression first",
+                x=x,
+                a=read_as(a),
+            )
         )
         return _zero_over_zero(top, bottom, x, a, direction, work, depth)
     if bottom_value == 0 and top_value is not None and top_value != 0:
@@ -271,11 +288,16 @@ def _zero_over_zero(top, bottom, x, a, direction, work: _Work, depth: int):
     if top.is_polynomial(x) and bottom.is_polynomial(x):
         common = sp.gcd(top, bottom)
         if common.has(x):
-            work.limit("Factor the top and the bottom", _unevaluated_quotient(top, bottom))
+            work.limit(msg("Factor the top and the bottom"), _unevaluated_quotient(top, bottom))
             simpler = sp.cancel(top / bottom)
             work.limit(
-                f"Cancel the common factor {read_as(sp.factor(common))}; near {x} = "
-                f"{read_as(a)} it is not 0, so this changes nothing about the limit",
+                msg(
+                    "Cancel the common factor {factor}; near {x} = {a} it is not "
+                    "0, so this changes nothing about the limit",
+                    factor=read_as(sp.factor(common)),
+                    x=x,
+                    a=read_as(a),
+                ),
                 simpler,
             )
             return _limit(simpler, x, a, direction, work, depth + 1)
@@ -295,15 +317,30 @@ def _zero_over_zero(top, bottom, x, a, direction, work: _Work, depth: int):
             shown = Quotient(sp.Mul(top, conjugate), sp.factor(cleared))
             common = sp.gcd(top, cleared)
             simpler = conjugate * sp.cancel(top / cleared)
+        if side == "top":
+            text = msg(
+                "Multiply the top and the bottom by the conjugate {conjugate}, "
+                "so the square root disappears from the top",
+                conjugate=read_as(conjugate),
+            )
+        else:
+            text = msg(
+                "Multiply the top and the bottom by the conjugate {conjugate}, "
+                "so the square root disappears from the bottom",
+                conjugate=read_as(conjugate),
+            )
         work.limit(
-            f"Multiply the top and the bottom by the conjugate {read_as(conjugate)}, "
-            f"so the square root disappears from the {side}",
+            text,
             shown,
         )
         if common.has(x):
             work.limit(
-                f"Cancel the common factor {read_as(sp.factor(common))}; near {x} = "
-                f"{read_as(a)} it is not 0",
+                msg(
+                    "Cancel the common factor {factor}; near {x} = {a} it is not 0",
+                    factor=read_as(sp.factor(common)),
+                    x=x,
+                    a=read_as(a),
+                ),
                 simpler,
             )
             return _limit(simpler, x, a, direction, work, depth + 1)
@@ -311,7 +348,7 @@ def _zero_over_zero(top, bottom, x, a, direction, work: _Work, depth: int):
 
     new_top, new_bottom = sp.diff(top, x), sp.diff(bottom, x)
     work.limit(
-        "L'Hopital's rule: for 0/0, the limit of top/bottom is the limit of top'/bottom'",
+        msg("L'Hopital's rule: for 0/0, the limit of top/bottom is the limit of top'/bottom'"),
         _unevaluated_quotient(new_top, new_bottom),
     )
     return _limit(sp.simplify(new_top / new_bottom), x, a, direction, work, depth + 1)
@@ -344,31 +381,40 @@ def _is_square_root(term: sp.Expr) -> bool:
 
 def _over_zero(f, top_value, x, a, direction, work: _Work):
     work.note(
-        f"Putting {x} = {read_as(a)} in gives {read_as(top_value)}/0: the top stays near "
-        f"{read_as(top_value)} while the bottom shrinks to 0, so the function grows without "
-        "bound. Which way depends on the side"
+        msg(
+            "Putting {x} = {a} in gives {top_value}/0: the top stays "
+            "near {top_value} while the bottom shrinks to 0, so the "
+            "function grows without bound. Which way depends on the side",
+            x=x,
+            a=read_as(a),
+            top_value=read_as(top_value),
+        )
     )
     sides = {}
     for side in ("-", "+"):
         if direction in (side, "+-"):
             sides[side] = sp.limit(f, x, a, side)
-    words = {"-": "from the left", "+": "from the right"}
-    text = "; ".join(
-        f"{words[side]} it goes to {_value_plain(value)}" for side, value in sides.items()
-    )
+    text = join("; ", [_from_side(side, value) for side, value in sides.items()])
     if direction != "+-":
         (value,) = sides.values()
-        work.value(text[0].upper() + text[1:], value)
+        if direction == "-":
+            one_side = msg("From the left it goes to {value}", value=_value_plain(value))
+        else:
+            one_side = msg("From the right it goes to {value}", value=_value_plain(value))
+        work.value(one_side, value)
         return value
     if sides["-"] == sides["+"]:
-        work.value(f"Both sides agree: {text}", sides["+"])
+        work.value(msg("Both sides agree: {text}", text=text), sides["+"])
         return sides["+"]
-    work.value(f"The two sides disagree ({text}), so the limit does not exist", DOES_NOT_EXIST)
+    work.value(
+        msg("The two sides disagree ({text}), so the limit does not exist", text=text),
+        DOES_NOT_EXIST,
+    )
     return DOES_NOT_EXIST
 
 
 def _at_infinity(f, x, a, work: _Work, depth: int):
-    where = "infinity" if a == sp.oo else "minus infinity"
+    where = msg("infinity") if a == sp.oo else msg("minus infinity")
     top, bottom = sp.fraction(sp.together(f))
     if top.is_polynomial(x) and bottom.is_polynomial(x):
         top_degree = sp.degree(top, x) if top.has(x) else 0
@@ -377,47 +423,71 @@ def _at_infinity(f, x, a, work: _Work, depth: int):
             leading = sp.LT(sp.expand(top), x)
             value = sp.limit(leading, x, a)
             work.limit(
-                f"A polynomial behaves like its highest-power term as {x} goes to {where}",
+                msg(
+                    "A polynomial behaves like its highest-power term as {x} goes to {where}",
+                    x=x,
+                    where=where,
+                ),
                 leading / bottom,
             )
-            work.value(f"So it goes to {_value_plain(value)}", value)
+            work.value(msg("So it goes to {value}", value=_value_plain(value)), value)
             return value
         if top_degree == 0:
             value = sp.limit(f, x, a)
             work.value(
-                f"The top stays {read_as(top)} while the bottom grows without bound, so the "
-                "fraction shrinks to 0",
+                msg(
+                    "The top stays {top} while the bottom grows without bound, "
+                    "so the fraction shrinks to 0",
+                    top=read_as(top),
+                ),
                 value,
             )
             return value
         power = x**bottom_degree
         divided = Quotient(sp.expand(top / power), sp.expand(bottom / power))
         work.limit(
-            f"Divide the top and the bottom by {read_as(power)}, the highest power in the bottom",
+            msg(
+                "Divide the top and the bottom by {power}, the highest power in the bottom",
+                power=read_as(power),
+            ),
             divided,
         )
         value = sp.limit(f, x, a)
         if top_degree < bottom_degree:
-            reason = f"every term with {x} in a denominator goes to 0, and the top goes to 0"
+            reason = msg(
+                "every term with {x} in a denominator goes to 0, and the top goes to 0", x=x
+            )
         elif top_degree == bottom_degree:
-            reason = (
-                f"every term with {x} in a denominator goes to 0, leaving the ratio of the "
-                "leading numbers"
+            reason = msg(
+                "every term with {x} in a denominator goes to 0, leaving the "
+                "ratio of the leading numbers",
+                x=x,
             )
         else:
-            reason = "the top still grows without bound while the bottom settles to a number"
-        work.value(f"As {x} goes to {where}, {reason}", value)
+            reason = msg("the top still grows without bound while the bottom settles to a number")
+        work.value(msg("As {x} goes to {where}, {reason}", x=x, where=where, reason=reason), value)
         return value
 
     top_limit, bottom_limit = sp.limit(top, x, a), sp.limit(bottom, x, a)
     if top_limit.is_infinite and bottom_limit.is_infinite and depth <= MAX_REWRITES:
         new_top, new_bottom = sp.diff(top, x), sp.diff(bottom, x)
         work.limit(
-            "Both grow without bound (infinity over infinity), so use L'Hopital's rule: "
-            "the limit of top/bottom is the limit of top'/bottom'",
+            msg(
+                "Both grow without bound (infinity over infinity), so use "
+                "L'Hopital's rule: the limit of top/bottom is the limit of "
+                "top'/bottom'"
+            ),
             _unevaluated_quotient(new_top, new_bottom),
         )
         return _at_infinity(sp.simplify(new_top / new_bottom), x, a, work, depth + 1)
     value = sp.limit(f, x, a)
-    work.value(f"As {x} goes to {where}, it approaches {_value_plain(value)}", value)
+    work.value(
+        msg(
+            "As {x} goes to {where}, it approaches {value}",
+            x=x,
+            where=where,
+            value=_value_plain(value),
+        ),
+        value,
+    )
     return value

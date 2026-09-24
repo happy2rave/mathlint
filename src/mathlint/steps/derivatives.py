@@ -8,11 +8,18 @@ import sympy as sp
 from sympy.core.parameters import distribute
 
 from ..errors import ParseError
+from ..i18n import msg
 from ..parse.plain import latex_of, parse_expression, read_as
 from .calculus import differentiate_solution
 from .solution import Solution, SolutionStep
 
-_ORDINALS = {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth"}
+_ORDINALS = {
+    1: msg("first", context="derivative"),
+    2: msg("second", context="derivative"),
+    3: msg("third", context="derivative"),
+    4: msg("fourth", context="derivative"),
+    5: msg("fifth", context="derivative"),
+}
 MAX_ORDER = 10
 
 # "dy/dx: x^2 + y^2 = 25" or "y' for x y = 1": the separator is what tells it
@@ -30,7 +37,7 @@ _TANGENT = re.compile(
 
 
 def ordinal(n: int) -> str:
-    return _ORDINALS.get(n, f"{n}th")
+    return _ORDINALS.get(n) or msg("{n}th", context="derivative", n=n)
 
 
 # --- higher orders ------------------------------------------------------------------------
@@ -39,20 +46,28 @@ def ordinal(n: int) -> str:
 def higher_derivative_solution(expression: sp.Expr, variable: sp.Symbol, order: int) -> Solution:
     """Differentiate ``order`` times, each time with the rules named."""
     if order > MAX_ORDER:
-        raise ParseError(f"derivatives are worked out up to the {MAX_ORDER}th")
+        raise ParseError(msg("derivatives are worked out up to order {order}", order=MAX_ORDER))
     solution = Solution(
         operation="diff",
         title=(
-            f"The {ordinal(order)} derivative of {read_as(expression)} "
-            f"with respect to {variable}"
+            msg(
+                "The {ordinal} derivative of {expression} with respect to {variable}",
+                ordinal=ordinal(order),
+                expression=read_as(expression),
+                variable=variable,
+            )
         ),
     )
-    solution.add("Start from", expression=sp.Derivative(expression, (variable, order)))
+    solution.add(msg("Start from"), expression=sp.Derivative(expression, (variable, order)))
     current = expression
     for n in range(1, order + 1):
         single = differentiate_solution(current, variable)
         solution.add(
-            f"The {ordinal(n)} derivative: differentiate {read_as(current)}",
+            msg(
+                "The {ordinal} derivative: differentiate {current}",
+                ordinal=ordinal(n),
+                current=read_as(current),
+            ),
             expression=sp.Derivative(current, variable),
         )
         solution.steps.extend(single.steps[1:])
@@ -77,15 +92,18 @@ def implicit_solution(text: str) -> Solution:
 
     match = _IMPLICIT.match(text)
     if match is None:
-        raise ParseError("start with dy/dx, like dy/dx: x^2 + y^2 = 25")
+        raise ParseError(msg("start with dy/dx, like dy/dx: x^2 + y^2 = 25"))
     equation = parse_equation(text[match.end() :])
     x, y = sp.Symbol("x"), sp.Symbol("y")
     letters = equation.lhs.free_symbols | equation.rhs.free_symbols
     if not {x, y} <= letters or letters - {x, y}:
-        raise ParseError("implicit differentiation needs an equation in x and y")
+        raise ParseError(msg("implicit differentiation needs an equation in x and y"))
 
-    solution = Solution(operation="implicit", title=f"Find dy/dx for {_equation_plain(equation)}")
-    solution.steps.append(_equation_step("Start from", equation.lhs, equation.rhs))
+    solution = Solution(
+        operation="implicit",
+        title=msg("Find dy/dx for {equation}", equation=_equation_plain(equation)),
+    )
+    solution.steps.append(_equation_step(msg("Start from"), equation.lhs, equation.rhs))
 
     curve = sp.Function("y")(x)
     slope = sp.Symbol("y'")
@@ -95,8 +113,12 @@ def implicit_solution(text: str) -> Solution:
         sides.append(derivative.subs(sp.Derivative(curve, x), slope).subs(curve, y))
     solution.steps.append(
         _equation_step(
-            f"Differentiate both sides with respect to {x}. y depends on {x}, so the chain rule "
-            "gives every y term a factor y' = dy/dx",
+            msg(
+                "Differentiate both sides with respect to {x}. y depends on "
+                "{x}, so the chain rule gives every y term a factor y' = "
+                "dy/dx",
+                x=x,
+            ),
             *sides,
         )
     )
@@ -104,20 +126,24 @@ def implicit_solution(text: str) -> Solution:
     coefficient = sp.expand(moved.coeff(slope))
     rest = sp.expand(moved - coefficient * slope)
     if coefficient == 0:
-        raise ParseError("y' drops out, so this equation does not fix dy/dx")
+        raise ParseError(msg("y' drops out, so this equation does not fix dy/dx"))
     if sp.Poly(coefficient, x, y).LC() < 0:
         # a positive number in front of y' reads more easily
         coefficient, rest = -coefficient, -rest
     solution.steps.append(
         _equation_step(
-            "Keep the y' terms on the left and move everything else to the right",
+            msg("Keep the y' terms on the left and move everything else to the right"),
             sp.Mul(*sp.Mul.make_args(coefficient), slope, evaluate=False),
             -rest,
         )
     )
     answer = sp.factor(sp.cancel(-rest / coefficient))
     solution.steps.append(
-        _equation_step(f"Divide both sides by {read_as(coefficient)}", slope, answer)
+        _equation_step(
+            msg("Divide both sides by {coefficient}", coefficient=read_as(coefficient)),
+            slope,
+            answer,
+        )
     )
     solution.result = answer
     solution.summary = f"dy/dx = {read_as(answer)}"
@@ -147,26 +173,35 @@ def tangent_solution(text: str) -> tuple[Solution, sp.Expr, sp.Expr, tuple[sp.Ex
     """The tangent (or normal) line; also the curve, the line and the point, for a graph."""
     match = _TANGENT.match(text)
     if match is None:
-        raise ParseError("write it like: tangent to y = x^2 at x = 1")
+        raise ParseError(msg("write it like: tangent to y = x^2 at x = 1"))
     kind = match.group("kind").lower()
     curve = parse_expression(match.group("curve")).expr
     point = parse_expression(match.group("point")).expr
     letters = curve.free_symbols
     if len(letters) != 1 or point.free_symbols:
-        raise ParseError("give a curve y = f(x) in one letter, and a number to touch it at")
+        raise ParseError(msg("give a curve y = f(x) in one letter, and a number to touch it at"))
     (x,) = letters
     y = sp.Symbol("y")
 
-    solution = Solution(
-        operation="tangent",
-        title=f"The {kind} line to y = {read_as(curve)} at {x} = {read_as(point)}",
-    )
+    at = {"curve": read_as(curve), "x": x, "point": read_as(point)}
+    if kind == "tangent":
+        title = msg("The tangent line to y = {curve} at {x} = {point}", **at)
+    else:
+        title = msg("The normal line to y = {curve} at {x} = {point}", **at)
+    solution = Solution(operation="tangent", title=title)
     height = sp.simplify(curve.subs(x, point))
     if not height.is_finite or height.is_real is False:
-        raise ParseError(f"the curve is not defined at {x} = {read_as(point)}")
+        raise ParseError(
+            msg("the curve is not defined at {x} = {point}", x=x, point=read_as(point))
+        )
     solution.steps.append(
         SolutionStep(
-            text=f"The point on the curve: put {x} = {read_as(point)} into y = {read_as(curve)}",
+            text=msg(
+                "The point on the curve: put {x} = {point} into y = {curve}",
+                x=x,
+                point=read_as(point),
+                curve=read_as(curve),
+            ),
             display=f"({read_as(point)}, {read_as(height)})",
             display_latex=rf"\left({latex_of(point)},\ {latex_of(height)}\right)",
         )
@@ -175,7 +210,11 @@ def tangent_solution(text: str) -> tuple[Solution, sp.Expr, sp.Expr, tuple[sp.Ex
     slope = sp.simplify(derivative.subs(x, point))
     solution.steps.append(
         SolutionStep(
-            text=f"The slope of the tangent is the derivative at {x} = {read_as(point)}",
+            text=msg(
+                "The slope of the tangent is the derivative at {x} = {point}",
+                x=x,
+                point=read_as(point),
+            ),
             display=f"y' = {read_as(derivative)}, so the slope is {read_as(slope)}",
             display_latex=(
                 rf"y' = {latex_of(derivative)} \quad\Rightarrow\quad m = {latex_of(slope)}"
@@ -186,8 +225,10 @@ def tangent_solution(text: str) -> tuple[Solution, sp.Expr, sp.Expr, tuple[sp.Ex
         if slope == 0:
             solution.steps.append(
                 SolutionStep(
-                    text="The tangent is flat, so the normal, which is perpendicular to it, "
-                    "is the vertical line through the point",
+                    text=msg(
+                        "The tangent is flat, so the normal, which is perpendicular "
+                        "to it, is the vertical line through the point"
+                    ),
                     display=f"{x} = {read_as(point)}",
                     display_latex=f"{latex_of(x)} = {latex_of(point)}",
                 )
@@ -198,8 +239,10 @@ def tangent_solution(text: str) -> tuple[Solution, sp.Expr, sp.Expr, tuple[sp.Ex
         slope = sp.simplify(-1 / slope)
         solution.steps.append(
             SolutionStep(
-                text="The normal is perpendicular to the tangent, so its slope is -1 over "
-                "the tangent's",
+                text=msg(
+                    "The normal is perpendicular to the tangent, so its slope is "
+                    "-1 over the tangent's"
+                ),
                 display=f"m = {read_as(slope)}",
                 display_latex=f"m = {latex_of(slope)}",
             )
@@ -209,7 +252,7 @@ def tangent_solution(text: str) -> tuple[Solution, sp.Expr, sp.Expr, tuple[sp.Ex
         point_slope_right = slope * (x - point)
     solution.steps.append(
         SolutionStep(
-            text="Point-slope form: y - y1 = m(x - x1)",
+            text=msg("Point-slope form: y - y1 = m(x - x1)"),
             display=f"{read_as(point_slope_left)} = {read_as(point_slope_right)}",
             display_latex=f"{latex_of(point_slope_left)} = {latex_of(point_slope_right)}",
         )
@@ -217,7 +260,7 @@ def tangent_solution(text: str) -> tuple[Solution, sp.Expr, sp.Expr, tuple[sp.Ex
     line = sp.expand(slope * (x - point) + height)
     solution.steps.append(
         SolutionStep(
-            text="Solve for y",
+            text=msg("Solve for y"),
             display=f"y = {read_as(line)}",
             display_latex=f"y = {latex_of(line)}",
         )

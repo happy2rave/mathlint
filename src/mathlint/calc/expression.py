@@ -15,9 +15,10 @@ from sympy.core.parameters import distribute
 
 from ..equivalence import Verdict, compare
 from ..errors import UnsupportedError
+from ..i18n import msg
 from ..parse.plain import latex_of, parse_as_written, parse_expression, read_as
 from ..steps.solution import SolutionStep
-from .computation import METHOD_LABELS, Computation
+from .computation import Computation
 
 
 class Steps:
@@ -69,16 +70,22 @@ def compute_expression(text: str, method_name: str | None = None) -> Computation
         name for name in METHOD_ORDER if name in METHODS and METHODS[name].applies(expression)
     ]
     if not available:
-        raise UnsupportedError("there is nothing to simplify, expand or factor here")
+        raise UnsupportedError(msg("there is nothing to simplify, expand or factor here"))
     choice = method_name or default_method(expression, available)
     if choice not in available:
         options = ", ".join(available)
-        raise UnsupportedError(f"the method '{choice}' does not apply here — try {options}")
+        raise UnsupportedError(
+            msg(
+                "the method '{choice}' does not apply here — try {options}",
+                choice=choice,
+                options=options,
+            )
+        )
     ordered = [choice, *[name for name in available if name != choice]]
 
     computation = Computation(
         operation=choice,
-        title=f"{METHOD_LABELS[choice]} {read_as(expression)}",
+        title=_title(choice, read_as(expression)),
         kind="expression",
         method=choice,
         methods=ordered,
@@ -92,9 +99,9 @@ def compute_expression(text: str, method_name: str | None = None) -> Computation
         # never show steps that do not add up
         computation.steps = computation.steps[:1]
         result = _fallback(choice, expression)
-        steps.show(METHOD_LABELS[choice], result)
+        steps.show(_instruction(choice), result)
     if len(computation.steps) == 1:
-        steps.note("This is already as simple as it gets")
+        steps.note(msg("This is already as simple as it gets"))
     computation.finish(result)
     return computation
 
@@ -128,6 +135,25 @@ def _fallback(choice: str, expression: sp.Expr) -> sp.Expr:
 # --- what SymPy does silently while reading --------------------------------------------
 
 
+def _title(choice: str, expression: str) -> str:
+    if choice == "expand":
+        return msg("Expand {expression}", expression=expression)
+    if choice == "factor":
+        return msg("Factor {expression}", expression=expression)
+    if choice == "analyze":
+        return msg("Analyze {expression}", expression=expression)
+    return msg("Simplify {expression}", expression=expression)
+
+
+def _instruction(choice: str) -> str:
+    """The step's wording, not the method's name on its button."""
+    if choice == "expand":
+        return msg("Expand")
+    if choice == "factor":
+        return msg("Factor")
+    return msg("Simplify")
+
+
 def _start(text: str, expression: sp.Expr, steps: Steps) -> sp.Expr:
     """Show the expression as written, and name the rules SymPy used to tidy it."""
     try:
@@ -136,10 +162,10 @@ def _start(text: str, expression: sp.Expr, steps: Steps) -> sp.Expr:
         written = expression
     rules = tidy_rules(written)
     if rules and read_as(written) != read_as(expression):
-        steps.show("Start from", written)
+        steps.show(msg("Start from"), written)
         steps.show(_join(rules), expression)
     else:
-        steps.show("Start from", expression)
+        steps.show(msg("Start from"), expression)
     return expression
 
 
@@ -154,7 +180,7 @@ def tidy_rules(written: sp.Basic) -> list[str]:
     for node in sp.preorder_traversal(written):
         if isinstance(node, sp.Pow) and isinstance(node.base, sp.Pow) and node.exp != -1:
             if node.base.exp != -1:
-                add("A power of a power: multiply the exponents")
+                add(msg("A power of a power: multiply the exponents"))
         elif isinstance(node, sp.Mul):
             bases: dict[sp.Expr, list[sp.Expr]] = {}
             numbers = 0
@@ -167,22 +193,22 @@ def tidy_rules(written: sp.Basic) -> list[str]:
                     base, exponent = base.base, -base.exp
                 bases.setdefault(base, []).append(exponent)
             if numbers > 1:
-                add("Multiply the numbers")
+                add(msg("Multiply the numbers"))
             for exponents in bases.values():
                 if len(exponents) > 1:
                     if any(exponent.could_extract_minus_sign() for exponent in exponents):
-                        add("Divide powers with the same base: subtract the exponents")
+                        add(msg("Divide powers with the same base: subtract the exponents"))
                     else:
-                        add("Multiply powers with the same base: add the exponents")
+                        add(msg("Multiply powers with the same base: add the exponents"))
         elif isinstance(node, sp.Add):
             seen: set[sp.Expr] = set()
             for term in node.args:
                 _, rest = term.as_coeff_Mul()
                 if rest in seen and rest != 1:
-                    add("Collect like terms")
+                    add(msg("Collect like terms"))
                 seen.add(rest)
             if sum(1 for term in node.args if term.is_Number) > 1:
-                add("Add the numbers")
+                add(msg("Add the numbers"))
     return rules
 
 

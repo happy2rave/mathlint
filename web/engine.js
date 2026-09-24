@@ -1,5 +1,7 @@
 // Talks to the engine in its Web Worker. Every call gets a promise and a time
 // limit; a call that runs over it stops the worker and starts a fresh one.
+// Every request carries the reader's language, so the steps come back in it.
+import { language, t } from "./i18n.js";
 
 export const TIME_LIMIT_MS = 20000;
 
@@ -42,7 +44,7 @@ export class Engine {
     try {
       await this.ready;
     } catch (error) {
-      return { ok: false, error: "The math engine could not start: " + error.message };
+      return { ok: false, error: t("engine.couldNotStart", { error: error.message }) };
     }
     return new Promise((resolve) => {
       const id = this.nextId++;
@@ -52,12 +54,10 @@ export class Engine {
           resolve({ ok: false, error: "too slow for a live answer" });
           return;
         }
-        this.stop(
-          "This took longer than 20 seconds, so it was stopped. Try writing it more simply."
-        );
+        this.stop(t("engine.tooSlow"));
       }, timeLimit);
       this.pending.set(id, { resolve, timer });
-      this.worker.postMessage({ id, kind, payload });
+      this.worker.postMessage({ id, kind, payload: { lang: language(), ...payload } });
     });
   }
 

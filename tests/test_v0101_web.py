@@ -39,11 +39,11 @@ def test_the_keypad_docks_on_a_phone_and_hides_again():
     assert "body.keypad-open .keypad-slot" in STYLE
     assert "function openKeypad(field)" in APP
     assert "function closeKeypad()" in APP
-    assert 'setAttribute("aria-label", "Hide the keypad")' in KEYPAD
+    assert 'setAttribute("aria-label", t("keypad.hide"))' in KEYPAD
 
 
 def test_the_enter_key_says_what_it_does():
-    assert 'if (solveSheet.contains(field)) return "Solve";' in APP
+    assert 'if (solveSheet.contains(field)) return t("keypad.enterSolve");' in APP
     assert "refresh()" in KEYPAD
 
 
@@ -55,7 +55,7 @@ def test_checked_lines_are_marked_in_the_notebook_margin():
 
 
 def test_light_and_dark_themes_can_be_chosen():
-    assert '@media (prefers-color-scheme: dark)' in STYLE
+    assert "@media (prefers-color-scheme: dark)" in STYLE
     assert ':root:not([data-theme="light"])' in STYLE
     assert ':root[data-theme="dark"]' in STYLE
     for value in ("system", "light", "dark"):

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .equivalence import Verdict
+from .i18n import msg
 
 _COLORS = {
     Verdict.OK: "\033[32m",
@@ -13,7 +14,7 @@ _COLORS = {
     Verdict.UNSURE: "\033[36m",
 }
 _RESET = "\033[0m"
-_METHOD_WORDS = {"exact": "proved exactly", "numeric": "checked with numbers"}
+_METHOD_WORDS = {"exact": msg("proved exactly"), "numeric": msg("checked with numbers")}
 
 
 @dataclass

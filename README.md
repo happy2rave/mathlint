@@ -20,6 +20,12 @@ The app is built for phones first: tabs at the bottom, a keypad that docks like
 the phone's own keyboard, marks in the notebook's margin when you check your
 working, and a light and a dark theme.
 
+It speaks **English, Romanian, Russian and Spanish** — the interface and every
+step, hint and explanation. Add it to your home screen and it works
+**offline**: everything, the math engine included, is kept on your device, along
+with a **history** of what you solved and the problems you starred. Screen
+readers hear the math in words, in your language.
+
 ## Learn one step at a time
 
 The web page shows the first step and lets you reveal the rest at your pace.
@@ -296,6 +302,13 @@ mathlint check solution.txt --format markdown
 Exit codes: `0` nothing wrong, `1` a wrong step was found, `2` the input could
 not be read. That makes it usable in a script or in CI.
 
+Every command takes `--lang ro`, `--lang ru` or `--lang es` to explain the math
+in Romanian, Russian or Spanish:
+
+```bash
+mathlint solve "x^2 - 5x + 6 = 0" --lang es
+```
+
 From Python:
 
 ```python
@@ -393,7 +406,8 @@ reads your line differently than you meant it, that's a bug. See
 
 [SymPy](https://www.sympy.org) for the math; in the browser,
 [Pyodide](https://pyodide.org), [MathLive](https://mathlive.io) for the editor and
-[KaTeX](https://katex.org) for the results.
+[KaTeX](https://katex.org) for the results, all served from the site itself so
+the page asks nothing of any other server.
 
 The open-textbook problem library adapts exercises from OpenStax's
 *College Algebra with Corequisite Support 2e* under CC BY 4.0; see

@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 
 from ..errors import ParseError
+from ..i18n import msg
 
 _DERIVATIVE = re.compile(
     r"(?<![A-Za-z0-9_])d(?:\s*\^\s*(\d+))?\s*/\s*d\s*([A-Za-z][A-Za-z0-9_]*)(?:\s*\^\s*(\d+))?"
@@ -53,7 +54,7 @@ def _rewrite_derivative(text: str, match: re.Match[str]) -> str:
     else:
         operand, rest = text[start:], ""
     if not operand.strip():
-        raise ParseError("d/d" + variable + " needs something to differentiate")
+        raise ParseError(msg("d/d{variable} needs something to differentiate", variable=variable))
     spec = variable if order == 1 else f"({variable}, {order})"
     return f"{text[: match.start()]}Derivative(({_rewrite(operand)}), {spec}){_rewrite(rest)}"
 
@@ -67,14 +68,16 @@ def _rewrite_integral(text: str, match: re.Match[str]) -> str:
         if index < len(text) and text[index] == "^":
             upper, index = _read_bound(text, index + 1)
         else:
-            raise ParseError("this integral has a lower limit but no upper limit")
+            raise ParseError(msg("this integral has a lower limit but no upper limit"))
 
     closing = _find_differential(text, index)
     if closing is None:
-        raise ParseError("this integral needs a dx at the end (which variable do you integrate?)")
+        raise ParseError(
+            msg("this integral needs a dx at the end (which variable do you integrate?)")
+        )
     integrand = text[index : closing.start()].strip().rstrip("*").strip()
     if not integrand:
-        raise ParseError("this integral has nothing to integrate")
+        raise ParseError(msg("this integral has nothing to integrate"))
     variable = closing.group(1)
     rest = text[closing.end() :]
 
@@ -113,7 +116,7 @@ def _read_bound(text: str, index: int) -> tuple[str, int]:
         return f"({inner})", end
     match = _NUMBER_OR_NAME.match(text, index)
     if match is None:
-        raise ParseError("cannot read the limits of this integral")
+        raise ParseError(msg("cannot read the limits of this integral"))
     return match.group(0).replace(" ", ""), match.end()
 
 
@@ -126,7 +129,7 @@ def _balanced(text: str, index: int) -> tuple[str, int]:
             depth -= 1
             if depth == 0:
                 return text[index + 1 : position], position + 1
-    raise ParseError("unbalanced bracket")
+    raise ParseError(msg("unbalanced bracket"))
 
 
 def _skip_spaces(text: str, index: int) -> int:

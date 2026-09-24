@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from ..i18n import msg
 from ..parse.plain import latex_of
 from . import dispatch
 from .core import Equation, Outcome, Work, show, sort_values
@@ -24,7 +25,7 @@ def solve_rational(
     excluded = _excluded(denominators, variable)
     if excluded:
         work.show(
-            "A denominator can never be zero, so these values are excluded",
+            msg("A denominator can never be zero, so these values are excluded"),
             ", ".join(f"{variable} != {show(value)}" for value in excluded),
             r",\quad ".join(rf"{latex_of(variable)} \neq {latex_of(value)}" for value in excluded),
         )
@@ -33,7 +34,7 @@ def solve_rational(
     lhs = sp.expand(sp.cancel(equation.lhs * common))
     rhs = sp.expand(sp.cancel(equation.rhs * common))
     work.equation(
-        f"Multiply both sides by the common denominator {show(common)}",
+        msg("Multiply both sides by the common denominator {common}", common=show(common)),
         Equation(lhs, rhs),
         operation=f"* {show(common)}",
     )
@@ -41,15 +42,19 @@ def solve_rational(
     found = dispatch.solve_equation(Equation(lhs, rhs), variable, work, depth=depth + 1)
     if found.everything:
         allowed = sp.Complement(sp.S.Reals, sp.FiniteSet(*excluded))
-        work.note(f"Every {variable} works, except the excluded values")
+        work.note(msg("Every {variable} works, except the excluded values", variable=variable))
         return Outcome.as_set(allowed) if excluded else Outcome.all()
 
     kept = []
     for value in found.values:
         if any(sp.simplify(value - bad) == 0 for bad in excluded):
             work.note(
-                f"{variable} = {show(value)} was excluded at the start (it makes a "
-                "denominator zero), so it is not a solution"
+                msg(
+                    "{variable} = {value} was excluded at the start (it makes a "
+                    "denominator zero), so it is not a solution",
+                    variable=variable,
+                    value=show(value),
+                )
             )
         else:
             kept.append(value)

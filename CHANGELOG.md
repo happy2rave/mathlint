@@ -6,6 +6,51 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-09-24
+
+App quality: your language, offline, your history, and math a screen reader
+can read.
+
+### Added
+
+- **Romanian, Russian and Spanish.** The interface and everything the solver
+  says — steps, method names, answers, checker verdicts and hints, the **Why?**
+  panels, practice labels and error messages — in each language. The language
+  follows the browser until one is chosen in About; switching says what is on
+  the screen again. Translations are new: the English original is the
+  reference, and corrections from native speakers are welcome.
+- `mathlint solve`, `steps` and `check` take `--lang ro`, `--lang ru` or
+  `--lang es`.
+- **Works offline.** Every file of the site, the math engine included, is kept
+  on the device after the first visit. A new version installs quietly and the
+  page offers **Reload** instead of switching under you. About says when the
+  device is ready.
+- **Installable.** A web app manifest and icons: add mathlint to a phone's home
+  screen and it opens like an app.
+- **History and favourites.** Everything you solve, check and work out is kept
+  on your device, newest first. Reopen any of it, star the problems you want to
+  keep (they are never dropped, and stay when you clear the rest), delete one
+  or all.
+- **Math in words for screen readers,** in the chosen language: fractions,
+  powers, roots, functions, sets, matrices, integrals, limits and derivatives.
+  Keypad keys say their symbol, each result is announced once, and the checker's
+  margin marks and the graph's points have words. The page passes an axe audit
+  on every tab and sheet, at phone and desktop width.
+- About shows how long the engine took to start.
+
+### Changed
+
+- The page no longer loads anything from other sites: Pyodide, SymPy, KaTeX,
+  MathLive and the fonts are served from the site itself, each download pinned
+  by its hash at build time.
+- The engine loads less and overlaps more: mathlint's own code downloads while
+  SymPy loads and is unpacked straight into Python, so micropip (and the
+  packages it needs) are no longer fetched; the other solvers load while you
+  read the first answer.
+- CI checks performance budgets on every build: the page's own code, the
+  stylesheets before the first paint, the size of the whole site and the time
+  to import the engine.
+
 ## [0.10.1] — 2026-09-22
 
 A new look, built for phones first. The notebook stays; everything around it

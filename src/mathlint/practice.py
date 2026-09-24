@@ -5,7 +5,9 @@ from __future__ import annotations
 import hashlib
 import re
 
-_LABELS = ("Warm-up", "Another one", "Challenge")
+from .i18n import msg
+
+_LABELS = (msg("Warm-up"), msg("Another one"), msg("Challenge"))
 
 _BANK = {
     "polynomial": [

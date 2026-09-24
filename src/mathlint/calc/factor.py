@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 import sympy as sp
 from sympy.core.parameters import distribute
 
+from ..i18n import msg
 from ..parse.plain import latex_of, read_as
 from .expression import Steps, method, show
 
@@ -55,13 +56,13 @@ def _differs(factored: sp.Expr, expression: sp.Expr) -> bool:
 def factor_steps(expression: sp.Expr, steps: Steps) -> sp.Expr:
     polynomial = _expanded(expression)
     if read_as(polynomial) != read_as(expression):
-        steps.show("Multiply out first", polynomial)
+        steps.show(msg("Multiply out first"), polynomial)
     outside, rest = common_factor(polynomial)
     if outside != 1:
         text = (
-            "Take out a minus sign"
+            msg("Take out a minus sign")
             if outside == -1
-            else f"Take out the common factor {show(outside)}"
+            else msg("Take out the common factor {outside}", outside=show(outside))
         )
         steps.show(text, _product(outside, [(rest, 1)]))
     done: list[tuple[sp.Expr, int]] = []
@@ -162,7 +163,11 @@ def _difference_of_squares(terms: list[sp.Expr]) -> Found | None:
         return None
     return Found(
         [(a - b, 1), (a + b, 1)],
-        f"Difference of squares: a^2 - b^2 = (a - b)(a + b), with a = {show(a)} and b = {show(b)}",
+        msg(
+            "Difference of squares: a^2 - b^2 = (a - b)(a + b), with a = {a} and b = {b}",
+            a=show(a),
+            b=show(b),
+        ),
     )
 
 
@@ -177,15 +182,23 @@ def _cubes(terms: list[sp.Expr]) -> Found | None:
             return None
         return Found(
             [(a - b, 1), (_expanded(a**2 + a * b + b**2), 1)],
-            "Difference of cubes: a^3 - b^3 = (a - b)(a^2 + ab + b^2), "
-            f"with a = {show(a)} and b = {show(b)}",
+            msg(
+                "Difference of cubes: a^3 - b^3 = (a - b)(a^2 + ab + b^2), "
+                "with a = {a} and b = {b}",
+                a=show(a),
+                b=show(b),
+            ),
         )
     b = root_of(second, 3)
     if b is None:
         return None
     return Found(
         [(a + b, 1), (_expanded(a**2 - a * b + b**2), 1)],
-        f"Sum of cubes: a^3 + b^3 = (a + b)(a^2 - ab + b^2), with a = {show(a)} and b = {show(b)}",
+        msg(
+            "Sum of cubes: a^3 + b^3 = (a + b)(a^2 - ab + b^2), with a = {a} and b = {b}",
+            a=show(a),
+            b=show(b),
+        ),
     )
 
 
@@ -200,12 +213,20 @@ def _perfect_square(terms: list[sp.Expr]) -> Found | None:
     if _expanded(2 * a * b - middle) == 0:
         return Found(
             [(a + b, 2)],
-            f"Perfect square: a^2 + 2ab + b^2 = (a + b)^2, with a = {show(a)} and b = {show(b)}",
+            msg(
+                "Perfect square: a^2 + 2ab + b^2 = (a + b)^2, with a = {a} and b = {b}",
+                a=show(a),
+                b=show(b),
+            ),
         )
     if _expanded(2 * a * b + middle) == 0:
         return Found(
             [(a - b, 2)],
-            f"Perfect square: a^2 - 2ab + b^2 = (a - b)^2, with a = {show(a)} and b = {show(b)}",
+            msg(
+                "Perfect square: a^2 - 2ab + b^2 = (a - b)^2, with a = {a} and b = {b}",
+                a=show(a),
+                b=show(b),
+            ),
         )
     return None
 
@@ -228,11 +249,18 @@ def _trinomial(polynomial: sp.Expr, symbols: list[sp.Symbol]) -> Found | None:
     if pair is None:
         return None
     m, n = pair
-    disguise = f"This is a quadratic in {show(u)}. " if step > 1 else ""
+    disguise = msg("This is a quadratic in {u}. ", u=show(u)) if step > 1 else ""
     if a == 1:
         return Found(
             [(u + m, 1), (u + n, 1)],
-            f"{disguise}Find two numbers that multiply to {c} and add to {b}: {m} and {n}",
+            msg(
+                "{disguise}Find two numbers that multiply to {c} and add to {b}: {m} and {n}",
+                disguise=disguise,
+                c=c,
+                b=b,
+                m=m,
+                n=n,
+            ),
         )
     return _split_middle(a, b, c, m, n, u, disguise)
 
@@ -254,8 +282,13 @@ def _homogeneous(polynomial: sp.Expr, symbols: list[sp.Symbol]) -> Found | None:
     m, n = pair
     return Found(
         [(x + m * y, 1), (x + n * y, 1)],
-        f"Find two terms that multiply to {show(c * y**2)} and add to {show(b * y)}: "
-        f"{show(m * y)} and {show(n * y)}",
+        msg(
+            "Find two terms that multiply to {c} and add to {b}: {m} and {n}",
+            c=show(c * y**2),
+            b=show(b * y),
+            m=show(m * y),
+            n=show(n * y),
+        ),
     )
 
 
@@ -284,15 +317,22 @@ def _split_middle(a, b, c, m, n, u, disguise: str) -> Found:
     grouped = _pairs([(first_factor, first_inner), (second_factor, second_inner)])
     return Found(
         [(first_inner, 1), (first_factor + second_factor, 1)],
-        f"Take out the common bracket {show(first_inner)}",
+        msg("Take out the common bracket {first_inner}", first_inner=show(first_inner)),
         [
             (
-                f"{disguise}Find two numbers that multiply to a*c = {a * c} and add to "
-                f"b = {b}: {m} and {n}. Split the middle term with them",
+                msg(
+                    "{disguise}Find two numbers that multiply to a*c = {a} and "
+                    "add to b = {b}: {m} and {n}. Split the middle term with them",
+                    disguise=disguise,
+                    a=a * c,
+                    b=b,
+                    m=m,
+                    n=n,
+                ),
                 read_as(split),
                 latex_of(split),
             ),
-            ("Take out the common factor of each pair", *grouped),
+            (msg("Take out the common factor of each pair"), *grouped),
         ],
     )
 
@@ -315,10 +355,10 @@ def _grouping(terms: list[sp.Expr]) -> Found | None:
         pulled = _pairs([(first_factor, first_inner), (second_factor, second_inner)])
         return Found(
             [(first_inner, 1), (first_factor + second_factor, 1)],
-            f"Take out the common bracket {show(first_inner)}",
+            msg("Take out the common bracket {first_inner}", first_inner=show(first_inner)),
             [
-                ("Group the terms in pairs", grouped_plain, grouped_latex),
-                ("Take out the common factor of each pair", *pulled),
+                (msg("Group the terms in pairs"), grouped_plain, grouped_latex),
+                (msg("Take out the common factor of each pair"), *pulled),
             ],
         )
     return None
@@ -350,8 +390,13 @@ def _rational_root(polynomial: sp.Expr, x: sp.Symbol) -> Found | None:
             quotient = sp.quo(poly, sp.Poly(linear, x)).as_expr()
             return Found(
                 [(linear, 1), (quotient, 1)],
-                f"{x} = {show(root)} makes it 0, so {show(linear)} is a factor "
-                f"(the factor theorem). Divide it out",
+                msg(
+                    "{x} = {root} makes it 0, so {linear} is a factor (the "
+                    "factor theorem). Divide it out",
+                    x=x,
+                    root=show(root),
+                    linear=show(linear),
+                ),
             )
     return None
 
@@ -360,7 +405,7 @@ def _computer(polynomial: sp.Expr) -> Found | None:
     _, factors = sp.factor_list(polynomial)
     if sum(count for _, count in factors) < 2:
         return None
-    return Found([(factor, count) for factor, count in factors], "Factor (computer algebra)")
+    return Found([(factor, count) for factor, count in factors], msg("Factor (computer algebra)"))
 
 
 def _pairs(parts: list[tuple[sp.Expr, sp.Expr]]) -> tuple[str, str]:
