@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { speak } from "../speech.js";
+import { TABS } from "../keypad.js";
 
 const dictionary = (lang) =>
   JSON.parse(readFileSync(new URL(`../locales/${lang}.json`, import.meta.url), "utf-8"));
@@ -78,4 +79,16 @@ test("the same math in Romanian, Russian and Spanish", () => {
   assert.equal(speak(latex, wordsFor("ro")), "1 supra 2 plus x la pătrat egal cu radical din y");
   assert.equal(speak(latex, wordsFor("ru")), "1 делённое на 2 плюс x в квадрате равно квадратный корень из y");
   assert.equal(speak(latex, wordsFor("es")), "1 entre 2 más x al cuadrado es igual a la raíz cuadrada de y");
+});
+
+test("every keypad key can be spoken, a function key on its own too", () => {
+  const words = wordsFor("en");
+  for (const tab of TABS) {
+    for (const key of tab.rows.flat()) {
+      if (!key.label || key.title) continue;
+      // punctuation may have no words (the key then says its label); nothing may throw
+      assert.equal(typeof speak(key.label, words), "string", `${tab.id}: ${key.label}`);
+    }
+  }
+  assert.equal(speak(String.raw`\sin`, words), "sine");
 });

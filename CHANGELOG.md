@@ -50,6 +50,11 @@ lands in the notebook as math you can edit — read on the device, offline.
 - The red of wrong marks is a shade darker in the light theme, for contrast on
   its tinted background.
 
+### Fixed
+
+- The keypad's **f(x)** and **∫ d/dx** tabs were empty: a function key such as
+  `sin` broke the words a screen reader hears, and with them the whole tab.
+
 ## [0.11.0] — 2026-09-24
 
 App quality: your language, offline, your history, and math a screen reader
