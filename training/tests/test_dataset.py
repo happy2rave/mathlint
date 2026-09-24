@@ -9,6 +9,7 @@ from PIL import Image
 from mathrec import dataset, formulas, photo, render_printed, symbols, vocab
 from mathrec.download import DOWNLOADS
 from mathrec.image import HEIGHT, MAX_WIDTH, prepare
+from mathrec.tensors import collate
 
 needs_handwriting = pytest.mark.skipif(
     not (symbols.CACHE / "detexify.pkl").exists() and not (DOWNLOADS / "detexify.sql").exists(),
@@ -60,7 +61,8 @@ def test_a_photographed_formula_keeps_all_its_ink():
 
 def test_a_batch_pads_images_with_paper_and_tokens_with_pad():
     images = [np.full((HEIGHT, 40), 255, np.uint8), np.zeros((HEIGHT, 70), np.uint8)]
-    batch_images, batch_tokens = dataset.collate([(images[0], [1, 5, 2]), (images[1], [1, 2])])
+    batch_images, batch_tokens, widths = collate([(images[0], [1, 5, 2]), (images[1], [1, 2])])
+    assert widths.tolist() == [40, 70]
     assert batch_images.shape == (2, 1, HEIGHT, 80)
     assert batch_images[0].max() == 0 and batch_images[1, 0, :, :70].min() == 1
     assert batch_images[1, 0, :, 70:].max() == 0
@@ -79,10 +81,16 @@ def test_the_eval_sets_are_the_same_every_time(tmp_path):
 
 
 @needs_handwriting
-def test_the_stream_yields_images_with_their_tokens():
-    stream = iter(dataset.Stream(seed=1))
-    for _ in range(8):
-        pixels, ids = next(stream)
-        assert pixels.dtype == np.uint8 and pixels.shape[0] == HEIGHT
-        assert ids[0] == vocab.START and ids[-1] == vocab.END
-        assert len(ids) <= dataset.MAX_TOKENS
+def test_batches_hold_images_of_about_the_same_width_with_their_tokens():
+    groups = dataset.batches(seed=1, size=4, pool=3)
+    assert len(groups) == 3
+    everything = sorted(image.shape[1] for group in groups for image, _ in group)
+    for group in groups:
+        widths = sorted(image.shape[1] for image, _ in group)
+        # each batch is a run of neighbours in the sorted widths
+        start = everything.index(widths[0])
+        assert widths == everything[start : start + len(widths)]
+        for image, ids in group:
+            assert image.dtype == np.uint8 and image.shape[0] == HEIGHT
+            assert ids[0] == vocab.START and ids[-1] == vocab.END
+            assert len(ids) <= dataset.MAX_TOKENS

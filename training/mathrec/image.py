@@ -84,20 +84,27 @@ def resize(pixels: np.ndarray, width: int, height: int) -> np.ndarray:
     return np.clip(np.rint(out), 0, 255).astype(np.uint8)
 
 
-def _weights(size_in: int, size_out: int) -> np.ndarray:
+def _taps(size_in: int, size_out: int) -> tuple[np.ndarray, np.ndarray]:
+    """For each output pixel, the input pixels it reads and their weights (a triangle)."""
     scale = size_in / size_out
     support = max(scale, 1.0)
     centres = (np.arange(size_out) + 0.5) * scale
-    positions = np.arange(size_in) + 0.5
-    weights = np.maximum(0.0, 1.0 - np.abs(positions[None, :] - centres[:, None]) / support)
-    return weights / weights.sum(axis=1, keepdims=True)
+    first = np.floor(centres - support).astype(np.int64)
+    count = int(np.ceil(2 * support)) + 2
+    index = first[:, None] + np.arange(count)[None, :]
+    weights = np.maximum(0.0, 1.0 - np.abs(index + 0.5 - centres[:, None]) / support)
+    weights[(index < 0) | (index >= size_in)] = 0.0
+    weights /= weights.sum(axis=1, keepdims=True)
+    return np.clip(index, 0, size_in - 1), weights
 
 
 def _resample(pixels: np.ndarray, size: int, axis: int) -> np.ndarray:
     if pixels.shape[axis] == size:
         return pixels
-    weights = _weights(pixels.shape[axis], size)
-    return weights @ pixels if axis == 0 else pixels @ weights.T
+    index, weights = _taps(pixels.shape[axis], size)
+    if axis == 0:
+        return np.einsum("otw,ot->ow", pixels[index], weights)
+    return np.einsum("hot,ot->ho", pixels[:, index], weights)
 
 
 def _max_filter(pixels: np.ndarray, radius: int, pick=np.maximum) -> np.ndarray:

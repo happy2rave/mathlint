@@ -26,16 +26,24 @@ def photograph(canvas: Image.Image, size: float, rng: random.Random) -> Image.Im
     box = ink_bounds(canvas)
     if box is None:
         return canvas.convert("L")
-    left, top, right, bottom = box
-    ink = np.asarray(canvas.convert("L"), dtype=np.float32)[top:bottom, left:right] / 255
+    canvas = canvas.convert("L").crop(box)
+    # no bigger than it needs to be: the model sees 96 px tall, at most 768 wide
+    shrink = min(1.0, 200 / canvas.height, 2400 / canvas.width)
+    if shrink < 1.0:
+        canvas = canvas.resize(
+            (max(1, round(canvas.width * shrink)), max(1, round(canvas.height * shrink))),
+            Image.Resampling.BILINEAR,
+        )
+        size *= shrink
+    ink = np.asarray(canvas, dtype=np.float32) / 255
     ink = 1 - (1 - ink) * rng.uniform(0.55, 1.0)  # pen, or pencil
     ink_h, ink_w = ink.shape
 
     # the camera's frame: the line with paper around it, never cut off
     frame_h = round(ink_h * rng.uniform(1.3, 2.4))
-    frame_w = round(max(ink_w * rng.uniform(1.25, 1.7), frame_h * 1.5))
-    x = rng.randint(round(frame_w * 0.1), frame_w - ink_w - round(frame_w * 0.1))
-    y = rng.randint(round(frame_h * 0.1), frame_h - ink_h - round(frame_h * 0.1))
+    frame_w = round(max(ink_w * rng.uniform(1.3, 1.7), frame_h * 1.5))
+    x = _place(frame_w, ink_w, rng)
+    y = _place(frame_h, ink_h, rng)
     layer = np.ones((frame_h, frame_w), dtype=np.float32)
     layer[y : y + ink_h, x : x + ink_w] = ink
     if rng.random() < 0.25:
@@ -55,6 +63,12 @@ def photograph(canvas: Image.Image, size: float, rng: random.Random) -> Image.Im
         Image.Resampling.BILINEAR,
     )
     return _jpeg(image, rng.randint(25, 95))
+
+
+def _place(frame: int, ink: int, rng: random.Random) -> int:
+    """Where the ink starts in the frame, at least a tenth of the frame from each side."""
+    low = round(frame * 0.1)
+    return rng.randint(low, max(low, frame - ink - low))
 
 
 def _neighbour(layer: np.ndarray, ink: np.ndarray, y: int, rng: random.Random) -> None:
@@ -121,7 +135,7 @@ def _light(height: int, width: int, rng: random.Random) -> np.ndarray:
         angle = rng.uniform(0, 2 * math.pi)
         across = (xs - rng.uniform(0, 1)) * width * math.cos(angle)
         across += (ys - rng.uniform(0, 1)) * height * math.sin(angle)
-        soft = 1 / (1 + np.exp(-across / (height * rng.uniform(0.05, 0.4))))
+        soft = 1 / (1 + np.exp(np.clip(-across / (height * rng.uniform(0.05, 0.4)), -60, 60)))
         light *= 1 - rng.uniform(0.2, 0.45) * soft
     return light
 

@@ -7,9 +7,14 @@ Four kinds of image, all made on the fly and all passed through
 - handwritten: written on white (the pad);
 - printed-photo and handwritten-photo: the same, photographed on paper.
 
-``Stream`` is an endless PyTorch dataset of them. The held-out sets are made
-once from fixed seeds and written to ``training/data/eval/<kind>/``: the same
-images on every machine and every run, never trained on.
+``stream`` makes them endlessly and ``batches`` groups them into batches of
+images of about the same width, so little of a batch is padding. The held-out
+sets are made once from fixed seeds and written to
+``training/data/eval/<kind>/``: the same images on every machine and every
+run, never trained on.
+
+Nothing here imports PyTorch, so the processes that make training data stay
+small (``feed.py``); ``tensors.py`` turns their batches into tensors.
 """
 
 from __future__ import annotations
@@ -19,9 +24,7 @@ import random
 from pathlib import Path
 
 import numpy as np
-import torch
 from PIL import Image
-from torch.utils.data import IterableDataset, get_worker_info
 
 from . import formulas, photo, render_hand, render_printed, vocab
 from .download import DATA
@@ -42,42 +45,27 @@ def example(kind: str, latex: str, rng: random.Random) -> np.ndarray:
     return np.asarray(prepare(canvas))
 
 
-class Stream(IterableDataset):
-    """Endless (image, token ids) pairs; each worker draws its own."""
-
-    def __init__(self, seed: int) -> None:
-        self.seed = seed
-
-    def __iter__(self):
-        worker = get_worker_info()
-        rng = random.Random(self.seed * 1000 + (worker.id if worker else 0))
-        while True:
-            latex = formulas.sample(rng)
-            ids = vocab.encode(vocab.tokenize(latex))
-            if len(ids) > MAX_TOKENS:
-                continue
-            kind = rng.choices(KINDS, weights=WEIGHTS)[0]
-            yield example(kind, latex, rng), ids
+def stream(seed: int):
+    """Endless (image, token ids) pairs of every kind, mixed by ``WEIGHTS``."""
+    rng = random.Random(seed)
+    while True:
+        latex = formulas.sample(rng)
+        ids = vocab.encode(vocab.tokenize(latex))
+        if len(ids) > MAX_TOKENS:
+            continue
+        kind = rng.choices(KINDS, weights=WEIGHTS)[0]
+        yield example(kind, latex, rng), ids
 
 
-def to_tensor(pixels: list[np.ndarray]) -> torch.Tensor:
-    """Images as one batch, ink 1 and paper 0, padded with paper on the right."""
-    width = max(image.shape[1] for image in pixels)
-    width = -(-width // 16) * 16  # the encoder downsamples by 16
-    batch = torch.zeros(len(pixels), 1, pixels[0].shape[0], width)
-    for index, image in enumerate(pixels):
-        ink = 1.0 - torch.from_numpy(image.astype(np.float32)) / 255.0
-        batch[index, 0, :, : image.shape[1]] = ink
-    return batch
-
-
-def collate(batch: list[tuple[np.ndarray, list[int]]]) -> tuple[torch.Tensor, torch.Tensor]:
-    images = to_tensor([image for image, _ in batch])
-    length = max(len(ids) for _, ids in batch)
-    tokens = torch.full((len(batch), length), vocab.PAD, dtype=torch.long)
-    for index, (_, ids) in enumerate(batch):
-        tokens[index, : len(ids)] = torch.tensor(ids)
-    return images, tokens
+def batches(seed: int, size: int, pool: int = 16) -> list[list[tuple[np.ndarray, list[int]]]]:
+    """``pool`` batches of ``size``, each of images of about the same width, shuffled."""
+    examples = stream(seed)
+    everything = sorted(
+        (next(examples) for _ in range(size * pool)), key=lambda example: example[0].shape[1]
+    )
+    groups = [everything[i : i + size] for i in range(0, len(everything), size)]
+    random.Random(seed).shuffle(groups)
+    return groups
 
 
 def make_eval(kind: str, count: int, root: Path = EVAL) -> Path:
