@@ -30,8 +30,8 @@ real problems with known answers — runs on every commit.
 | v0.10 | Done: Premium, free | "Why?" on every step, step-by-step reveal, animated steps, tutor mode, practice |
 | v0.10.1 | Done: A new look | Phone-first app shell around the notebook, docked keypad, result cards, dark theme |
 | v0.11 | Done: App quality | Installable, offline, history, speed, screen readers, Romanian, Russian and Spanish |
+| v0.12 | Done: Camera and handwriting | Photograph printed or handwritten math, or write it on the screen — read on the device, offline |
 | v1.0 | App stores | Android and iOS apps from the same code |
-| v1.x | Camera | Photo to editable math, printed first, then handwriting — on the device |
 
 ### v0.5 — Solve it
 
@@ -124,14 +124,21 @@ device. History and favourites on the device. The engine warms up while you
 read the first answer, and CI holds the page to performance budgets. Math is
 read aloud in words, in the chosen language, and the page passes an axe audit.
 
+### v0.12 — Camera and handwriting
+
+Photograph a problem, printed or handwritten, or write it on the screen with a
+finger or a stylus, and it lands in the notebook as math you can edit. The app
+fades to a faint outline of the notebook over the camera; what is inside it is
+read, line by line, and written into the notebook as if by hand. A compact
+recognizer (about 4 MB, downloaded the first time it is used) runs on the
+device, offline, with no machine-learning runtime: its layers are plain
+JavaScript. It was trained only on data that may be used commercially:
+formulas generated from the math mathlint solves, typeset in open fonts and
+written with handwritten symbols from Detexify and HASYv2. Symbols it is unsure
+of are named under the notebook, and nothing is solved before you have seen it.
+Word problems, which need a language model, would only ever be an opt-in extra.
+
 ### v1.0 — App stores
 
 Android and iOS apps built from the same web code (Capacitor), and a stable
 Python package on PyPI.
-
-### v1.x — Camera
-
-Take or pick a photo and crop it; the math is recognised **on the device** and
-lands in the editor, where you fix anything misread before solving. Printed math
-first, handwriting after. Word problems, which need a language model, would only
-ever be an opt-in extra.

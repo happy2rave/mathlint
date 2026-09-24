@@ -1,7 +1,7 @@
 # v0.12 "Camera and handwriting" — design
 
 Date: 2026-09-24
-Status: approved
+Status: shipped in v0.12.0
 
 ## Goal
 
