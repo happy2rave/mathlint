@@ -154,6 +154,45 @@ def _pixels(image: np.ndarray) -> dict:
     }
 
 
+def synthetic_page(width: int, height: int) -> np.ndarray:
+    """A big page of blocky "writing" under uneven light, made the same way by the
+    JavaScript test, so the preparation of a photo taller than 384 px is compared
+    without storing one."""
+    y, x = np.mgrid[0:height, 0:width]
+    page = 150 + (x * 7 + y * 13) % 60 + x * 40 // width
+    writing = ((x // 23 + y // 31) % 3 == 0) & (y > height // 3) & (y < 2 * height // 3)
+    writing &= (x > width // 8) & (x < 7 * width // 8)
+    return np.where(writing, 30, page).astype(np.uint8)
+
+
+def _preparation(folder: Path) -> None:
+    """Grayscale inputs and what image.prepare makes of them."""
+    import random
+
+    from PIL import Image
+
+    from mathrec import photo, render_hand, render_printed
+    from mathrec.image import prepare
+
+    cases = []
+    rng = random.Random(11)
+    for name, renderer, photographed in [
+        ("photographed handwriting", render_hand, True),
+        ("photographed print", render_printed, True),
+        ("the pad", render_hand, False),
+    ]:
+        canvas, size = renderer.draw_formula(r"\frac{x+1}{2}=3y", rng)
+        image = photo.photograph(canvas, size, rng) if photographed else canvas.convert("L")
+        image.thumbnail((420, 420))  # keep the fixture small
+        gray = np.asarray(image)
+        ready = np.asarray(prepare(Image.fromarray(gray)))
+        cases.append({"name": name, "input": _pixels(gray), "expected": _pixels(ready)})
+    page = synthetic_page(900, 520)
+    ready = np.asarray(prepare(Image.fromarray(page)))
+    cases.append({"name": "synthetic", "synthetic": [900, 520], "expected": _pixels(ready)})
+    (folder / "prepare.json").write_text(json.dumps(cases), encoding="utf-8")
+
+
 @torch.no_grad()
 def fixtures(folder: Path, model_path: Path | None) -> None:
     """The tests' fixtures: a tiny random model with PyTorch's outputs, and, when
@@ -185,6 +224,7 @@ def fixtures(folder: Path, model_path: Path | None) -> None:
         "logits": logits[0].flatten().tolist(),
     }
     (folder / "tiny.json").write_text(json.dumps(expected), encoding="utf-8")
+    _preparation(folder)
 
     if model_path is None:
         return
