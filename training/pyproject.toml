@@ -1,0 +1,38 @@
+[project]
+name = "mathrec"
+version = "0.1.0"
+description = "Trains mathlint's on-device recognizer: photos and handwriting to LaTeX."
+requires-python = ">=3.12"
+dependencies = [
+    "mathlint",
+    "numpy>=2",
+    "pillow>=11",
+    "torch>=2.8",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+mathlint = { path = "..", editable = true }
+torch = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+src = ["."]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
