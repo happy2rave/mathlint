@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "mathlint",
     "numpy>=2",
+    "fonttools>=4.50",
     "pillow>=11",
     "torch>=2.8",
 ]
