@@ -23,3 +23,7 @@ fonts or assembled from handwritten symbols under ODbL and CC BY licenses, then
 | --- | --- |
 | `mathrec/vocab.py` | The LaTeX the recognizer may write, one spelling per picture |
 | `mathrec/formulas.py` | Formulas to learn from, weighted like what students bring |
+| `mathrec/layout.py` | Where every symbol goes: fractions, scripts, roots, brackets, matrices |
+| `mathrec/fonts.py` | The open fonts printed formulas are typeset in, pinned by hash |
+| `mathrec/render_printed.py` | A formula as a textbook prints it |
+| `mathrec/image.py` | The shape of every input: grayscale, cropped to the ink, 96 px tall |
