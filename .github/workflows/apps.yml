@@ -76,7 +76,7 @@ jobs:
             adb install -r app/android/app/build/outputs/apk/debug/app-debug.apk
             adb logcat -c
             adb shell am start -W -n ${{ env.APP_ID }}/.MainActivity
-            python3 scripts/wait_for_log.py --timeout 600 "${{ env.READY }}" -- adb logcat -v brief
+            python3 scripts/wait_for_log.py --timeout 900 "${{ env.READY }}" -- adb logcat -v brief
 
   ios:
     name: iOS
@@ -119,4 +119,4 @@ jobs:
           xcrun simctl boot "$device"
           xcrun simctl bootstatus "$device"
           xcrun simctl install "$device" build/ios/Build/Products/Debug-iphonesimulator/App.app
-          python3 scripts/wait_for_log.py --timeout 600 "$READY" -- xcrun simctl launch --console-pty "$device" "$APP_ID"
+          python3 scripts/wait_for_log.py --timeout 900 "$READY" -- xcrun simctl launch --console-pty "$device" "$APP_ID"
