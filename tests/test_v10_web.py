@@ -54,3 +54,12 @@ def test_the_page_says_when_the_engine_is_ready():
 def test_native_js_is_stamped_like_the_other_scripts():
     build = (ROOT / "scripts" / "build_web.py").read_text(encoding="utf-8")
     assert '"native.js"' in build.split("_LOCAL_FILES = (")[1].split(")")[0]
+
+
+def test_the_practice_row_does_not_widen_the_page():
+    # the spoken words beside each problem are placed absolutely; without a
+    # containing block inside the scrolling row they widened a phone's page,
+    # which then panned sideways (in the apps too)
+    row = STYLE.split(".practice-list {", 1)[1].split("}", 1)[0]
+    assert "position: relative;" in row
+    assert "overflow-x: auto;" in row

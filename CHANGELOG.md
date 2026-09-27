@@ -51,6 +51,12 @@ page, and a stable Python package.
   Python versions; the license is given only as its SPDX expression, since
   PyPI refuses a license classifier beside one.
 
+### Fixed
+
+- On a phone, the row of practice problems under an answer made the whole page
+  wider than the screen, so it could be dragged sideways (and would have in the
+  apps).
+
 ## [0.12.0] — 2026-09-24
 
 Camera and handwriting: photograph a problem, or write it by hand, and it

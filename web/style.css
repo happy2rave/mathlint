@@ -1238,6 +1238,9 @@ math-field.bound {
 
 /* practice: a row of cards to swipe through */
 .practice-list {
+  /* the words a screen reader hears beside each problem are placed absolutely:
+     here they stay inside the row, which clips them, instead of widening the page */
+  position: relative;
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(12rem, 78%);
