@@ -66,6 +66,7 @@ _LOCAL_FILES = (
     "pad.js",
     "reading.js",
     "writing.js",
+    "native.js",
     "examples.json",
     "solve-examples.json",
     "textbook-problems.json",

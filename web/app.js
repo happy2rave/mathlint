@@ -10,6 +10,7 @@ import { Pad } from "./pad.js";
 import { recognizer, unsureText } from "./reading.js";
 import { writeLines } from "./writing.js";
 import { LANGUAGE_KEY, language, onLanguageChange, pickLanguage, setLanguage, t } from "./i18n.js";
+import { backStep, followTheme, leave, nativePlatform, onBackButton } from "./native.js";
 
 const STORAGE_KEY = "mathlint:last-solution";
 const THEME_KEY = "mathlint:theme";
@@ -530,15 +531,21 @@ async function loadRecognizer(progress, say) {
   try {
     const loaded = await recognizer((fraction) => {
       progress(fraction ?? 0);
-      say(t("read.downloading"));
+      say(loadingText());
     });
     progress(null);
     return loaded;
   } catch (error) {
     progress(null);
-    say(navigator.onLine ? t("read.failed", { error: error.message }) : t("read.offline"));
+    const offline = !navigator.onLine && !nativePlatform();
+    say(offline ? t("read.offline") : t("read.failed", { error: error.message }));
     return null;
   }
+}
+
+// The web downloads the recognizer once; the apps carry it, so they only load it.
+function loadingText() {
+  return nativePlatform() ? t("read.preparing") : t("read.downloading");
 }
 
 function showReadTime(ms) {
@@ -608,7 +615,7 @@ function openCamera(context) {
   camera.open();
   // the download starts while the student lines the page up; its message goes
   // when it is done, and any other message (no camera, say) stays
-  const downloading = t("read.downloading");
+  const downloading = loadingText();
   loadRecognizer(
     (fraction) => camera.showProgress(fraction),
     (text) => camera.dialog.dataset.mode !== "no-camera" && camera.setStatus(text)
@@ -1568,7 +1575,8 @@ function applyTheme(theme) {
   } catch {
     /* the choice lasts until the page is closed */
   }
-  // the browser's own bar follows the page
+  // the browser's own bar follows the page, and so does the app's status bar
+  followTheme(theme);
   const background = getComputedStyle(document.body).backgroundColor;
   for (const meta of document.querySelectorAll('meta[name="theme-color"]')) {
     if (!meta.dataset.original) meta.dataset.original = meta.content;
@@ -1625,6 +1633,8 @@ function setUpOffline() {
     state.dataset.i18n = key;
     state.textContent = t(key);
   };
+  // inside the Android and iOS apps every file is already on the device
+  if (nativePlatform()) return say("offline.app");
   if (!("serviceWorker" in navigator)) return say("offline.unsupported");
   let reloading = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
@@ -1654,6 +1664,43 @@ function setUpOffline() {
     .catch(() => say("offline.unsupported"));
 }
 
+// ---------------------------------------------------------------- the apps
+
+// Inside the Android and iOS apps (web/native.js); on the web, nothing to do.
+function setUpApp() {
+  const platform = nativePlatform();
+  if (!platform) return;
+  document.documentElement.dataset.app = platform;
+  // the stores take payments only through their own systems, and mathlint
+  // charges for nothing: the apps leave the coffee link out (style.css)
+  const free = document.querySelector(".support p");
+  free.dataset.i18n = "about.freeApp";
+  free.textContent = t("about.freeApp");
+  onBackButton(goBack);
+}
+
+// Android's back button: what Escape does to the sheet or the camera on top,
+// then the keypad, then back to Solve, and only then out of the app.
+function goBack() {
+  const dialog = [...document.querySelectorAll("dialog[open]")].at(-1);
+  const step = backStep({
+    dialog: Boolean(dialog),
+    keypadOpen: document.body.classList.contains("keypad-open"),
+    tab: activeTab(),
+  });
+  if (step === "dialog") {
+    // a dialog may close itself (the camera fades out first)
+    if (dialog.dispatchEvent(new Event("cancel", { cancelable: true }))) closeSheet(dialog);
+  } else if (step === "keypad") {
+    document.activeElement?.blur?.();
+    closeKeypad();
+  } else if (step === "tab") {
+    selectTab("solve", { focus: true });
+  } else {
+    leave();
+  }
+}
+
 function savedLanguage() {
   try {
     return localStorage.getItem(LANGUAGE_KEY);
@@ -1680,6 +1727,7 @@ async function boot() {
   setUpTheme();
   setUpLanguage();
   setUpOffline();
+  setUpApp();
   await customElements.whenDefined("math-field");
 
   for (const field of [expressionField, lowerField, upperField]) configureField(field);
@@ -1764,6 +1812,8 @@ async function boot() {
   });
   const version = await engine.ready;
   engineReady = true;
+  // one line for the app builds' smoke tests (and anyone with the console open)
+  console.info(`mathlint: engine ready ${version}`);
   // seconds from opening the page to a working engine, shown in About
   const ready = performance.mark("mathlint:engine-ready");
   const showStartup = () =>

@@ -32,8 +32,8 @@ it works offline from the first launch and never downloads anything.
 of its functions does nothing.
 
 - **Detecting the app.** Capacitor puts a `Capacitor` object on the page before
-  it runs; `isNativePlatform()` and `getPlatform()` say which app it is. The page
-  gets the classes `app`, `app-android` or `app-ios` on `<html>`.
+  it runs; `isNativePlatform()` and `getPlatform()` say which app it is, and
+  `<html data-app="android">` (or `"ios"`) lets the stylesheet know.
 - **No downloads, no service worker.** The files are already on the device, so
   the service worker is not registered, and About says that everything is inside
   the app. The recognizer (about 4 MB) ships in the app, so the camera and the
