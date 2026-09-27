@@ -1,0 +1,36 @@
+Scrie o ecuație, fotografiaz-o sau scrie-o de mână, iar mathlint o rezolvă pas cu pas. Sau scrie-ți propria rezolvare, iar mathlint găsește primul pas greșit și o dovedește cu o valoare pentru care cele două rânduri diferă.
+
+Totul este gratuit, pentru totdeauna: nimic de cumpărat, fără cont și fără reclame. Totul rulează pe telefonul tău, așa că funcționează offline și nimic din ce scrii sau fotografiezi nu pleacă de pe el.
+
+REZOLVĂ
+• Ecuații de gradul întâi, de gradul al doilea și de grad mai mare, fracții, radicali, module, exponențiale și logaritmi
+• Sisteme de ecuații, prin substituție, reducere, regula lui Cramer sau matrice
+• Inecuații cu tabel de semn, cu răspunsul sub formă de intervale și pe axa numerelor
+• „Exprimă-l pe y din formulă”
+• Fiecare răspuns este verificat în problema inițială înainte de a fi arătat. Când mathlint nu poate rezolva ceva, o spune în loc să ghicească.
+
+VERIFICĂ-ȚI REZOLVAREA
+• Scrie-ți rezolvarea rând cu rând într-un caiet, iar mathlint marchează fiecare pas pe margine
+• Un pas este declarat greșit doar cu o dovadă: o valoare pentru care cele două rânduri diferă
+• Pașii adevărați doar uneori sunt avertismente, nu greșeli („doar pentru x ≥ 0”)
+
+ÎNVAȚĂ PAS CU PAS
+• „De ce?” la fiecare pas: regula, un mic exemplu și greșeala obișnuită
+• Arată câte un pas pe rând sau încearcă singur pasul următor
+• Exerciții făcute după problema pe care ai rezolvat-o
+
+ANALIZĂ MATEMATICĂ ȘI NU NUMAI
+• Derivate, integrale, limite, serii și ecuații diferențiale, cu pași
+• Grafice pe care le poți trage și mări, cu domeniul, intersecțiile cu axele, asimptotele, extremele și punctele de inflexiune
+• Calcule, desfaceri de paranteze, descompuneri în factori și simplificări, cu răspunsul exact și zecimal
+
+CAMERĂ ȘI SCRIS DE MÂNĂ
+• Fotografiază matematică tipărită sau scrisă de mână, ori scrie pe ecran cu degetul sau cu un stylus
+• Citită pe telefon, offline; fotografiile nu sunt păstrate niciodată
+
+PENTRU TOȚI
+• Engleză, română, rusă și spaniolă, inclusiv pașii
+• O temă luminoasă și una întunecată
+• Cititoarele de ecran citesc matematica în cuvinte
+
+mathlint este gratuit pentru uz personal, educațional și alt uz necomercial. Codul său sursă poate fi citit la github.com/happy2rave/mathlint.

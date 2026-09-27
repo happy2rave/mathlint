@@ -17,3 +17,6 @@ training/.venv/
 
 # the apps: npm packages, and what Capacitor copies in (app/*/.gitignore has the rest)
 app/node_modules/
+# store screenshots, made again from the page by `npm run screenshots` in app/
+app/fastlane/metadata/android/*/images/
+app/fastlane/screenshots/

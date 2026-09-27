@@ -51,12 +51,18 @@ class Measure:
 
 
 def own_code_kb(site: Path) -> float:
-    files = [path for path in site.iterdir() if path.is_file() and path.suffix in _OWN]
+    files = [
+        path
+        for path in site.iterdir()
+        if path.is_file() and path.suffix in _OWN and path.name not in _NOT_THE_PAGE
+    ]
     files += sorted((site / "locales").glob("*.json"))[:1]  # one language is loaded
     return sum(len(gzip.compress(path.read_bytes(), 9)) for path in files) / 1024
 
 
 _OWN = {".html", ".js", ".css", ".json", ".webmanifest"}
+#: pages of their own, which the app never loads
+_NOT_THE_PAGE = {"privacy.html"}
 
 
 def recognizer_kb(site: Path) -> float:

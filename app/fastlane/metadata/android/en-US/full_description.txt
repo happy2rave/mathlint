@@ -1,0 +1,36 @@
+Type an equation, photograph it or write it by hand, and mathlint solves it step by step. Or write out your own working, and mathlint finds the first wrong step and proves it with a value where the two lines differ.
+
+Everything is free, for good: there is nothing to buy, no account and no ads. Everything runs on your phone, so it works offline, and nothing you type or photograph leaves it.
+
+SOLVE IT
+• Linear, quadratic and higher-degree equations, fractions, roots, absolute values, exponentials and logarithms
+• Systems of equations, by substitution, elimination, Cramer's rule or matrices
+• Inequalities with sign charts, the answer as intervals and on a number line
+• "Solve this formula for y"
+• Every answer is put back into the problem before it is shown. When mathlint cannot solve something, it says so instead of guessing.
+
+CHECK YOUR WORKING
+• Write your solution one line at a time in a notebook, and mathlint marks each step in the margin
+• A step is called wrong only with proof: a value where the two lines differ
+• Steps that are only sometimes true are warnings, not errors ("only for x ≥ 0")
+
+LEARN ONE STEP AT A TIME
+• "Why?" on every step: the rule, a tiny example and the usual mistake
+• Reveal one step at a time, or try the next step yourself
+• Practice problems made from the one you solved
+
+CALCULUS AND MORE
+• Derivatives, integrals, limits, series and differential equations, with steps
+• Graphs you can drag and pinch, with the domain, intercepts, asymptotes, extrema and inflection points
+• Arithmetic, expanding, factoring and simplifying, with an exact answer and a decimal
+
+CAMERA AND HANDWRITING
+• Photograph printed or handwritten math, or write it on the screen with a finger or a stylus
+• Read on the phone, offline; photos are never kept
+
+FOR EVERYONE
+• English, Romanian, Russian and Spanish, steps included
+• A light and a dark theme
+• Screen readers hear the math in words
+
+mathlint is free for personal, educational and other noncommercial use. Its source code is open to read at github.com/happy2rave/mathlint.

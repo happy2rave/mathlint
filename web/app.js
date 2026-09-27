@@ -13,6 +13,7 @@ import { LANGUAGE_KEY, language, onLanguageChange, pickLanguage, setLanguage, t 
 import { backStep, followTheme, leave, nativePlatform, onBackButton } from "./native.js";
 
 const STORAGE_KEY = "mathlint:last-solution";
+const PRIVACY_URL = "https://happy2rave.github.io/mathlint/privacy.html";
 const THEME_KEY = "mathlint:theme";
 
 const $ = (id) => document.getElementById(id);
@@ -1676,6 +1677,9 @@ function setUpApp() {
   const free = document.querySelector(".support p");
   free.dataset.i18n = "about.freeApp";
   free.textContent = t("about.freeApp");
+  // the site's copy, in the phone's browser: a page opened inside the app
+  // would have no way back on iOS
+  $("privacy-link").href = PRIVACY_URL;
   onBackButton(goBack);
 }
 

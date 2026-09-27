@@ -36,3 +36,99 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv build
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  android:
+    # Runs once the maintainer has put the upload key in the repository's
+    # secrets and set the variable ANDROID_RELEASE to "true" (docs/app-stores.md):
+    # a signed App Bundle for Google Play, and a signed APK on the GitHub release.
+    needs: release
+    if: vars.ANDROID_RELEASE == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      MATHLINT_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+      MATHLINT_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+      MATHLINT_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: astral-sh/setup-uv@v5
+      - run: npm ci
+        working-directory: app
+      - run: uv run python scripts/build_app.py
+      - name: The upload key
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_UPLOAD_KEYSTORE }}
+        run: |
+          echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          echo "MATHLINT_UPLOAD_KEYSTORE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+      - name: Build the signed App Bundle and APK
+        run: ./gradlew bundleRelease assembleRelease --no-daemon
+        working-directory: app/android
+      - name: Attach them to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/android/app/build/outputs/bundle/release/app-release.aab "mathlint-${GITHUB_REF_NAME}.aab"
+          cp app/android/app/build/outputs/apk/release/app-release.apk "mathlint-${GITHUB_REF_NAME}.apk"
+          gh release upload "${GITHUB_REF_NAME}" "mathlint-${GITHUB_REF_NAME}.aab" "mathlint-${GITHUB_REF_NAME}.apk"
+      - name: Send the bundle to Google Play's internal testing
+        # the maintainer promotes it to production in the Play Console
+        if: vars.PLAY_PUBLISH == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: io.github.happy2rave.mathlint
+          releaseFiles: mathlint-${{ github.ref_name }}.aab
+          track: internal
+          status: completed
+
+  ios:
+    # Runs once the maintainer has put an App Store Connect API key in the
+    # repository's secrets and set APPSTORE_PUBLISH to "true" (docs/app-stores.md):
+    # the app is archived, signed by Xcode through the key, and sent to TestFlight.
+    needs: release
+    if: vars.APPSTORE_PUBLISH == 'true'
+    runs-on: macos-latest
+    env:
+      KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+      ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+      TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: astral-sh/setup-uv@v5
+      - run: npm ci
+        working-directory: app
+      - run: uv run python scripts/build_app.py
+      - name: The App Store Connect API key
+        env:
+          KEY: ${{ secrets.APPSTORE_API_KEY }}
+        run: |
+          printf '%s' "$KEY" > "$RUNNER_TEMP/AuthKey.p8"
+          echo "KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+      - name: Archive
+        run: >
+          xcodebuild -project app/ios/App/App.xcodeproj -scheme App -configuration Release
+          -destination "generic/platform=iOS" -archivePath "$RUNNER_TEMP/mathlint.xcarchive"
+          -allowProvisioningUpdates -authenticationKeyPath "$KEY_PATH"
+          -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID"
+          DEVELOPMENT_TEAM="$TEAM_ID" archive
+      - name: Send it to TestFlight
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :method string app-store-connect" \
+            -c "Add :destination string upload" -c "Add :teamID string $TEAM_ID" \
+            -c "Add :signingStyle string automatic" "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/mathlint.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID"

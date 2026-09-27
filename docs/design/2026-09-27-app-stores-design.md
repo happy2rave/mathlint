@@ -93,8 +93,9 @@ of its functions does nothing.
   Pyodide, WebAssembly, SymPy and mathlint's wheel loaded from the app's files.
 - **Releases** (`release.yml`, on a version tag):
   - Android: a signed App Bundle for Google Play and a signed APK attached to
-    the GitHub release, when the signing key is in the repository's secrets.
-    Upload to Google Play's internal testing track when `PLAY_PUBLISH` is `true`.
+    the GitHub release, once the upload key is in the repository's secrets and
+    `ANDROID_RELEASE` is `true`. Upload to Google Play's internal testing track
+    when `PLAY_PUBLISH` is `true`.
   - iOS: an archive signed through App Store Connect's API and uploaded to
     TestFlight when `APPSTORE_PUBLISH` is `true`.
   - Like PyPI today, each is switched off until the maintainer sets it up once.
@@ -113,8 +114,10 @@ of its functions does nothing.
   shared. App Store privacy: Data Not Collected. Both follow from the design
   and are recorded in `docs/app-stores.md` with the other one-time steps
   (developer accounts, the signing key, content ratings, screenshots).
-- **Screenshots** of the real page at phone and tablet sizes, made by
-  `scripts/screenshots.py` in a browser, in each language.
+- **Screenshots** of the real page at the sizes each store asks for (6.9"
+  iPhone, 13" iPad, phone and 10" tablet), in each language, with Play's icon
+  and feature graphic: `npm run screenshots` in `app/` drives the built site in
+  a browser and writes them where fastlane looks, outside git.
 
 ## 5. A stable Python package
 

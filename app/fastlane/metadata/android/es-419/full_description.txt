@@ -1,0 +1,36 @@
+Escribe una ecuación, fotografíala o escríbela a mano, y mathlint la resuelve paso a paso. O escribe tu propio desarrollo, y mathlint encuentra el primer paso erróneo y lo demuestra con un valor en el que las dos líneas difieren.
+
+Todo es gratis, para siempre: no hay nada que comprar, ni cuentas ni anuncios. Todo funciona en tu teléfono, así que funciona sin conexión, y nada de lo que escribes o fotografías sale de él.
+
+RESOLVER
+• Ecuaciones lineales, cuadráticas y de grado superior, fracciones, raíces, valores absolutos, exponenciales y logaritmos
+• Sistemas de ecuaciones, por sustitución, reducción, la regla de Cramer o matrices
+• Inecuaciones con tabla de signos, con la respuesta en intervalos y en la recta numérica
+• «Despeja y de esta fórmula»
+• Cada respuesta se sustituye en el problema antes de mostrarse. Cuando mathlint no puede resolver algo, lo dice en lugar de adivinar.
+
+COMPRUEBA TU DESARROLLO
+• Escribe tu solución línea a línea en un cuaderno, y mathlint marca cada paso en el margen
+• Un paso se declara erróneo solo con una prueba: un valor en el que las dos líneas difieren
+• Los pasos que solo a veces son ciertos son avisos, no errores («solo para x ≥ 0»)
+
+APRENDE PASO A PASO
+• «¿Por qué?» en cada paso: la regla, un ejemplo pequeño y el error habitual
+• Muestra los pasos de uno en uno, o intenta tú el siguiente paso
+• Ejercicios de práctica creados a partir del problema que resolviste
+
+CÁLCULO Y MÁS
+• Derivadas, integrales, límites, series y ecuaciones diferenciales, con pasos
+• Gráficas que puedes arrastrar y ampliar, con el dominio, los cortes con los ejes, las asíntotas, los extremos y los puntos de inflexión
+• Aritmética, desarrollo, factorización y simplificación, con la respuesta exacta y en decimales
+
+CÁMARA Y ESCRITURA A MANO
+• Fotografía matemáticas impresas o escritas a mano, o escríbelas en la pantalla con el dedo o un lápiz óptico
+• Se leen en el teléfono, sin conexión; las fotos nunca se guardan
+
+PARA TODOS
+• Inglés, rumano, ruso y español, pasos incluidos
+• Un tema claro y uno oscuro
+• Los lectores de pantalla leen las matemáticas en palabras
+
+mathlint es gratis para uso personal, educativo y cualquier otro uso no comercial. Su código fuente se puede leer en github.com/happy2rave/mathlint.

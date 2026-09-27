@@ -16,10 +16,25 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            // The upload key, from the environment: the Release workflow takes it
+            // from the repository's secrets (docs/app-stores.md makes one).
+            if (System.getenv("MATHLINT_UPLOAD_KEYSTORE")) {
+                storeFile file(System.getenv("MATHLINT_UPLOAD_KEYSTORE"))
+                storePassword System.getenv("MATHLINT_UPLOAD_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("MATHLINT_UPLOAD_KEY_ALIAS")
+                keyPassword System.getenv("MATHLINT_UPLOAD_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (System.getenv("MATHLINT_UPLOAD_KEYSTORE")) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
