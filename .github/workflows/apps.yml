@@ -1,0 +1,122 @@
+name: Apps
+
+# Builds the Android and iOS apps and starts each one until the page says its
+# engine is ready: Pyodide, SymPy and mathlint, loaded from the app's own files
+# inside the platform's web view. See app/README.md.
+
+on:
+  push:
+    paths:
+      - "app/**"
+      - "web/**"
+      - "src/mathlint/**"
+      - "scripts/build_app.py"
+      - "scripts/build_web.py"
+      - "scripts/vendor.py"
+      - "scripts/icons.py"
+      - "scripts/wait_for_log.py"
+      - ".github/workflows/apps.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apps-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_ID: io.github.happy2rave.mathlint
+  READY: "mathlint: engine ready"
+
+jobs:
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+          cache-dependency-path: app/android/**/*.gradle*
+      - uses: astral-sh/setup-uv@v5
+      - run: npm ci
+        working-directory: app
+      - run: uv run python scripts/build_app.py
+      - name: Build the debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        working-directory: app/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mathlint-android-debug
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - name: Let the emulator use KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Start the app until the engine is ready
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            adb install -r app/android/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell am start -W -n ${{ env.APP_ID }}/.MainActivity
+            python3 scripts/wait_for_log.py --timeout 600 "${{ env.READY }}" -- adb logcat -v brief
+
+  ios:
+    name: iOS
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: astral-sh/setup-uv@v5
+      - run: npm ci
+        working-directory: app
+      - run: uv run python scripts/build_app.py
+      - name: Build for the simulator
+        run: >
+          xcodebuild -project app/ios/App/App.xcodeproj -scheme App -configuration Debug
+          -sdk iphonesimulator -destination "generic/platform=iOS Simulator"
+          -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO build
+      - name: Keep the simulator app
+        run: ditto -c -k --keepParent build/ios/Build/Products/Debug-iphonesimulator/App.app mathlint-ios-simulator.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mathlint-ios-simulator
+          path: mathlint-ios-simulator.zip
+          if-no-files-found: error
+      - name: Start the app until the engine is ready
+        run: |
+          device=$(xcrun simctl list devices available --json | python3 -c '
+          import json, re, sys
+          runtimes = json.load(sys.stdin)["devices"]
+          phones = [
+              (tuple(map(int, re.findall(r"\d+", runtime))), device["udid"])
+              for runtime, devices in runtimes.items() if ".iOS-" in runtime
+              for device in devices if device["name"].startswith("iPhone")
+          ]
+          print(max(phones)[1])')
+          xcrun simctl boot "$device"
+          xcrun simctl bootstatus "$device"
+          xcrun simctl install "$device" build/ios/Build/Products/Debug-iphonesimulator/App.app
+          python3 scripts/wait_for_log.py --timeout 600 "$READY" -- xcrun simctl launch --console-pty "$device" "$APP_ID"

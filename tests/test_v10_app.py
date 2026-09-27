@@ -12,6 +12,7 @@ import plistlib
 import re
 import struct
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -41,6 +42,7 @@ def _script(name: str):
 
 
 build_app = _script("build_app")
+wait_for_log = _script("wait_for_log")
 
 
 def test_one_app_id_everywhere():
@@ -239,3 +241,22 @@ def test_capacitor_is_pinned_to_one_version():
 
 def test_the_app_packages_stay_out_of_git():
     assert "app/node_modules/" in (ROOT / ".gitignore").read_text(encoding="utf-8")
+
+
+def test_ci_waits_for_the_line_the_page_writes():
+    workflow = (ROOT / ".github/workflows/apps.yml").read_text(encoding="utf-8")
+    page = (ROOT / "web/app.js").read_text(encoding="utf-8")
+    assert 'READY: "mathlint: engine ready"' in workflow
+    assert "console.info(`mathlint: engine ready ${version}`)" in page
+    assert f"APP_ID: {CONFIG['appId']}" in workflow
+
+
+def test_waiting_for_a_line_in_a_log():
+    ready = "mathlint: engine ready"
+    says_it = "print('booting'); print('I/Capacitor/Console: mathlint: engine ready 1.0.0')"
+    assert wait_for_log.wait_for([sys.executable, "-c", says_it], ready, timeout=60)
+    assert not wait_for_log.wait_for([sys.executable, "-c", "print('booting')"], ready, 60)
+    started = time.monotonic()
+    silent = [sys.executable, "-c", "import time; time.sleep(60)"]
+    assert not wait_for_log.wait_for(silent, ready, timeout=1)
+    assert time.monotonic() - started < 30
