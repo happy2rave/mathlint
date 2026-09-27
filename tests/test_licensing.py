@@ -18,7 +18,8 @@ def test_package_metadata_does_not_claim_osi_approval():
 
     assert 'license = "PolyForm-Noncommercial-1.0.0"' in metadata
     assert "License :: OSI Approved" not in metadata
-    assert "License :: Other/Proprietary License" in metadata
+    # the SPDX expression is the license; PyPI refuses a License classifier beside it
+    assert '    "License ::' not in metadata
 
 
 def test_third_party_content_keeps_its_separate_license():
