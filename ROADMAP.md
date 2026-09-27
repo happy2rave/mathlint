@@ -31,7 +31,7 @@ real problems with known answers — runs on every commit.
 | v0.10.1 | Done: A new look | Phone-first app shell around the notebook, docked keypad, result cards, dark theme |
 | v0.11 | Done: App quality | Installable, offline, history, speed, screen readers, Romanian, Russian and Spanish |
 | v0.12 | Done: Camera and handwriting | Photograph printed or handwritten math, or write it on the screen — read on the device, offline |
-| v1.0 | App stores | Android and iOS apps from the same code |
+| v1.0 | Done: App stores | Android and iOS apps from the same code, and a stable Python package |
 
 ### v0.5 — Solve it
 
@@ -140,5 +140,13 @@ Word problems, which need a language model, would only ever be an opt-in extra.
 
 ### v1.0 — App stores
 
-Android and iOS apps built from the same web code (Capacitor), and a stable
-Python package on PyPI.
+Android and iOS apps built from the same web code with Capacitor: the page
+itself, with the engine and the recognizer inside, so the apps work offline from
+the first launch. The page knows when it is in an app and behaves like one — the
+back button, the status bar, no service worker — and asks for nothing but the
+camera. CI builds both apps and starts each until the engine is ready; once the
+keys are set up, releases sign them and send them to Google Play and TestFlight.
+The listings, the screenshots and a privacy policy are in four languages, and the
+one-time steps in the stores' consoles are in `docs/app-stores.md`. The Python
+package is stable: what `mathlint.__all__` names follows semantic versioning, on
+PyPI.

@@ -1,7 +1,7 @@
 # v1.0 "App stores" — design
 
 Date: 2026-09-27
-Status: planned
+Status: shipped in v1.0.0
 
 ## Goal
 

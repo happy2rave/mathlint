@@ -24,6 +24,9 @@ working, and a light and a dark theme.
 the screen, and it lands in the notebook as math you can edit. The recognizer
 runs on your device and works offline; photos never leave it.
 
+The same app is built for **Android and iOS** ([app/](app/README.md)), with the
+engine and the recognizer inside it, so it works offline from the first launch.
+
 It speaks **English, Romanian, Russian and Spanish** — the interface and every
 step, hint and explanation. Add it to your home screen and it works
 **offline**: everything, the math engine included, is kept on your device, along
@@ -293,13 +296,14 @@ mathlint solve "taylor ln(x) at 1 order 4"
 ## Install
 
 ```bash
-pip install "mathlint @ git+https://github.com/happy2rave/mathlint"
+pip install mathlint
 ```
 
 or install the wheel attached to the
-[latest release](https://github.com/happy2rave/mathlint/releases/latest). Python
-3.10 or newer; the only dependency is [SymPy](https://www.sympy.org). Nothing to
-install at all: [use it in the browser](https://happy2rave.github.io/mathlint/).
+[latest release](https://github.com/happy2rave/mathlint/releases/latest), or the
+newest code with `pip install "mathlint @ git+https://github.com/happy2rave/mathlint"`.
+Python 3.10 or newer; the only dependency is [SymPy](https://www.sympy.org).
+Nothing to install at all: [use it in the browser](https://happy2rave.github.io/mathlint/).
 
 ## Use it
 
@@ -337,6 +341,14 @@ report = mathlint.check("(x+1)^2\n= x^2 + 2x + 1")
 print(report.ok)            # True
 print(report.to_text())
 ```
+
+From 1.0 on the Python API is stable: what `mathlint.__all__` names —
+`check`, `solve`, `compute`, `analyze` and `compare`, their results (`Report`,
+`Step`, `Verdict`, `Comparison`, `Computation`, `EquationSolution`,
+`SystemSolution`, `InequalitySolution`) and the errors (`MathlintError`,
+`ParseError`, `UnsupportedError`) — changes only as
+[semantic versioning](https://semver.org) allows. The package carries its type
+annotations for type checkers.
 
 ## Worked solutions, step by step
 
@@ -426,7 +438,8 @@ reads your line differently than you meant it, that's a bug. See
 [SymPy](https://www.sympy.org) for the math; in the browser,
 [Pyodide](https://pyodide.org), [MathLive](https://mathlive.io) for the editor and
 [KaTeX](https://katex.org) for the results, all served from the site itself so
-the page asks nothing of any other server. The handwriting recognizer learned
+the page asks nothing of any other server; [Capacitor](https://capacitorjs.com)
+for the Android and iOS apps. The handwriting recognizer learned
 from the [Detexify](https://detexify.kirelabs.org) and
 [HASYv2](https://doi.org/10.5281/zenodo.259444) collections (Open Database
 License) and from open fonts.

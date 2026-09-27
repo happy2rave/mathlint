@@ -128,3 +128,13 @@ def test_the_release_jobs_stay_off_until_their_secrets_exist():
     gradle = (ROOT / "app" / "android" / "app" / "build.gradle").read_text(encoding="utf-8")
     assert 'System.getenv("MATHLINT_UPLOAD_KEYSTORE")' in gradle
     assert "upload.jks" not in gradle  # the key is never in the repository
+
+
+def test_this_release_says_what_is_new_in_every_store_and_language():
+    version = re.search(r'"([\d.]+)"', (ROOT / "src/mathlint/_version.py").read_text("utf-8"))[1]
+    major, minor, patch = map(int, version.split("."))
+    code = major * 10000 + minor * 100 + patch  # scripts/build_app.py's version code
+    for locale in _locales(PLAY):
+        assert (METADATA / "android" / locale / "changelogs" / f"{code}.txt").exists(), locale
+    for locale in _locales(APPLE):
+        assert _text(METADATA / "ios" / locale / "release_notes.txt"), locale

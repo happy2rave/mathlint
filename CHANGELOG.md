@@ -6,6 +6,51 @@ All notable changes are recorded here. This project follows
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-09-27
+
+App stores: mathlint for Android and iOS, built from the same code as the web
+page, and a stable Python package.
+
+### Added
+
+- **Android and iOS apps.** The web page in a Capacitor shell (`app/`), with
+  everything inside it — the math engine and the handwriting recognizer
+  included — so the apps work offline from the first launch and download
+  nothing. Android 7.0 and newer, iOS 15 and newer, phones and tablets. The
+  only permission asked for is the camera, the first time it is used, and
+  iOS explains why in each of the four languages.
+- They behave like apps: Android's back button closes the camera or the sheet
+  on top, then the keypad, then goes back to Solve before it leaves; the page
+  draws edge to edge around the status bar and the notch, and the status bar
+  follows the theme. The icon (with a themed icon on Android 13 and newer) and
+  the launch screen are drawn from the logo, dark in the dark theme.
+- The store apps show no payment link of any kind: the stores take payments
+  only through their own systems, and mathlint sells nothing.
+- **CI builds both apps on every change** and starts each in an Android
+  emulator and an iOS simulator until the page reports that the engine has
+  loaded inside the web view. The debug APK and the simulator app are kept as
+  build artifacts.
+- **Releases sign and upload the apps** once the maintainer has set up the
+  keys: a signed App Bundle and APK on the GitHub release and in Google Play's
+  internal testing, and the iOS app in TestFlight. `docs/app-stores.md` lists
+  the one-time steps in both stores.
+- **Store listings** for Google Play and the App Store in English, Romanian,
+  Russian and Spanish (`app/fastlane/metadata`), held to each store's limits by
+  tests, and `npm run screenshots` in `app/` to make every store's screenshots
+  from the real page in each language.
+- **A privacy policy** (`privacy.html`, linked from About) in the four
+  languages: mathlint collects nothing, sends nothing, and keeps no photos.
+- **A stable Python API.** The names in `mathlint.__all__` and their
+  signatures are held by a test and follow semantic versioning from 1.0 on.
+  The package ships its type annotations (`py.typed`), and 1.0.0 is the first
+  version for PyPI: `pip install mathlint`.
+
+### Changed
+
+- The package metadata says "Production/Stable" and lists the supported
+  Python versions; the license is given only as its SPDX expression, since
+  PyPI refuses a license classifier beside one.
+
 ## [0.12.0] — 2026-09-24
 
 Camera and handwriting: photograph a problem, or write it by hand, and it
@@ -472,7 +517,8 @@ First release: the mistake finder.
   when a step is wrong.
 - A web page that runs SymPy and mathlint in the browser through Pyodide.
 
-[Unreleased]: https://github.com/happy2rave/mathlint/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/happy2rave/mathlint/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/happy2rave/mathlint/releases/tag/v1.0.0
 [0.12.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.12.0
 [0.11.0]: https://github.com/happy2rave/mathlint/releases/tag/v0.11.0
 [0.10.1]: https://github.com/happy2rave/mathlint/releases/tag/v0.10.1

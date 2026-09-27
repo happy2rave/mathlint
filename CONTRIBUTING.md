@@ -54,6 +54,7 @@ python -m http.server -d _site 8123
 | `src/mathlint/check/` | walk the lines and build the report |
 | `src/mathlint/report.py` | text, Markdown and JSON output |
 | `web/` | the browser version: `app.js` runs mathlint in Pyodide, `editor.js` is the sheet of MathLive math fields, `keypad.js` the keypad, `examples.json` the examples (checked by `tests/test_web_examples.py`) |
+| `app/` | the Android and iOS apps: the built web page in a Capacitor shell (see `app/README.md`) |
 
 ## House rules
 
@@ -79,8 +80,13 @@ Add the case to the matching test file first, watch it fail, then make it pass.
 ## Releasing (maintainers)
 
 1. Move the "Unreleased" notes in `CHANGELOG.md` under a new version heading.
-2. Bump `src/mathlint/_version.py` and the version assertions in the tests.
-3. Commit, then `git tag -a vX.Y.Z -m "mathlint X.Y.Z"` and push the tag.
+2. Bump `src/mathlint/_version.py` and the version assertions in the tests, and
+   run `uv run python scripts/build_app.py --no-sync` to write the version into
+   the apps (1.2.3 is version code 10203).
+3. Write what is new for the stores, in each language:
+   `app/fastlane/metadata/android/<locale>/changelogs/<version code>.txt` and
+   `app/fastlane/metadata/ios/<locale>/release_notes.txt`.
+4. Commit, then `git tag -a vX.Y.Z -m "mathlint X.Y.Z"` and push the tag.
 
 The `Release` workflow tests, builds, and publishes a GitHub release with the
 wheel and sdist attached; `Pages` redeploys the web page with the new wheel.
@@ -92,4 +98,5 @@ Publishing to PyPI is switched off until it is set up once:
 2. In the repository settings, create the environment `pypi` and the repository
    variable `PYPI_PUBLISH` = `true`.
 
-From then on every tag also publishes to PyPI.
+From then on every tag also publishes to PyPI. The apps are set up the same
+way, once, as [docs/app-stores.md](docs/app-stores.md) describes.
