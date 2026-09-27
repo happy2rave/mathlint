@@ -13,6 +13,7 @@ import re
 import struct
 import sys
 import time
+import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
 import pytest
@@ -125,6 +126,18 @@ def test_the_icons_are_the_ones_icons_py_draws():
             assert committed.read_text(encoding="utf-8") == content, path
         else:
             assert committed.read_bytes() == content, path
+
+
+def test_every_native_xml_file_parses():
+    files = [
+        *(APP / "android").rglob("*.xml"),
+        IOS / "App/Base.lproj/LaunchScreen.storyboard",
+        IOS / "App/Base.lproj/Main.storyboard",
+    ]
+    for path in files:
+        if "build" in path.relative_to(APP).parts:
+            continue
+        ElementTree.parse(path)  # raises on what aapt or Xcode would refuse, "--" in a comment
 
 
 def test_the_icons_have_the_sizes_their_stores_ask_for():

@@ -106,7 +106,7 @@ def android_vector(*, content: float, monochrome: bool = False) -> str:
     body = "\n".join("        " + path for path in paths)
     return (
         '<?xml version="1.0" encoding="utf-8"?>\n'
-        "<!-- drawn by scripts/icons.py: python scripts/build_app.py --icons -->\n"
+        "<!-- drawn by scripts/icons.py; scripts/build_app.py redraws it -->\n"
         '<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
         '    android:width="108dp" android:height="108dp"\n'
         '    android:viewportWidth="108" android:viewportHeight="108">\n'
