@@ -102,9 +102,13 @@ async function shoot(browser, base, device, lang) {
     const results = scene.tab === "solve" ? "#solved" : "#results";
     await page.waitForFunction((selector) => document.querySelector(selector).childElementCount > 0, results);
     await page.evaluate(() => document.activeElement?.blur?.());
-    // the page scrolls smoothly to the answer; once it has, back to the top
+    // the page scrolls its screen smoothly to the answer; once it has, back to the top
     await page.waitForTimeout(1500);
-    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await page.evaluate(() => {
+      for (const element of [document.scrollingElement, ...document.querySelectorAll("*")]) {
+        if (element.scrollTop || element.scrollLeft) element.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+    });
     await page.waitForTimeout(300);
     shots.push({ name: `${index + 1}_${scene.name}.png`, data: await page.screenshot() });
   }
