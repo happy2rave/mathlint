@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the page's own background (web/style.css), behind the logo at launch -->
+    <color name="splash_background">#F4F3EF</color>
+</resources>

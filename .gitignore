@@ -14,3 +14,6 @@ _site/
 training/data/
 training/runs/
 training/.venv/
+
+# the apps: npm packages, and what Capacitor copies in (app/*/.gitignore has the rest)
+app/node_modules/

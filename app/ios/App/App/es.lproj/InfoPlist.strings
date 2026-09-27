@@ -1,0 +1,2 @@
+/* Why mathlint asks for the camera, in the reader's language (Info.plist has the English). */
+"NSCameraUsageDescription" = "mathlint lee las matemáticas de una foto de tu trabajo. La foto se queda en tu dispositivo y no se guarda.";

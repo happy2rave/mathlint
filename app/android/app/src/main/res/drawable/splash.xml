@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launch screen before Android 12: the logo on the page's background.
+     Android 12 and newer draw their own from the theme (values/styles.xml). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background"/>
+    <item
+        android:width="160dp"
+        android:height="160dp"
+        android:gravity="center"
+        android:drawable="@drawable/ic_launcher_foreground"/>
+</layer-list>

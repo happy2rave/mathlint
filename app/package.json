@@ -1,0 +1,15 @@
+{
+  "name": "mathlint-app",
+  "private": true,
+  "description": "mathlint for Android and iOS: the web page in a Capacitor shell",
+  "license": "SEE LICENSE IN ../LICENSE",
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}

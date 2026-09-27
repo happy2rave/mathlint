@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The languages mathlint speaks (web/locales), for Android 13's per-app language. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en"/>
+    <locale android:name="ro"/>
+    <locale android:name="ru"/>
+    <locale android:name="es"/>
+</locale-config>

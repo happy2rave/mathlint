@@ -1,0 +1,11 @@
+{
+  "appId": "io.github.happy2rave.mathlint",
+  "appName": "mathlint",
+  "webDir": "../_site",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}
